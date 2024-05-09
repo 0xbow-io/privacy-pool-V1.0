@@ -1,0 +1,40 @@
+[package]
+name = "nova-scotia"
+version = "0.5.0"
+edition = "2021"
+authors = ["Nalin <novascotia@nibnalin.me>"]
+description = "Middleware to compile Circom circuits to Nova zkSNARK scheme"
+documentation = "https://github.com/nalinbhardwaj/Nova-Scotia/blob/main/README.md"
+readme = "README.md"
+repository = "https://github.com/nalinbhardwaj/Nova-Scotia"
+license-file = "LICENSE"
+keywords = ["zkSNARKs", "cryptography", "proofs"]
+
+[dependencies]
+num-bigint = { version = "0.4.4", features = ["serde", "rand"] }
+nova-snark = { git = "https://github.com/chainwayxyz/Nova", branch = "hakan/arb" }
+num-traits = "0.2.18"
+serde = "1.0.198"
+serde_json = "1.0.116"
+anyhow = "1.0.82"
+bellperson = { version = "0.25 ", default-features = false }
+serde_cbor = "0.11.2"
+ff = { version = "0.13", features = ["derive"] }
+itertools = "0.12.1"
+pasta_curves = "0.5.1"
+byteorder = "1.5.0"
+hex-literal = "0.4.1"
+
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
+rayon = "1.5"
+wasm-bindgen-rayon = { version = "1.2.1" }
+wasm-bindgen-futures = "0.4.42"
+js-sys = "0.3"
+
+
+[features]
+xdefault = []
+cuda = ["nova-snark/cuda"]
+opencl = ["nova-snark/opencl"]

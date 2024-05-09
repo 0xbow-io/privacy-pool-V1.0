@@ -1,0 +1,3 @@
+[workspace]
+members = ["nova-scotia", "wasm", "cbor"]
+resolver = "2"

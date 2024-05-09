@@ -1,0 +1,1 @@
+self.__NEXT_FONT_MANIFEST="{\"pages\":{},\"app\":{\"/Users/tarasworonjanski/Documents/0xbow/Privacy Pools/privacy-pool-v1/privacy-pool-ui/web/app/layout\":[\"static/media/c9a5bc6a7c948fb0-s.p.woff2\",\"static/media/92f44bb82993d879-s.p.woff2\"]},\"appUsingSizeAdjust\":true,\"pagesUsingSizeAdjust\":false}"

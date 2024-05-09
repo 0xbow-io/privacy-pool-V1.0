@@ -1,0 +1,35 @@
+"use strict";
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+exports.id = "vendor-chunks/wagmi";
+exports.ids = ["vendor-chunks/wagmi"];
+exports.modules = {
+
+/***/ "(ssr)/./node_modules/wagmi/dist/esm/context.js":
+/*!************************************************!*\
+  !*** ./node_modules/wagmi/dist/esm/context.js ***!
+  \************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   WagmiContext: () => (/* binding */ WagmiContext),\n/* harmony export */   WagmiProvider: () => (/* binding */ WagmiProvider)\n/* harmony export */ });\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"(ssr)/./node_modules/next/dist/server/future/route-modules/app-page/vendored/ssr/react.js\");\n/* harmony import */ var _hydrate_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./hydrate.js */ \"(ssr)/./node_modules/wagmi/dist/esm/hydrate.js\");\n'use client';\n\n\n\nconst WagmiContext = (0,react__WEBPACK_IMPORTED_MODULE_0__.createContext)(undefined);\nfunction WagmiProvider(parameters) {\n    const { children, config } = parameters;\n    const props = { value: config };\n    return (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(_hydrate_js__WEBPACK_IMPORTED_MODULE_1__.Hydrate, parameters, (0,react__WEBPACK_IMPORTED_MODULE_0__.createElement)(WagmiContext.Provider, props, children));\n}\n//# sourceMappingURL=context.js.map//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvd2FnbWkvZGlzdC9lc20vY29udGV4dC5qcyIsIm1hcHBpbmdzIjoiOzs7Ozs7O0FBQUE7QUFDNkI7QUFDd0I7QUFDZDtBQUNoQyxxQkFBcUIsb0RBQWE7QUFDbEM7QUFDUCxZQUFZLG1CQUFtQjtBQUMvQixvQkFBb0I7QUFDcEIsV0FBVyxvREFBYSxDQUFDLGdEQUFPLGNBQWMsb0RBQWE7QUFDM0Q7QUFDQSIsInNvdXJjZXMiOlsid2VicGFjazovL3ByaXZhY3ktcG9vbC11aS8uL25vZGVfbW9kdWxlcy93YWdtaS9kaXN0L2VzbS9jb250ZXh0LmpzPzM5ZjAiXSwic291cmNlc0NvbnRlbnQiOlsiJ3VzZSBjbGllbnQnO1xuaW1wb3J0IHt9IGZyb20gJ0B3YWdtaS9jb3JlJztcbmltcG9ydCB7IGNyZWF0ZUNvbnRleHQsIGNyZWF0ZUVsZW1lbnQgfSBmcm9tICdyZWFjdCc7XG5pbXBvcnQgeyBIeWRyYXRlIH0gZnJvbSAnLi9oeWRyYXRlLmpzJztcbmV4cG9ydCBjb25zdCBXYWdtaUNvbnRleHQgPSBjcmVhdGVDb250ZXh0KHVuZGVmaW5lZCk7XG5leHBvcnQgZnVuY3Rpb24gV2FnbWlQcm92aWRlcihwYXJhbWV0ZXJzKSB7XG4gICAgY29uc3QgeyBjaGlsZHJlbiwgY29uZmlnIH0gPSBwYXJhbWV0ZXJzO1xuICAgIGNvbnN0IHByb3BzID0geyB2YWx1ZTogY29uZmlnIH07XG4gICAgcmV0dXJuIGNyZWF0ZUVsZW1lbnQoSHlkcmF0ZSwgcGFyYW1ldGVycywgY3JlYXRlRWxlbWVudChXYWdtaUNvbnRleHQuUHJvdmlkZXIsIHByb3BzLCBjaGlsZHJlbikpO1xufVxuLy8jIHNvdXJjZU1hcHBpbmdVUkw9Y29udGV4dC5qcy5tYXAiXSwibmFtZXMiOltdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/wagmi/dist/esm/context.js\n");
+
+/***/ }),
+
+/***/ "(ssr)/./node_modules/wagmi/dist/esm/hydrate.js":
+/*!************************************************!*\
+  !*** ./node_modules/wagmi/dist/esm/hydrate.js ***!
+  \************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   Hydrate: () => (/* binding */ Hydrate)\n/* harmony export */ });\n/* harmony import */ var _wagmi_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wagmi/core */ \"(ssr)/./node_modules/@wagmi/core/dist/esm/hydrate.js\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"(ssr)/./node_modules/next/dist/server/future/route-modules/app-page/vendored/ssr/react.js\");\n'use client';\n\n\nfunction Hydrate(parameters) {\n    const { children, config, initialState, reconnectOnMount = true } = parameters;\n    const { onMount } = (0,_wagmi_core__WEBPACK_IMPORTED_MODULE_1__.hydrate)(config, {\n        initialState,\n        reconnectOnMount,\n    });\n    // Hydrate for non-SSR\n    if (!config._internal.ssr)\n        onMount();\n    // Hydrate for SSR\n    const active = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(true);\n    // biome-ignore lint/nursery/useExhaustiveDependencies:\n    (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {\n        if (!active.current)\n            return;\n        if (!config._internal.ssr)\n            return;\n        onMount();\n        return () => {\n            active.current = false;\n        };\n    }, []);\n    return children;\n}\n//# sourceMappingURL=hydrate.js.map//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvd2FnbWkvZGlzdC9lc20vaHlkcmF0ZS5qcyIsIm1hcHBpbmdzIjoiOzs7Ozs7QUFBQTtBQUNzQztBQUNJO0FBQ25DO0FBQ1AsWUFBWSwwREFBMEQ7QUFDdEUsWUFBWSxVQUFVLEVBQUUsb0RBQU87QUFDL0I7QUFDQTtBQUNBLEtBQUs7QUFDTDtBQUNBO0FBQ0E7QUFDQTtBQUNBLG1CQUFtQiw2Q0FBTTtBQUN6QjtBQUNBLElBQUksZ0RBQVM7QUFDYjtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsS0FBSztBQUNMO0FBQ0E7QUFDQSIsInNvdXJjZXMiOlsid2VicGFjazovL3ByaXZhY3ktcG9vbC11aS8uL25vZGVfbW9kdWxlcy93YWdtaS9kaXN0L2VzbS9oeWRyYXRlLmpzP2JhODgiXSwic291cmNlc0NvbnRlbnQiOlsiJ3VzZSBjbGllbnQnO1xuaW1wb3J0IHsgaHlkcmF0ZSB9IGZyb20gJ0B3YWdtaS9jb3JlJztcbmltcG9ydCB7IHVzZUVmZmVjdCwgdXNlUmVmIH0gZnJvbSAncmVhY3QnO1xuZXhwb3J0IGZ1bmN0aW9uIEh5ZHJhdGUocGFyYW1ldGVycykge1xuICAgIGNvbnN0IHsgY2hpbGRyZW4sIGNvbmZpZywgaW5pdGlhbFN0YXRlLCByZWNvbm5lY3RPbk1vdW50ID0gdHJ1ZSB9ID0gcGFyYW1ldGVycztcbiAgICBjb25zdCB7IG9uTW91bnQgfSA9IGh5ZHJhdGUoY29uZmlnLCB7XG4gICAgICAgIGluaXRpYWxTdGF0ZSxcbiAgICAgICAgcmVjb25uZWN0T25Nb3VudCxcbiAgICB9KTtcbiAgICAvLyBIeWRyYXRlIGZvciBub24tU1NSXG4gICAgaWYgKCFjb25maWcuX2ludGVybmFsLnNzcilcbiAgICAgICAgb25Nb3VudCgpO1xuICAgIC8vIEh5ZHJhdGUgZm9yIFNTUlxuICAgIGNvbnN0IGFjdGl2ZSA9IHVzZVJlZih0cnVlKTtcbiAgICAvLyBiaW9tZS1pZ25vcmUgbGludC9udXJzZXJ5L3VzZUV4aGF1c3RpdmVEZXBlbmRlbmNpZXM6XG4gICAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICAgICAgaWYgKCFhY3RpdmUuY3VycmVudClcbiAgICAgICAgICAgIHJldHVybjtcbiAgICAgICAgaWYgKCFjb25maWcuX2ludGVybmFsLnNzcilcbiAgICAgICAgICAgIHJldHVybjtcbiAgICAgICAgb25Nb3VudCgpO1xuICAgICAgICByZXR1cm4gKCkgPT4ge1xuICAgICAgICAgICAgYWN0aXZlLmN1cnJlbnQgPSBmYWxzZTtcbiAgICAgICAgfTtcbiAgICB9LCBbXSk7XG4gICAgcmV0dXJuIGNoaWxkcmVuO1xufVxuLy8jIHNvdXJjZU1hcHBpbmdVUkw9aHlkcmF0ZS5qcy5tYXAiXSwibmFtZXMiOltdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/wagmi/dist/esm/hydrate.js\n");
+
+/***/ })
+
+};
+;
