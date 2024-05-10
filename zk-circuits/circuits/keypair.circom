@@ -1,8 +1,11 @@
-pragma circom 2.0.0;
+pragma circom 2.1.8;
 
 // circomlib imports
 include  "./circomlib/bitify.circom"; 
 include "./circomlib/escalarmulfix.circom"; 
+include "./EdDSAPoseidonVerifier.circom";
+include "./circomlib/poseidon.circom";
+
 
 // It utilizes the {@link https://eips.ethereum.org/EIPS/eip-2494|Baby Jubjub} elliptic curve
 // to derive a public key from a EdDSA private key.
@@ -30,15 +33,35 @@ template PrivToPubKey() {
 
 
 
-template Signature() {
-    signal input pk;
+/**
+ * Verifies the EdDSA signature of Poseidon(2)([Commitment, index])
+ */
+template VerifySignature() {
+    // Public key of the signer, consisting of two coordinates [x, y].
+    signal input pubKey[2];
+    // R8 point from the signature, consisting of two coordinates [x, y]. 
+    signal input R8[2];
+    // Scalar component of the signature.
+    signal input S;
+
+
+    // The preimage data that was hashed, an array of size NumOfElements
     signal input commitment;
     signal input leafIndex;
-    signal output out;
+    signal output valid;
 
-    component hasher = Poseidon(3);
-    hasher.inputs[0] <== pk;
-    hasher.inputs[1] <== commitment;
-    hasher.inputs[2] <== leafIndex;
-    out <== hasher.out;
+    // Hash the preimage using the Poseidon hashing function configured for four inputs.
+    var computedM = Poseidon(2)([commitment, leafIndex]);
+
+    // Instantiate the patched EdDSA Poseidon verifier with the necessary inputs.
+    var computedVerifier = EdDSAPoseidonVerifier()(
+        pubKey[0],
+        pubKey[1],
+        S,
+        R8[0],
+        R8[1],
+        computedM
+    );
+
+    valid <== computedVerifier;
 }

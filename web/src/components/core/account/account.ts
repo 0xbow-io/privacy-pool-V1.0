@@ -1,6 +1,6 @@
 
 import { generatePrivateKey, privateKeyToAccount, PrivateKeyAccount } from 'viem/accounts'
-import  {Hex,fromHex} from 'viem'
+import  {Hex, hexToBigInt} from 'viem'
 import { numbers } from '@/store/variables'
 import { toFixedHex, toBuffer} from '@/utils/hash'
 import { encrypt, decrypt, getEncryptionPublicKey } from 'eth-sig-util'
@@ -10,19 +10,11 @@ import {Commitment, PrivacyPool, PrivacyPools, stateManager} from '@core/pool'
 import { Chain } from 'viem/chains';
 import { Address } from 'viem'
 
-import { poseidon3 } from "poseidon-lite/poseidon3"
+import { hash2, hash3, sign, Signature} from "maci-crypto"
 import { LeanIMT } from "@zk-kit/imt"
+import {Keypair, PrivKey, PubKey} from "maci-domainobjs"
 
 
-
-import {
-    derivePublicKey,
-    signMessage,
-    verifySignature,
-    deriveSecretScalar,
-    packPublicKey,
-    unpackPublicKey
-} from "@zk-kit/eddsa-poseidon"
 
 /*
     Ethereum ESDCA keypairs can be used to 
@@ -31,15 +23,16 @@ import {
     Secrets are encrypted with encryption public key derived from private key
 */
 
-export type keypair = {
-    pub: Hex         // ecdsa public address
+export type privacyKeys = {
     pk:  Hex         // ecdsa private key
-    Pk:  bigint      // packed public key derived from pk via Baby Jubjub elliptic curve  https://eips.ethereum.org/EIPS/eip-2494
+    pubAddr: Hex     // ecdsa public address
+
+    keypair: Keypair // eddsa keypair (from maci-domainobjs)
     eK:  string      // x25519-xsalsa20-poly1305 encryption public key
 }
 
 export interface Account {
-    genKeyPair(): bigint 
+    genKeyPair(): Keypair 
     importKeyPair(privateKey: Hex): void
     encryptUTXO(utxo: UTXO): string
     StoreCommitmentIfMatch(chain: Chain, contract: Address, commitment: Commitment): void
@@ -54,65 +47,71 @@ export type PoolUTXOs = {
 export type poolUTXOMap = Map<Address, PoolUTXOs>
 
 export class account implements Account {
-    keypairs: Map<bigint, keypair> // map of pk to keypair
+    keypairs: Map<bigint, privacyKeys> // map of hash(pk) to keypair
     esdcaAccounts: Map<string, PrivateKeyAccount> // map of pub to account
     chainUTXOMap: Map<Chain, poolUTXOMap> // UTXO mapping to chain & pool contract
     
     public constructor(){
-        this.keypairs = new Map<bigint, keypair>()  
+        this.keypairs = new Map<bigint, privacyKeys>()  
         this.esdcaAccounts = new Map<string, PrivateKeyAccount>()
         this.chainUTXOMap = new Map<Chain, poolUTXOMap>()
     }
     
 
-    public genKeyPair(): bigint {
+    public genKeyPair(): Keypair {
         const privateKey = generatePrivateKey()
         const account = privateKeyToAccount(privateKey)
 
-        // Derive a eddsa public key from the ecdsa private key.
+        // Derive a eddsa public key from the private key.
         // pack it for convenience
-        const Pk = packPublicKey(derivePublicKey(privateKey))
+        const pK = new PrivKey(hexToBigInt(privateKey))
+        const keypair = new Keypair(pK)
+        const pubKeyHash = keypair.pubKey.hash()
 
         this.esdcaAccounts.set(account.address, account)
-        this.keypairs.set(Pk, {
-            pub: account.address,
+        this.keypairs.set(pubKeyHash, {
+            pubAddr: account.address,
             pk: privateKey,
-            Pk: Pk,
+            keypair: keypair,
             eK: getEncryptionPublicKey(privateKey.slice(numbers.OX_LENGTH))
         })   
-        return Pk
+        return keypair
     }
 
     public importKeyPair(privateKey: Hex){
         const account = privateKeyToAccount(privateKey)
         this.esdcaAccounts.set(account.address, account)
 
-        // Derive a public key from the private key.
-        const Pk = packPublicKey(derivePublicKey(privateKey))
+        // Derive a eddsa public key from the private key.
+        // pack it for convenience
+        const pK = new PrivKey(hexToBigInt(privateKey))
+        const keypair = new Keypair(pK)
+        const pubKeyHash = keypair.pubKey.hash()
 
-        this.keypairs.set(Pk, {
-            pub: account.address,
+        this.keypairs.set(pubKeyHash, {
+            pubAddr: account.address,
             pk: privateKey,
-            Pk: Pk,
+            keypair: keypair,
             eK: getEncryptionPublicKey(privateKey.slice(numbers.OX_LENGTH))
         })   
     }
 
-    // given a packed public key, return the associated private key
-    public pKFromPk(Pk: bigint): Hex {
-        let keypair = this.keypairs.get(Pk) as keypair
-        return keypair.pk
+    // given a pubkey hash, return the associated private key as string
+    public pKFromPk(Pk: PubKey): string {
+        let keys = this.keypairs.get(Pk.hash()) as privacyKeys
+        return keys.keypair.privKey.rawPrivKey.toString()
     }
 
-    public pKFromPkBigInt(Pk: bigint): bigint {
-        let keypair = this.keypairs.get(Pk) as keypair
-        return fromHex(keypair.pk, 'bigint')
+    // given a pubkey hash, return the associated private key as bigint
+    public pKFromPkBigInt(Pk: PubKey): bigint {
+        let keys = this.keypairs.get(Pk.hash()) as privacyKeys
+        return keys.keypair.privKey.rawPrivKey as bigint
     }
 
-    // given a packed public key, return the associated encryption public key
-    eKFromPk(Pk: bigint): string {
-        let keypair = this.keypairs.get(Pk) as keypair
-        return keypair.eK
+    // given a pubkey hash, return the associated encryption public key
+    public eKFromPk(Pk: PubKey): string {
+        let keys = this.keypairs.get(Pk.hash()) as privacyKeys
+        return keys.eK
     }
 
 
@@ -120,11 +119,11 @@ export class account implements Account {
     // and find the private key that is associated with the commitment event
     // if there's a match, store the commitment as a UTXO
     public StoreCommitmentIfMatch(chain: Chain, contract: Address, commitment: Commitment) {
-        this.keypairs.forEach((keypair, Pk) => {
-            const {isDecrypted, decrypted} = this.decryptUTXO(commitment.encryptedOutput, Pk)
+        this.keypairs.forEach((keys, Pk) => {
+            const {isDecrypted, decrypted} = this.decryptUTXO(commitment.encryptedOutput, keys.keypair.pubKey)
             if (isDecrypted) {
                 let {utxo, commitment: utxoCommitment, nullifier, ismatch} 
-                    = this.recoverUTXO(Pk, decrypted, fromHex(commitment.commitment as Hex, 'bigint'), commitment.index)
+                    = this.recoverUTXO(keys.keypair.pubKey, decrypted, hexToBigInt(commitment.commitment as Hex), commitment.index)
                 if (ismatch) {
                     try {
                         this.chainUTXOMap.get(chain)?.get(contract)?.NullifierToCommitments.set(nullifier, utxoCommitment)
@@ -140,7 +139,7 @@ export class account implements Account {
 
     // attempts to decrypt the encryptedOutput of a commitment event
     // reveals which private key was used to encrypt the UTXO
-    decryptUTXO(encryptedOutput: string, Pk: bigint): {isDecrypted: boolean, decrypted: string} {
+    decryptUTXO(encryptedOutput: string, Pk: PubKey): {isDecrypted: boolean, decrypted: string} {
         try {
             let encrypted = unpackEncryptedMessage(encryptedOutput)
             let decrypted = decrypt(encrypted, this.pKFromPk(Pk).slice(numbers.OX_LENGTH))
@@ -153,7 +152,7 @@ export class account implements Account {
     // used to retrieve UTXO from commitment events
     // verifies against the commitment if the UTXO is valid
     // otherwise returns UTXO, commitment, nullifier, and bool
-    recoverUTXO( Pk: bigint, decryptedOutput: string, commitment: bigint, index: bigint): 
+    recoverUTXO( Pk: PubKey, decryptedOutput: string, commitment: bigint, index: bigint): 
         { utxo: UTXO, commitment: bigint, nullifier: bigint, ismatch: boolean } 
     {
         const buf =  Buffer.from(decryptedOutput, 'base64')
@@ -161,8 +160,8 @@ export class account implements Account {
         let blindingBuffer = "0x" + buf.subarray(BYTES_31, BYTES_62).toString('hex') as Hex
 
         let utxo : UTXO = {
-            amount: fromHex(amountBuffer, "bigint"),
-            blinding: fromHex(blindingBuffer, "bigint"),
+            amount: hexToBigInt(amountBuffer),
+            blinding: hexToBigInt(blindingBuffer),
             Pk: Pk,
             index: index
         }
@@ -184,8 +183,8 @@ export class account implements Account {
 
     // generates a signature for a UTXO
     // with pk associated with UTXO Pk
-    public signUTXO(utxo: UTXO): bigint {
-        return poseidon3([this.pKFromPkBigInt(utxo.Pk), GetCommitment(utxo), utxo.index])
+    public signUTXO(utxo: UTXO): Signature {
+        return sign(this.pKFromPk(utxo.Pk), hash2([GetCommitment(utxo), utxo.index]));
     }
 
     public ExportToJSON(): string {

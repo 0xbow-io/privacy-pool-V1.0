@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.8;
 
 include "./circomlib/poseidon.circom";
 include "./keypair.circom";
@@ -16,8 +16,13 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
     // data for nIns Nullifiers
     signal input inputNullifier[nIns];
     signal input inUnits[nIns];
-    signal input inpK[nIns];
+    signal input inPk[nIns][2];
     signal input inBlinding[nIns];
+
+    // input signature components 
+    signal input inSigR8[nIns][2];    
+    signal input inSigS[nIns];
+
     signal input inLeafIndices[nIns];
     signal input merkleProofIndices[nIns][MAX_DEPTH];
     signal input merkleProofSiblings[nIns][MAX_DEPTH];
@@ -25,15 +30,14 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
     // data for nOuts Commitments
     signal input outCommitment[nOuts];
     signal input outUnits[nOuts];
-    signal input outPk_x[nOuts];
-    signal input outPk_y[nOuts];
+    signal input outPk[nOuts][2];
     signal input outBlinding[nOuts];
 
     signal output merkleRoot;
 
     component inKeypair[nIns];
     component inCommitment[nIns];
-    component inSignature[nIns];
+    component inSigVerifier[nIns];
     component inNullifier[nIns];
     component inMux1[nIns];
 
@@ -41,24 +45,25 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
     signal inMerkleRoots[nIns];
     var sumIns = 0;
     for (var i = 0; i < nIns; i++) {
-        inKeypair[i] = PrivToPubKey();
-        inKeypair[i].pK <== inpK[i];
-
         inCommitment[i] = Commitment();
         inCommitment[i].amount <== inUnits[i];
-        inCommitment[i].Pk_x <== inKeypair[i].Pk[0];
-        inCommitment[i].Pk_y <== inKeypair[i].Pk[1];
+        inCommitment[i].pubKey <== inPk[i];
         inCommitment[i].blinding <== inBlinding[i];
 
-        inSignature[i] = Signature();
-        inSignature[i].pk <== inpK[i];
-        inSignature[i].commitment <== inCommitment[i].out;
-        inSignature[i].leafIndex <== inLeafIndices[i];
+         // verify signature from private key
+        inSigVerifier[i] = VerifySignature();
+        inSigVerifier[i].pubKey <== inPk[i];
+        inSigVerifier[i].R8 <== inSigR8[i];
+        inSigVerifier[i].S <== inSigS[i];
+        inSigVerifier[i].commitment <== inCommitment[i].out;
+        inSigVerifier[i].leafIndex <== inLeafIndices[i];   
 
+        inSigVerifier[i].valid === 1;
+       
         inNullifier[i] = Nullifier();
         inNullifier[i].commitment <== inCommitment[i].out;
         inNullifier[i].leafIndex <== inLeafIndices[i];
-        inNullifier[i].signature <== inSignature[i].out;
+        inNullifier[i].signature <== inSigS[i];
 
         inNullifier[i].out === inputNullifier[i];
 
@@ -72,9 +77,9 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
                                                         merkleProofSiblings[i]
                                                         );
         inMux1[i].c[1] <== i == 0 ? 0 : inMerkleRoots[i-1];
+
         inMux1[i].s <== IsZero()(inUnits[i]);
         inMux1[i].out ==> inMerkleRoots[i]; 
-
         sumIns += inUnits[i];
     }
 
@@ -89,13 +94,13 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
     component outUnitsCheck[nOuts];
     var sumOuts = 0;
 
-    // verify correctness of transaction outputs
+    // verify correctness of outputs
     for (var i = 0; i < nOuts; i++) {
         expectedOutCommitment[i] = Commitment();
         expectedOutCommitment[i].amount <== outUnits[i];
-        expectedOutCommitment[i].Pk_x <== outPk_x[i];
-        expectedOutCommitment[i].Pk_y <== outPk_y[i];
+        expectedOutCommitment[i].pubKey <== outPk[i];
         expectedOutCommitment[i].blinding <== outBlinding[i];
+
         expectedOutCommitment[i].out === outCommitment[i];
 
         // Check that amount fits into 248 bits to prevent overflow
@@ -117,8 +122,6 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
           index++;
       }
     }
-
     sumIns + publicVal === sumOuts;
     signal signalSquare <== signalHash * signalHash;
-
 }

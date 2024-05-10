@@ -1,5 +1,4 @@
 import { poseidonHash, poseidonHash2, randomBN, toFixedHex } from '../hash';
-import { poseidon } from 'circomlib'
 
 
 

@@ -20,6 +20,6 @@
       "inputNullifier",
       "outCommitment"
     ],
-    "params": [100, 2, 2]
+    "params": [20, 2, 2]
   }
 }

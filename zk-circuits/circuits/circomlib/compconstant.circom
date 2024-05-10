@@ -17,6 +17,7 @@
     along with circom. If not, see <https://www.gnu.org/licenses/>.
 */
 pragma circom 2.1.8;
+
 include "bitify.circom";
 
 // Returns 1 if in (in binary) > ct

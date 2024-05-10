@@ -1,26 +1,42 @@
-import {account, keypair} from '@core/account'
+import {account} from '@core/account'
 import {GetCommitment, GetNullifier, UTXO} from '../utxo'
 import { LeanIMT } from "@zk-kit/imt"
-import { poseidon2 } from "poseidon-lite"
 import {ProofInputs} from '@core/pool'
 
-
-const hash = (a: bigint, b: bigint) => poseidon2([a, b])
+import { hashLeftRight, hash2, stringifyBigInts} from "maci-crypto"
 
 
 describe('testUTXO', () => {
     test('commiting utxos', async () => {
         const acc = new account();
-        const Pk = acc.genKeyPair();
-        const pK = acc.pKFromPkBigInt(Pk)
-        const tree = new LeanIMT(hash)
-        const proofInputs : ProofInputs = {}
+        const keypair = acc.genKeyPair();
+        const privKey = keypair.privKey.asCircuitInputs()
+        const pubKey = keypair.pubKey.asCircuitInputs()
+        const tree = new LeanIMT(hashLeftRight)
+
+        const proofInputs : ProofInputs = {
+            publicValue: 100n,
+            signalHash: hash2([100n, 200n]),
+            inUnits: [],
+            inpK: [],
+            inBlinding: [],
+            inLeafIndices: [],
+            inputNullifier: [],
+            merkleProofLength: 0,
+            merkleProofIndices: [],
+            merkleProofSiblings: [],
+            outCommitment: [],
+            outUnits: [],
+            outPk_x: [],
+            outPk_y: [],
+            outBlinding: [],
+        }
         const maxDepth = 20
         
         // Generate random UTXOs to populate the tree
        for (let i = 0; i < 100; i++) {
             const utxo: UTXO = {
-                Pk: Pk,
+                Pk: keypair.pubKey,
                 amount: BigInt(Math.floor(Math.random() * 100)),
                 blinding: BigInt(Math.floor(Math.random() * 100)),
                 index: BigInt(tree.size),
@@ -31,25 +47,30 @@ describe('testUTXO', () => {
 
         // Generate 2 input UTXOs
         proofInputs.inUnits = [100n, 200n]
-        proofInputs.inpK = [pK, pK]
+        proofInputs.inpK = [privKey, privKey]
         proofInputs.inBlinding = [BigInt(Math.floor(Math.random() * 100)), BigInt(Math.floor(Math.random() * 100))]
         
         const utxos : UTXO[] = Array(2).fill(0).map((_, i) => {
             // Generate 1 input UTXO 
             const utxo: UTXO = {
-                Pk: Pk,
+                Pk: keypair.pubKey,
                 amount: proofInputs.inUnits[i],
                 blinding: proofInputs.inBlinding[i],
                 index: BigInt(tree.size),
             }
 
+            proofInputs.inLeafIndices.push(utxo.index)
+
             // get commitment
             const commitment = GetCommitment(utxo)
+            console.log(" commitment: ", commitment)
             // insert into tree
             tree.insert(commitment)
 
             // get account to sign UTXO
             const sig = acc.signUTXO(utxo)
+            console.log(" sig: ", sig)
+
 
             // get nullifier for UTXO 
             const nullifier = GetNullifier(utxo, sig)
@@ -60,26 +81,50 @@ describe('testUTXO', () => {
             return utxo
         });
 
-        // Get merkle proofs for the 2 input UTXOs
-        const inProofs = utxos.map((utxo, i) => {
-            return tree.generateProof(Number(utxo.index))
-        })
+        proofInputs.merkleProofLength = BigInt(tree.depth)
 
-        const merkleProofIndices: number[][] = inProofs.map((proof) => {
-            const indices: number[] = []
-            let index = proof.index
+        utxos.forEach((utxo, i) => {
+            const {siblings: merkleProofSiblings, index} = tree.generateProof(Number(utxo.index))
+
+            const merkleProofIndices: bigint[] = []
             for (let i = 0; i < maxDepth; i += 1) {
-                indices.push((index >> i) & 1)
+                merkleProofIndices.push((BigInt((index >> i) & 1)))
+
                 if (merkleProofSiblings[i] === undefined) {
-                    merkleProofSiblings[i] = []
+                    merkleProofSiblings[i] = BigInt(0)
                 }
             }
-            return indices
-        });
+            proofInputs.merkleProofIndices.push(merkleProofIndices)
+            proofInputs.merkleProofSiblings.push(merkleProofSiblings)
+        })
 
+    
+        // Generate 1 Output UTXO that has a value of the input UTXOS + publicval 
+        const outputUtxo1: UTXO = {
+            Pk: keypair.pubKey,
+            amount: proofInputs.inUnits[0] + proofInputs.inUnits[1] + proofInputs.publicValue,
+            blinding: BigInt(Math.floor(Math.random() * 100)),
+            index: BigInt(tree.size),
+        }
+        proofInputs.outCommitment.push(GetCommitment(outputUtxo1))
+        proofInputs.outBlinding.push(outputUtxo1.blinding) 
 
+        // Generate 1 Output UTXO that has a value of 0 
+        const outputUtxo2: UTXO = {
+            Pk: keypair.pubKey,
+            amount: 0n,
+            blinding: BigInt(Math.floor(Math.random() * 100)),
+            index: BigInt(tree.size),
+        }
 
+        proofInputs.outCommitment.push(GetCommitment(outputUtxo2))
+        proofInputs.outBlinding.push(outputUtxo2.blinding)
+        proofInputs.outUnits = [proofInputs.inUnits[0] + proofInputs.inUnits[1] + proofInputs.publicValue, 0n]
 
+        proofInputs.outPk_x = [pubKey[0], pubKey[0]]
+        proofInputs.outPk_y = [pubKey[1], pubKey[1]]
+
+        console.log(stringifyBigInts(proofInputs))
 
     });
   });

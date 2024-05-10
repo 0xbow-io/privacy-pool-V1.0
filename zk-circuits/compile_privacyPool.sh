@@ -10,6 +10,10 @@ CIRCUITNAME="privacyPool"
 # CircomKit operations
 echo "Running CircomKit operations..."
 npx circomkit clean
-npx circomkit compile privacyPool
-npx circomkit info privacyPool
-npx circomkit setup privacyPool
+npx circomkit compile $CIRCUITNAME
+npx circomkit instantiate $CIRCUITNAME
+npx circomkit info $CIRCUITNAME
+npx circomkit setup $CIRCUITNAME
+npx circomkit prove $CIRCUITNAME default
+npx circomkit verify $CIRCUITNAME default
+npx circomkit contract $CIRCUITNAME

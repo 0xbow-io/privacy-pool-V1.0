@@ -1,7 +1,6 @@
 import {randomBytes} from 'crypto'
 
 import { getBigInt, AbiCoder, keccak256 } from 'ethers'
-import { poseidon } from 'circomlib'
 import { numbers, FIELD_SIZE } from '@/store/variables'
 import {BaseUtxo} from '@core/utxo/types'
 

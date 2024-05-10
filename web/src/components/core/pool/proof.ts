@@ -3,20 +3,19 @@
 export type ProofInputs = {
     publicValue: bigint,
     signalHash: bigint,
-    merkleProofLength: number,
+    merkleProofLength: bigint,
 
     inputNullifier: bigint[],
     inUnits: bigint[],
-    inpK: bigint[],
+    inpK: string[],
     inBlinding: bigint[],
     inLeafIndices: bigint[],
-    merkleProofIndices: number[][],
+    merkleProofIndices: bigint[][],
     merkleProofSiblings: bigint[][],
-
 
     outCommitment: bigint[],
     outUnits    : bigint[],
-    outPk_x     : bigint[],
-    outPk_y     : bigint[],
+    outPk_x     : string[],
+    outPk_y     : string[],
     outBlinding : bigint[],
 }

@@ -1,34 +1,26 @@
 
 import { numbers} from '@/store/variables'
 
-import {
-  packPublicKey,
-  unpackPublicKey
-} from "@zk-kit/eddsa-poseidon"
 
-import { poseidon3 } from "poseidon-lite/poseidon3"
-import { poseidon4 } from "poseidon-lite/poseidon4"
-
+import { hash3, hash4, Signature} from "maci-crypto"
+import {PubKey} from "maci-domainobjs"
 
 export const BYTES_31 = 31
 export const BYTES_62 = 62
 
 export type UTXO = {
   // Values to generate the UTXO commitment & nullifier
-  Pk: bigint  // packed public key derived from pk via Baby Jubjub elliptic curve  https://eips.ethereum.org/EIPS/eip-2494
+  Pk: PubKey  
   amount: bigint
   blinding: bigint
   index: bigint
 }
 
 export function GetCommitment(utxo: UTXO): bigint {
-  // unpack public key
-  const Pk = unpackPublicKey(utxo.Pk)
-
-  return poseidon4([utxo.amount, Pk[0], Pk[1], utxo.blinding])
+  return hash4([utxo.amount, utxo.Pk.rawPubKey[0], utxo.Pk.rawPubKey[1], utxo.blinding])
 }
 
-export function GetNullifier(utxo: UTXO, sig: bigint): bigint {
+export function GetNullifier(utxo: UTXO, sig: Signature): bigint {
   let commitment = GetCommitment(utxo)
-  return poseidon3([commitment, utxo.index || numbers.ZERO, sig])
+  return hash3([commitment, utxo.index || BigInt(0), sig.S as bigint])
 } 
