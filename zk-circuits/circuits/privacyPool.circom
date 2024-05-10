@@ -87,7 +87,6 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
     for (var i = 0; i < nIns - 1; i++) {
         inMerkleRoots[i] === inMerkleRoots[i+1];
     }
-
     merkleRoot <== inMerkleRoots[nIns-1];
 
     component expectedOutCommitment[nOuts];
