@@ -15,8 +15,6 @@ interface IPrivacyPool {
     error FeeFailed();
 
     error InvalidMerkleRoot(bytes32 root);
-    error InvalidnIns(uint256 got);
-    error InvalidnOuts(uint256 got);
 
     error ProofVerificationFailed();
 

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 import {InternalLeanIMT, LeanIMTData} from "./library/InternalLeanIMT.sol";
-import {IVerifier} from "./interfaces/IVerifier.sol";
+import {IGroth16Verifier} from "./interfaces/IGroth16Verifier.sol";
 import {IPoseidonT3} from "./interfaces/IPoseidonT3.sol";
 import {MAX_FEE, NATIVE_REPRESENTATION, SNARK_SCALAR_FIELD} from "./library/Constants.sol";
 import {IPrivacyPool} from "./interfaces/IPrivacyPool.sol";
@@ -21,11 +21,9 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
     LeanIMTData commitmentTree;
 
     /// @dev verifier is the SNARK verifier for the pool
-    IVerifier public verifier;
-
+    IGroth16Verifier verifier;
     /// @dev refer to snark verifier circuit
-    uint8 public nIns;
-    uint8 public nOuts;
+    uint256 public constant pubSignalsLen = 8;
 
     /// @dev maxCommitVal is the maximum value that can be committed to the pool at once
     uint256 public immutable maxCommitVal;
@@ -41,18 +39,14 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
 
     /**
      * @dev The constructor
-     * @param _verifier the address of SNARK verifier
-     * @param _hasher address of poseidon hasher contract for the commitment tree
-     * @param _nIns nIns of the snark verifier
-     * @param _nOuts nOuts of the snark verifier
+     * @param _groth16Verifier the address of GROTH16 SNARK verifier
+     * @param _treeHasher address of poseidon hasher contract for the commitment tree
      * @param _maxCommitVal maximum value that can be committed to the pool at once
      * @param _valueUnitRepresentative address of the external contract that represents the unit of value
      */
     constructor(
-        address _verifier,
-        address _hasher,
-        uint8 _nIns,
-        uint8 _nOuts,
+        address _groth16Verifier,
+        address _treeHasher,
         uint256 _maxCommitVal,
         address _valueUnitRepresentative
     ) {
@@ -66,37 +60,27 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             revert IsZeroAddress();
         }
 
-        commitmentTree.PoseidonT3 = IPoseidonT3(_hasher);
+        commitmentTree.PoseidonT3 = IPoseidonT3(_treeHasher);
 
         if (_valueUnitRepresentative == address(0)) {
             revert IsZeroAddress();
         }
 
         valueUnitRepresentative = _valueUnitRepresentative;
-
-        if (_nIns == 0) {
-            revert InvalidnIns(nIns);
+        if (_maxCommitVal == 0) {
+            revert ValMismatch(_maxCommitVal, 0);
         }
-
-        nIns = _nIns;
-
-        if (_nOuts == 0) {
-            revert InvalidnOuts(_nOuts);
-        }
-
-        nOuts = _nOuts;
-
         maxCommitVal = _maxCommitVal;
     }
 
     /*
         Data should be streamed in the following order & type: 
             *** Proof carrying data:
-            *** Proof Inputs (nIns + nOuts + 2) * uint256: 
+            *** Proof Inputs (nIns + nIns + 2) * uint256: 
             --> proofSize: uint8
             --> proof: uint256[proofSize]
             --> nullifiers: uint256[nIns]
-            --> commitments: uint256[nOuts]
+            --> commitments: uint256[nIns]
 
             *** Signal data: 
             
@@ -107,13 +91,10 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
 
             *** Supplementary Data:   
 
-             *** encrypted secrets (nOut secrets)
+            *** encrypted secrets (nOut secrets)
             --> secret ==> bytes   
 
-            *** Using MultiHash Format
-            --> associationProofHash: 32 bytes 
-            --> hashFunction: uint8 
-            --> size: uint8 
+            --> associationProofURI ==> bytes 
     */
 
     function process(bytes memory data) public payable {
@@ -127,7 +108,7 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
                 proof[i] = decoder.readUint();
             }
 
-            uint256[] memory pubInputs = new uint256[](nIns + nOuts + 2);
+            uint256[] memory pubInputs = new uint256[](nIns * 2 + 2);
 
             // read the nullifiers
             uint256[] memory inputNullifiers = new uint256[](nIns);
@@ -142,8 +123,8 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
                 emit NewNullifier(inputNullifiers[i]);
             }
             // read output commitments
-            uint256[] memory outputCommitments = new uint256[](nOuts);
-            for (uint256 i = 0; i < nOuts; i++) {
+            uint256[] memory outputCommitments = new uint256[](nIns);
+            for (uint256 i = 0; i < nIns; i++) {
                 outputCommitments[i] = decoder.readUint();
                 pubInputs[nIns + i] = outputCommitments[i];
             }
@@ -154,11 +135,11 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             address account = decoder.readAddress();
             address feeCollector = decoder.readAddress();
 
-            pubInputs[nIns + nOuts + 1] = calcPublicVal(units, fee);
-            pubInputs[nIns + nOuts + 2] = calcSignalHash(units, fee, account);
+            pubInputs[nIns + nIns + 1] = calcPublicVal(units, fee);
+            pubInputs[nIns + nIns + 2] = calcSignalHash(units, fee, account);
 
             // verify proof
-            if (!verifier.verifyProof(proof, pubInputs, nIns + nOuts + 2)) {
+            if (!verifier.verifyProof(proof, pubInputs, nIns + nIns + 2)) {
                 revert ProofVerificationFailed();
             }
 
@@ -169,7 +150,7 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             commitmentTree._insertMany(outputCommitments);
 
             // announce the commitments
-            for (uint256 i = 0; i < nOuts; i++) {
+            for (uint256 i = 0; i < nIns; i++) {
                 // read encrypted output
                 bytes memory encryptedOutput = decoder.readBytes();
                 emit NewCommitment(outputCommitments[i], currentIndex + i, encryptedOutput);
@@ -178,7 +159,7 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             _release(account, units, fee, feeCollector, inputNullifiers, decoder);
 
             // For ASP Ingestion
-            emit NewTxRecord(inputNullifiers, outputCommitments, pubInputs[nIns + nOuts + 1], currentIndex);
+            emit NewTxRecord(inputNullifiers, outputCommitments, pubInputs[nIns + nIns + 1], currentIndex);
         }
     }
 
