@@ -6,24 +6,24 @@ import {IGroth16Verifier} from "./interfaces/IGroth16Verifier.sol";
 import {IPoseidonT3} from "./interfaces/IPoseidonT3.sol";
 import {MAX_FEE, NATIVE_REPRESENTATION, SNARK_SCALAR_FIELD} from "./library/Constants.sol";
 import {IPrivacyPool} from "./interfaces/IPrivacyPool.sol";
-import {DataDecoder} from "./library/DataDecoder.sol";
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title PrivacyPool pools contract.
-abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
+contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
     using InternalLeanIMT for LeanIMTData;
-    using DataDecoder for uint256;
 
     /// @dev merkleTree that stores the commitments
     /// The tree is an Incremental Merkle Tree
     /// which a merkle tree with dynamic depth.
     LeanIMTData commitmentTree;
+    // keep track of known roots
+    mapping(uint256 => bool) KnownRoots;
 
     /// @dev verifier is the SNARK verifier for the pool
+    uint256 constant nIns = 2;
+    uint256 constant nOuts = 2;
     IGroth16Verifier verifier;
-    /// @dev refer to snark verifier circuit
-    uint256 public constant pubSignalsLen = 8;
 
     /// @dev maxCommitVal is the maximum value that can be committed to the pool at once
     uint256 public immutable maxCommitVal;
@@ -50,13 +50,13 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         uint256 _maxCommitVal,
         address _valueUnitRepresentative
     ) {
-        if (_verifier == address(0)) {
+        if (_groth16Verifier == address(0)) {
             revert IsZeroAddress();
         }
 
-        verifier = IVerifier(verifier);
+        verifier = IGroth16Verifier(_groth16Verifier);
 
-        if (_hasher == address(0)) {
+        if (_treeHasher == address(0)) {
             revert IsZeroAddress();
         }
 
@@ -73,94 +73,56 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         maxCommitVal = _maxCommitVal;
     }
 
-    /*
-        Data should be streamed in the following order & type: 
-            *** Proof carrying data:
-            *** Proof Inputs (nIns + nIns + 2) * uint256: 
-            --> proofSize: uint8
-            --> proof: uint256[proofSize]
-            --> nullifiers: uint256[nIns]
-            --> commitments: uint256[nIns]
-
-            *** Signal data: 
-            
-            --> units: int256 (32 bytes)
-            --> fee: uint256 (32 bytes)
-            --> account: Address (20 bytes)
-            --> feecollector: Address (20 bytes)
-
-            *** Supplementary Data:   
-
-            *** encrypted secrets (nOut secrets)
-            --> secret ==> bytes   
-
-            --> associationProofURI ==> bytes 
-    */
-
-    function process(bytes memory data) public payable {
-        uint256 decoder = DataDecoder.createDecoderStream(data);
-        while (decoder.isNotEmpty()) {
-            // read the proof size
-            uint8 proofSize = decoder.readUint8();
-            // read the proof
-            uint256[] memory proof = new uint256[](proofSize);
-            for (uint256 i = 0; i < proofSize; i++) {
-                proof[i] = decoder.readUint();
+    function process(
+        signal calldata s,
+        supplement calldata sp,
+        uint256[2] memory _pA,
+        uint256[2][2] memory _pB,
+        uint256[2] memory _pC,
+        uint256[8] memory _pubSignals
+    ) public payable {
+        // check nullifiers against known nullifiers
+        for (uint256 i = 0; i < nIns; i++) {
+            // check if nullifier is known
+            // revert if known
+            if (knownNullifiers[_pubSignals[2 + i]]) {
+                revert NullifierIsKnown(_pubSignals[2 + i]);
             }
-
-            uint256[] memory pubInputs = new uint256[](nIns * 2 + 2);
-
-            // read the nullifiers
-            uint256[] memory inputNullifiers = new uint256[](nIns);
-            for (uint256 i = 0; i < nIns; i++) {
-                pubInputs[i] = decoder.readUint();
-                inputNullifiers[i] = pubInputs[i];
-                // check if nullifier is known
-                // revert if known
-                if (knownNullifiers[inputNullifiers[i]]) {
-                    revert NullifierIsKnown(inputNullifiers[i]);
-                }
-                emit NewNullifier(inputNullifiers[i]);
-            }
-            // read output commitments
-            uint256[] memory outputCommitments = new uint256[](nIns);
-            for (uint256 i = 0; i < nIns; i++) {
-                outputCommitments[i] = decoder.readUint();
-                pubInputs[nIns + i] = outputCommitments[i];
-            }
-
-            // Get supplementary data
-            int256 units = int256(decoder.readUint());
-            uint256 fee = decoder.readUint();
-            address account = decoder.readAddress();
-            address feeCollector = decoder.readAddress();
-
-            pubInputs[nIns + nIns + 1] = calcPublicVal(units, fee);
-            pubInputs[nIns + nIns + 2] = calcSignalHash(units, fee, account);
-
-            // verify proof
-            if (!verifier.verifyProof(proof, pubInputs, nIns + nIns + 2)) {
-                revert ProofVerificationFailed();
-            }
-
-            _commit(account, units, fee, feeCollector);
-
-            // commit output commitments to commitmentTree
-            uint256 currentIndex = commitmentTree.size;
-            commitmentTree._insertMany(outputCommitments);
-
-            // announce the commitments
-            for (uint256 i = 0; i < nIns; i++) {
-                // read encrypted output
-                bytes memory encryptedOutput = decoder.readBytes();
-                emit NewCommitment(outputCommitments[i], currentIndex + i, encryptedOutput);
-            }
-
-            _release(account, units, fee, feeCollector, inputNullifiers, decoder);
-
-            // For ASP Ingestion
-            emit NewTxRecord(inputNullifiers, outputCommitments, pubInputs[nIns + nIns + 1], currentIndex);
+            emit NewNullifier(_pubSignals[2 + i]);
         }
+
+        // check merkle root against history
+        if (!KnownRoots[_pubSignals[0]]) {
+            revert InvalidMerkleRoot(_pubSignals[0]);
+        }
+
+        _pubSignals[1] = calcPublicVal(s.units, s.fee);
+        _pubSignals[2] = calcSignalHash(s.units, s.fee, s.account, s.feeCollector);
+
+        // verify proof
+        if (!verifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
+            revert ProofVerificationFailed();
+        }
+
+        // commit output commitments to commitmentTree
+        for (uint256 i = 0; i < nOuts; i++) {
+            // insert commitment
+            uint256 newRoot = commitmentTree._insert(_pubSignals[4 + i]);
+            // update known roots
+            KnownRoots[newRoot] = true;
+            // emit commitment
+            emit NewCommitment(_pubSignals[4 + i], commitmentTree.size - 1, sp.encryptedOutputs);
+        }
+
+        // finalize any commitments
+        _commit(s.account, s.units, s.fee, s.feeCollector);
+
+        // finalize any releases
+        _release(s.account, s.units, s.fee, s.feeCollector, sp.associationProofURI, _pubSignals[4], _pubSignals[5]);
+
+        emit NewTxRecord(
+            _pubSignals[4], _pubSignals[5], _pubSignals[6], _pubSignals[7], _pubSignals[1], commitmentTree.size - 2
+        );
     }
 
     function abs(int256 x) private pure returns (uint256) {
@@ -174,11 +136,15 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         return (publicVal >= 0) ? uint256(publicVal) : SNARK_SCALAR_FIELD - uint256(-publicVal);
     }
 
-    // signal hash is a keccak256 hash of the signal data (units, fee, account, pool address)
+    // signal hash is a keccak256 hash of the signal data (pool address, units, fee, account, feeCollector)
     // this is used as a public input to the snark verifier
     // ensures that the signal data has not been tampered with
-    function calcSignalHash(int256 units, uint256 fee, address account) public view returns (uint256) {
-        return uint256(keccak256(abi.encode(address(this), units, fee, account)));
+    function calcSignalHash(int256 units, uint256 fee, address account, address feeCollector)
+        public
+        view
+        returns (uint256)
+    {
+        return uint256(keccak256(abi.encode(address(this), units, fee, account, feeCollector)));
     }
 
     function _verifyFeeAndUnits(int256 units, uint256 fee) internal view returns (bool) {
@@ -188,7 +154,7 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             revert InvalidFee(fee, uint256(units));
         }
         // check units value against maximum commitment allowed (- if release, + if commit)
-        if (abs(units) > maxCommitVal && units > 0) {
+        if (abs(units) > maxCommitVal) {
             revert ExceedsMax(uint256(units), maxCommitVal);
         }
         return true;
@@ -239,14 +205,12 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         int256 units,
         uint256 fee,
         address feeCollector,
-        uint256[] memory inputNullifiers,
-        uint256 decoder
+        string calldata associationProofURI,
+        uint256 inputNullifier1,
+        uint256 inputNullifier2
     ) internal {
         // commit when units is +ve
         if (units > 0 && _verifyFeeAndUnits(units, fee)) {
-            // read associationProofHash
-            bytes memory associationProofHash = decoder.readBytes();
-
             // release units back to account
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
                 releaseToViaRepresentative(account, uint256(units));
@@ -268,7 +232,9 @@ abstract contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
                     }
                 }
             }
-            emit NewRelease(account, feeCollector, uint256(units), associationProofHash, inputNullifiers);
+            emit NewRelease(
+                account, feeCollector, uint256(units), associationProofURI, inputNullifier1, inputNullifier2
+            );
         }
     }
 

@@ -1,0 +1,1 @@
+{"privacyPool":{"file":"privacyPool","template":"PrivacyPool","dir":"main","pubs":["publicVal","signalHash","merkleProofLength","inputNullifier","outCommitment"],"params":[32,2,2]}}

@@ -9,12 +9,10 @@ interface IPrivacyPool {
 
     error InvalidFee(uint256 got, uint256 expected);
     error InvalidUnits(uint256 got, uint256 expected);
-    error InvalidPublicVal(uint256 got, uint256 expected);
-    error InvalidExtHash(bytes32 extDataHash);
 
     error FeeFailed();
 
-    error InvalidMerkleRoot(bytes32 root);
+    error InvalidMerkleRoot(uint256 root);
 
     error ProofVerificationFailed();
 
@@ -24,8 +22,32 @@ interface IPrivacyPool {
 
     event NewCommitment(uint256 commitment, uint256 index, bytes encryptedOutput);
     event NewNullifier(uint256 nullifier);
-    event NewTxRecord(uint256[] inputNullifiers, uint256[] outputCommitments, uint256 publicVal, uint256 index);
-    event NewRelease(
-        address to, address feeCollector, uint256 value, bytes associationProofHash, uint256[] inputNullifiers
+    event NewTxRecord(
+        uint256 inputNullifier1,
+        uint256 inputNullifier2,
+        uint256 outputCommitment1,
+        uint256 outputCommitment2,
+        uint256 publicAmount,
+        uint256 index
     );
+    event NewRelease(
+        address to,
+        address feeCollector,
+        uint256 value,
+        string associationProofURI,
+        uint256 inputNullifier1,
+        uint256 inputNullifier2
+    );
+
+    struct signal {
+        int256 units;
+        uint256 fee;
+        address account;
+        address feeCollector;
+    }
+
+    struct supplement {
+        bytes encryptedOutputs;
+        string associationProofURI;
+    }
 }
