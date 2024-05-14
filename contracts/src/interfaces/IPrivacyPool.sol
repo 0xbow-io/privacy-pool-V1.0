@@ -51,6 +51,14 @@ interface IPrivacyPool {
         string associationProofURI;
     }
 
+    function maxCommitValue() external view returns (uint256);
+    function latestRoot() external view returns (uint256);
+    function size() external view returns (uint256);
+    function knownRoot(uint256 root) external view returns (bool);
+    function IsKnownNullifier(uint256 nullifier) external view returns (bool);
+    function currentDepth() external view returns (uint256);
+
+    function valueUnitRepresentative() external view returns (address);
     function process(
         signal calldata s,
         supplement calldata sp,
@@ -59,4 +67,9 @@ interface IPrivacyPool {
         uint256[2] memory _pC,
         uint256[8] memory _pubSignals
     ) external payable;
+
+    function calcSignalHash(int256 units, uint256 fee, address account, address feeCollector)
+        external
+        view
+        returns (uint256);
 }

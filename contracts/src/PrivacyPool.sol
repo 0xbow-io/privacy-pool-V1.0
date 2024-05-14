@@ -74,6 +74,30 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         maxCommitVal = _maxCommitVal;
     }
 
+    function maxCommitValue() public view override returns (uint256) {
+        return maxCommitVal;
+    }
+
+    function latestRoot() public view returns (uint256) {
+        return commitmentTree.sideNodes[commitmentTree.depth];
+    }
+
+    function size() public view returns (uint256) {
+        return commitmentTree.size;
+    }
+
+    function knownRoot(uint256 root) public view returns (bool) {
+        return KnownRoots[root];
+    }
+
+    function IsKnownNullifier(uint256 nullifier) public view returns (bool) {
+        return knownNullifiers[nullifier];
+    }
+
+    function currentDepth() public view returns (uint256) {
+        return commitmentTree.depth;
+    }
+
     function process(
         signal calldata s,
         supplement calldata sp,

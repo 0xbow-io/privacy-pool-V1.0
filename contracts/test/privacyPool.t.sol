@@ -9,8 +9,6 @@ import "../src/TreeHasher.sol";
 import "../src/interfaces/IPrivacyPool.sol";
 
 contract TestPrivacyPool is Test {
-    address poolAddress = vm.computeCreateAddress(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, 1);
-
     IPrivacyPool internal pool;
     Groth16Verifier internal verifier;
     TreeHasher internal hasher;
@@ -20,9 +18,7 @@ contract TestPrivacyPool is Test {
         verifier = new Groth16Verifier();
         hasher = new TreeHasher();
         create2 = new Create2();
-    }
 
-    function testDeterministicDeploy() public {
         vm.deal(address(0x1), 100 ether);
         vm.startPrank(address(0x1));
         bytes32 salt = "12345";
@@ -40,6 +36,17 @@ contract TestPrivacyPool is Test {
         assertEq(computedAddress, deployedAddress);
 
         pool = IPrivacyPool(deployedAddress);
+        console.log("valueUnitRepresentative: ", pool.valueUnitRepresentative());
+        console.log("currentDepth: ", pool.currentDepth());
+        console.log("latestRoot: ", pool.latestRoot());
+        console.log("size: ", pool.size());
+    }
+
+    function testCalcSignalHash() public {
+        uint256 hash = pool.calcSignalHash(
+            100, 0, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+        );
+        assertEq(hash, 107605282755322177291376109240623063313944526491973613997205612502938444526312);
     }
 
     function testProcess() public {}

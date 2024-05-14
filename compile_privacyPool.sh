@@ -16,7 +16,12 @@ bun test privacyPool --timeout 60000
 # CircomKit operations
 echo "Running CircomKit operations..."
 circomkit setup $CIRCUITNAME
-circomkit prove $CIRCUITNAME default
-circomkit verify $CIRCUITNAME default
 circomkit contract $CIRCUITNAME
-circomkit calldata $CIRCUITNAME default
+
+for VARIABLE in 1 2 3 4 5 .. N
+do
+    circomkit prove $CIRCUITNAME test_$VARIABLE
+    circomkit verify $CIRCUITNAME test_$VARIABLE
+    circomkit calldata $CIRCUITNAME test_$VARIABLE
+done
+
