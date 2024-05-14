@@ -50,4 +50,13 @@ interface IPrivacyPool {
         bytes encryptedOutputs;
         string associationProofURI;
     }
+
+    function process(
+        signal calldata s,
+        supplement calldata sp,
+        uint256[2] memory _pA,
+        uint256[2][2] memory _pB,
+        uint256[2] memory _pC,
+        uint256[8] memory _pubSignals
+    ) external payable;
 }

@@ -17,13 +17,11 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
     /// The tree is an Incremental Merkle Tree
     /// which a merkle tree with dynamic depth.
     LeanIMTData commitmentTree;
-    // keep track of known roots
-    mapping(uint256 => bool) KnownRoots;
 
     /// @dev verifier is the SNARK verifier for the pool
     uint256 constant nIns = 2;
     uint256 constant nOuts = 2;
-    IGroth16Verifier verifier;
+    IGroth16Verifier immutable verifier;
 
     /// @dev maxCommitVal is the maximum value that can be committed to the pool at once
     uint256 public immutable maxCommitVal;
@@ -36,6 +34,9 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
 
     /// @dev nullifiers are the hash of the commitments that are known
     mapping(uint256 => bool) public knownNullifiers;
+
+    /// @dev used tokeep track of known merkle roots for each commitment inserts
+    mapping(uint256 => bool) KnownRoots;
 
     /**
      * @dev The constructor
