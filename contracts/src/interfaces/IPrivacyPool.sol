@@ -20,7 +20,7 @@ interface IPrivacyPool {
 
     error NoETHAllowed();
 
-    event NewCommitment(uint256 commitment, uint256 index, bytes encryptedOutput);
+    event NewCommitment(uint256 commitment, uint256 index, uint256[4] ciphertext);
     event NewNullifier(uint256 nullifier);
     event NewTxRecord(
         uint256 inputNullifier1,
@@ -47,7 +47,7 @@ interface IPrivacyPool {
     }
 
     struct supplement {
-        bytes encryptedOutputs;
+        uint256[4][2] ciphertexts;
         string associationProofURI;
     }
 
@@ -72,4 +72,6 @@ interface IPrivacyPool {
         external
         view
         returns (uint256);
+
+    function calcPublicVal(int256 units, uint256 fee) external view returns (uint256);
 }

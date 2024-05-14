@@ -10,7 +10,7 @@ import {Commitment, PrivacyPool, PrivacyPools, stateManager} from '@core/pool'
 import { Chain } from 'viem/chains';
 import { Address } from 'viem'
 
-import { hash2, hash3, sign, Signature} from "maci-crypto"
+import { hash2, hash3, sign, Signature, genEcdhSharedKey, EcdhSharedKey, poseidonEncrypt, poseidonDecrypt, Ciphertext} from "maci-crypto"
 import { LeanIMT } from "@zk-kit/imt"
 import {Keypair, PrivKey, PubKey} from "maci-domainobjs"
 
@@ -24,17 +24,17 @@ import {Keypair, PrivKey, PubKey} from "maci-domainobjs"
 */
 
 export type privacyKeys = {
-    pk:  Hex         // ecdsa private key
-    pubAddr: Hex     // ecdsa public address
+    pk:  Hex            // ecdsa private key
+    pubAddr: Hex        // ecdsa public address
 
-    keypair: Keypair // eddsa keypair (from maci-domainobjs)
-    eK:  string      // x25519-xsalsa20-poly1305 encryption public key
+    keypair: Keypair    // eddsa keypair (from maci-domainobjs)
+    eK:  EcdhSharedKey  // ECDH shared key
 }
 
 export interface Account {
     genKeyPair(): Keypair 
     importKeyPair(privateKey: Hex): void
-    encryptUTXO(utxo: UTXO): string
+    encryptUTXO(utxo: UTXO): Ciphertext
     StoreCommitmentIfMatch(chain: Chain, contract: Address, commitment: Commitment): void
 }
 
@@ -73,7 +73,7 @@ export class account implements Account {
             pubAddr: account.address,
             pk: privateKey,
             keypair: keypair,
-            eK: getEncryptionPublicKey(privateKey.slice(numbers.OX_LENGTH))
+            eK: genEcdhSharedKey(keypair.privKey.rawPrivKey, keypair.pubKey.rawPubKey)
         })   
         return keypair
     }
@@ -92,7 +92,7 @@ export class account implements Account {
             pubAddr: account.address,
             pk: privateKey,
             keypair: keypair,
-            eK: getEncryptionPublicKey(privateKey.slice(numbers.OX_LENGTH))
+            eK: genEcdhSharedKey(keypair.privKey.rawPrivKey, keypair.pubKey.rawPubKey)
         })   
     }
 
@@ -109,7 +109,7 @@ export class account implements Account {
     }
 
     // given a pubkey hash, return the associated encryption public key
-    public eKFromPk(Pk: PubKey): string {
+    public eKFromPk(Pk: PubKey): EcdhSharedKey {
         let keys = this.keypairs.get(Pk.hash()) as privacyKeys
         return keys.eK
     }
@@ -142,17 +142,7 @@ export class account implements Account {
     }
 
 
-    // attempts to decrypt the encryptedOutput of a commitment event
-    // reveals which private key was used to encrypt the UTXO
-    decryptUTXO(encryptedOutput: string, Pk: PubKey): {isDecrypted: boolean, decrypted: string} {
-        try {
-            let encrypted = unpackEncryptedMessage(encryptedOutput)
-            let decrypted = decrypt(encrypted, this.pKFromPk(Pk).slice(numbers.OX_LENGTH))
-            return {isDecrypted: true, decrypted: decrypted}
-        } catch (error) {
-            return {isDecrypted: false,decrypted: ""}
-        }
-    }
+  
 
     // used to retrieve UTXO from commitment events
     // verifies against the commitment if the UTXO is valid
@@ -174,16 +164,18 @@ export class account implements Account {
         return {utxo: utxo, commitment: utxoCommitment, nullifier: GetNullifier(utxo, this.signUTXO(utxo)), ismatch: utxoCommitment == commitment}
     }
 
-    public encryptUTXO(utxo: UTXO): string {
-        const bytes = Buffer.concat([toBuffer(utxo.amount, BYTES_31), toBuffer(utxo.blinding, BYTES_31)])
-        let encrypted = encrypt(
-                    this.eKFromPk(utxo.Pk),
-                    {
-                        data: bytes.toString('base64'),
-                    },
-                    'x25519-xsalsa20-poly1305'
-                )
-        return packEncryptedMessage(encrypted)
+    public encryptUTXO(utxo: UTXO): Ciphertext {
+        const sharedKey = this.eKFromPk(utxo.Pk)
+        return poseidonEncrypt( [utxo.amount, utxo.blinding], sharedKey, utxo.index)
+    }
+
+      // attempts to decrypt the encryptedOutput of a commitment event
+    // reveals which private key was used to encrypt the UTXO
+    decryptUTXO(ciphertext: Ciphertext, utxo: UTXO): {amount: bigint, blinding: bigint} {
+        const sharedKey = this.eKFromPk(utxo.Pk)
+        const plainText = poseidonDecrypt(ciphertext, sharedKey, utxo.index, 2)
+        return {amount: plainText[0], blinding: plainText[1]}
+
     }
 
     // generates a signature for a UTXO

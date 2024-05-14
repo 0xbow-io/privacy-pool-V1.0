@@ -47,16 +47,17 @@ const privKey = keypair.privKey.rawPrivKey
 const pubKey = keypair.pubKey.rawPubKey
 const tree = new LeanIMT(hashLeftRight)
 const circomkit = new Circomkit(circomkitConf as CircomkitConfig);
-const privacyPoolAddr = "0x6ab4B83244d58f48C576d6Ed7D1b174F6C5b6C13" as Hex // create2 address
+const privacyPoolAddr = "0x896b974232550888C7210FC465E3a6a3908D5f63" as Hex // create2 address
 const dummyAccount =  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as Hex
 
 
 
 
-async function generateProofInputs(publicVal: bigint, inputUTXOs: UTXO[]): Promise<{proofInputs: ProofInputs, outputUtxos: UTXO[], expectedMerkleRoot: bigint}> {
+function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]): {proofInputs: ProofInputs, outputUtxos: UTXO[], expectedMerkleRoot: bigint} {
+    let extVal = units - feeVal;
     let proofInputs: ProofInputs = {
-        publicVal: publicVal,
-        signalHash: caclSignalHash(privacyPoolAddr, publicVal, 0n, dummyAccount, dummyAccount),
+        publicVal: extVal,
+        signalHash: caclSignalHash(privacyPoolAddr, units, feeVal, dummyAccount, dummyAccount),
         inUnits: [],
         inPk: [],
         inSigR8: [],
@@ -124,10 +125,12 @@ async function generateProofInputs(publicVal: bigint, inputUTXOs: UTXO[]): Promi
 
     let outputUtxos: UTXO[] = []
 
+    let outputAmount = inputUTXOs[0].amount + inputUTXOs[1].amount + extVal
+
     // Generate 1 Output UTXO that has a value of the input UTXOS + publicval 
     outputUtxos[0] = {
         Pk: keypair.pubKey,
-        amount: proofInputs.inUnits[0] + proofInputs.inUnits[1] + proofInputs.publicVal,
+        amount: outputAmount,
         blinding: BigInt(Math.floor(Math.random() * 100)),
         index: BigInt(tree.size),
     }
@@ -149,12 +152,17 @@ async function generateProofInputs(publicVal: bigint, inputUTXOs: UTXO[]): Promi
     proofInputs.outBlinding.push(outputUtxos[1].blinding)
     proofInputs.outPk.push(outputUtxos[1].Pk.rawPubKey)
 
-    proofInputs.outUnits = [proofInputs.inUnits[0] + proofInputs.inUnits[1] + proofInputs.publicVal, 0n]
+    proofInputs.outUnits = [outputUtxos[0].amount,outputUtxos[1].amount]
 
     // insert output UTXOs into the tree
     tree.insert(outCommitment1) 
     tree.insert(outCommitment2)
 
+    let cipherTexts = []
+    cipherTexts.push(acc.encryptUTXO(outputUtxos[0]))
+    cipherTexts.push(acc.encryptUTXO(outputUtxos[1]))
+
+    console.log("cipherTexts: ", cipherTexts)
 
 
     return {proofInputs, outputUtxos, expectedMerkleRoot};
@@ -169,8 +177,15 @@ function randomBlinder() {
 describe("PrivacyPool", () => {
     test("testing circuit", async () => {
         let circuit = await circomkit.WitnessTester("privacyPool", privacyPoolConfig)
+
+        fs.writeFileSync("circomkit.json", JSON.stringify(circomkitConf));
+
+        fs.writeFileSync("circuits.json", JSON.stringify({
+            "privacyPool": privacyPoolConfig
+        }));
         
-        let extVals = [100n, 200n, -300n]
+        let extVals = [100n, 200n, -250n]
+        let feeVals = [0n, 0n, 50n]
 
         let unspentUTXO: UTXO = {
             Pk: keypair.pubKey,
@@ -179,9 +194,8 @@ describe("PrivacyPool", () => {
             index: 0n,
         }
 
-        extVals.forEach(async (extVal, i) => {
-            let publicVal = extVal >= 0 ? extVal : FIELD_SIZE - (extVal + FIELD_SIZE) % FIELD_SIZE
-            const {proofInputs: proofInputs, outputUtxos: outputUtxos, expectedMerkleRoot: expectedMerkleRoot} = await generateProofInputs(publicVal, [
+        extVals.forEach((extVal, i) => {
+            const {proofInputs: proofInputs, outputUtxos: outputUtxos, expectedMerkleRoot: expectedMerkleRoot} = generateProofInputs(extVal, feeVals[i], [
                 unspentUTXO,
                 {
                     Pk: keypair.pubKey,
@@ -198,11 +212,11 @@ describe("PrivacyPool", () => {
 
             let fileName = `inputs/privacyPool/test_${i}.json`
             console.log("writing to file: ", fileName);
-            await fs.writeFileSync(fileName, JSON.stringify(stringifyBigInts(proofInputs)));
+            fs.writeFileSync(fileName, JSON.stringify(stringifyBigInts(proofInputs)));
 
             if (expectedMerkleRoot > 0n) {
                 console.log("expectedRoot : ", expectedMerkleRoot)
-                await circuit.expectPass(
+                circuit.expectPass(
                     {    
                         publicVal: proofInputs.publicVal, 
                         signalHash : proofInputs.signalHash, 
@@ -226,7 +240,7 @@ describe("PrivacyPool", () => {
                     }
                 );
             } else {
-                await circuit.expectPass(
+                circuit.expectPass(
                     {    
                         publicVal: proofInputs.publicVal, 
                         signalHash : proofInputs.signalHash, 
@@ -247,34 +261,8 @@ describe("PrivacyPool", () => {
                     },
                 );
             }
-           
+            return 
         })  
     });
-    
-    
-    test("compiling circuit", async () => {
-        try {
-            console.log("cleaning artifacts...")
-            await circomkit.clean("privacyPool")
-
-            console.log("compiling circuit...")
-            await circomkit.compile("privacyPool", privacyPoolConfig)
-            
-            let rc1sInfo = await circomkit.info("privacyPool")
-            console.log("circuit rc1sInfo: ", rc1sInfo)
-
-            fs.writeFileSync("circomkit.json", JSON.stringify(circomkitConf));
-
-            fs.writeFileSync("cricuit.json", JSON.stringify({
-                "privacyPool": privacyPoolConfig
-            }));
-
-
-        } catch (error) {
-            console.log("error: ", error)
-        }
-        
-    });
-
   });
   

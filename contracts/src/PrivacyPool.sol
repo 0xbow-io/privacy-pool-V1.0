@@ -101,23 +101,23 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
     function process(
         signal calldata s,
         supplement calldata sp,
-        uint256[2] memory _pA,
-        uint256[2][2] memory _pB,
-        uint256[2] memory _pC,
+        uint256[2] calldata _pA,
+        uint256[2][2] calldata _pB,
+        uint256[2] calldata _pC,
         uint256[8] memory _pubSignals
     ) public payable {
         // check nullifiers against known nullifiers
         for (uint256 i = 0; i < nIns; i++) {
             // check if nullifier is known
             // revert if known
-            if (knownNullifiers[_pubSignals[2 + i]]) {
-                revert NullifierIsKnown(_pubSignals[2 + i]);
+            if (knownNullifiers[_pubSignals[4 + i]]) {
+                revert NullifierIsKnown(_pubSignals[4 + i]);
             }
-            emit NewNullifier(_pubSignals[2 + i]);
+            emit NewNullifier(_pubSignals[4 + i]);
         }
 
         // check merkle root against history
-        if (!KnownRoots[_pubSignals[0]]) {
+        if (_pubSignals[0] != 0 && !KnownRoots[_pubSignals[0]]) {
             revert InvalidMerkleRoot(_pubSignals[0]);
         }
 
@@ -132,11 +132,11 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         // commit output commitments to commitmentTree
         for (uint256 i = 0; i < nOuts; i++) {
             // insert commitment
-            uint256 newRoot = commitmentTree._insert(_pubSignals[4 + i]);
+            uint256 newRoot = commitmentTree._insert(_pubSignals[4 + nIns + i]);
             // update known roots
             KnownRoots[newRoot] = true;
             // emit commitment
-            emit NewCommitment(_pubSignals[4 + i], commitmentTree.size - 1, sp.encryptedOutputs);
+            emit NewCommitment(_pubSignals[4 + nIns + i], commitmentTree.size - 1, sp.ciphertexts[i]);
         }
 
         // finalize any commitments
@@ -169,7 +169,7 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         view
         returns (uint256)
     {
-        return uint256(keccak256(abi.encode(address(this), units, fee, account, feeCollector)));
+        return uint256(keccak256(abi.encode(address(this), units, fee, account, feeCollector))) % SNARK_SCALAR_FIELD;
     }
 
     function _verifyFeeAndUnits(int256 units, uint256 fee) internal view returns (bool) {
