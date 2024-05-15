@@ -1,1 +1,32 @@
-{"privacyPool":{"file":"privacyPool","template":"PrivacyPool","dir":"main","pubs":["publicVal","signalHash","merkleProofLength","inputNullifier","outCommitment"],"params":[32,2,2]}}
+{
+  "privacyPool": {
+    "file": "privacyPool",
+    "template": "PrivacyPool",
+    "dir": "main",
+    "pubs": [
+      "publicVal",
+      "signalHash",
+      "merkleProofLength",
+      "inputNullifier",
+      "outCommitment"
+    ],
+    "params": [
+      32,
+      2,
+      2
+    ]
+  },
+  "proofOfAssociation": {
+    "file": "associationStep",
+    "template": "AssociationProof",
+    "dir": "main",
+    "pubs": [
+      "stepIn"
+    ],
+    "params": [
+      32,
+      2,
+      2
+    ]
+  }
+}

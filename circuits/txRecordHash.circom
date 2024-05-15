@@ -8,10 +8,10 @@ include "./commitment.circom";
 template GetTxRecordHash(nIns, nOuts) {
     signal input inNullifiers[nIns];
     signal input outCommitments[nOuts];
-    signal input publicAmount;
-    signal input index;
+    signal input publicVal;
+    signal input leafIndex;
 
-    signal output result;
+    signal output out;
 
     // 1.a - Hash(inputNullifier1, inNullifiers) 
     component inNullifierHasher = Poseidon(nIns);
@@ -26,5 +26,5 @@ template GetTxRecordHash(nIns, nOuts) {
     }
 
     // 1.c - Hash(1.a, 1.b, publicAmount, outIndexes[0])
-    result <== Poseidon(4)([inNullifierHasher.out, outputCommitmentHasher.out, publicAmount, index]);
+    out <== Poseidon(4)([inNullifierHasher.out, outputCommitmentHasher.out, publicVal, leafIndex]);
 }

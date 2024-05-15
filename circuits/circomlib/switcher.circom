@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with circom. If not, see <https://www.gnu.org/licenses/>.
 */
-pragma circom 2.1.9;
+
 /*
     Assume sel is binary.
 
@@ -24,6 +24,8 @@ pragma circom 2.1.9;
     If sel == 1 then outL = R and outR=L
 
  */
+ 
+pragma circom 2.0.0;
 
 template Switcher() {
     signal input sel;
