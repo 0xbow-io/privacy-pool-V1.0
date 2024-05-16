@@ -234,32 +234,24 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         uint256 inputNullifier1,
         uint256 inputNullifier2
     ) internal {
-        // commit when units is +ve
-        if (units > 0 && _verifyFeeAndUnits(units, fee)) {
+        // commit when units is -ve
+        if (units < 0 && _verifyFeeAndUnits(units, fee)) {
             // release units back to account
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
-                releaseToViaRepresentative(account, uint256(units));
+                releaseToViaRepresentative(account, abs(units));
             } else {
-                (bool sent,) = account.call{value: uint256(units)}("");
-                if (!sent) {
-                    revert FeeFailed();
-                }
+                releaseToNative(account, abs(units));
             }
             // Send the specified fee to the feeCollector
             // Send the specified fee to the feeCollector
             if (feeCollector != address(0) && fee > 0) {
                 if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
-                    commitFromViaRepresentative(feeCollector, fee);
+                    releaseToViaRepresentative(feeCollector, fee);
                 } else {
-                    (bool sent,) = feeCollector.call{value: fee}("");
-                    if (!sent) {
-                        revert FeeFailed();
-                    }
+                    releaseToNative(feeCollector, fee);
                 }
             }
-            emit NewRelease(
-                account, feeCollector, uint256(units), associationProofURI, inputNullifier1, inputNullifier2
-            );
+            emit NewRelease(account, feeCollector, abs(units), associationProofURI, inputNullifier1, inputNullifier2);
         }
     }
 
@@ -281,6 +273,16 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             }
             mstore(0x60, 0)
             mstore(0x40, m)
+        }
+    }
+
+    function releaseToNative(address to, uint256 units) internal {
+        /// @solidity memory-safe-assembly
+        assembly {
+            if iszero(call(gas(), to, units, codesize(), 0x00, codesize(), 0x00)) {
+                mstore(0x00, 0xb12d13eb)
+                revert(0x1c, 0x04)
+            }
         }
     }
 

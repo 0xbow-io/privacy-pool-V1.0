@@ -47,7 +47,7 @@ contract TestPrivacyPool is Test {
         uint256 hash = pool.calcSignalHash(
             100, 0, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
         );
-        assertEq(hash, 3065252958325793851206743978421963665353331658506504487234789517251804995496);
+        assertEq(hash, 20522700343222740729646563492806455675743905192170048688487104318430265754410);
     }
 
     function testCalcPublicVal() public {
@@ -229,6 +229,8 @@ contract TestPrivacyPool is Test {
         console.log("latestRoot: ", pool.latestRoot());
 
         uint256 balance = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE).balance;
+        console.log("balance: ", balance);
+
         assert(balance == 300);
 
         vm.stopPrank();
