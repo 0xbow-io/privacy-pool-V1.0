@@ -355,8 +355,4 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     // stepOut[2:2+nIns] should be all 0 values
     // stepOut[2+nIns:2+nIns+nIns] should be all 0 values
     // improper linkage of nullifiers will result otherwise in leaking out unproven input nullifiers. 
-
-    for (var i = 0; i < nIns+nIns+2; i++) {
-       log(stepOut[i]);
-    }
 }

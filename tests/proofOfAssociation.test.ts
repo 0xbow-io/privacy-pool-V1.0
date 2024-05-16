@@ -317,13 +317,13 @@ describe("proofOfAssociation", ()  => {
         ]
 
         let isDone = false
+        let stepcounter = 0
         while (!isDone) {
             let {priv: priv, stepOut: stepOut}  = getInputs(stepIn);
         
-            console.log("stepIn: ", stepIn)
             console.log("privInputs: ", priv)
+            console.log("stepIn: ", stepIn)
             console.log("stepOut: ", stepOut)
-    
             circuit.expectPass(
                     {    
                         stepIn: stepIn,
@@ -350,9 +350,19 @@ describe("proofOfAssociation", ()  => {
                     }
                 );
             stepIn = stepOut
-            if (stepOut[2] === 0n && stepOut[3] === 0n && stepOut[4] === 0n && stepOut[5] === 0n) {
+
+            if (stepOut[2] == 0n && stepOut[3] == 0n && stepOut[4] == 0n && stepOut[5] == 0n) {
                 isDone = true
             }
+
+            let fileName = `inputs/associationProof/step_${stepcounter}.json`
+            console.log("writing to file: ", fileName);
+            fs.writeFileSync(fileName, JSON.stringify(stringifyBigInts({
+                stepIn: stepIn,
+                privateInputs: priv,
+                expectedStepOut: stepOut
+            })));
+            stepcounter++
         }
     });
 });
