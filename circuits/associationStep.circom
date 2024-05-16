@@ -147,7 +147,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     signal input outPk[nOuts][2];
     signal input outBlinding[nOuts];
 
-    signal input commitmentProofLengths[nOuts];
+    signal input commitmentProofLengths;
     signal input commitmentProofIndices[nOuts][MAX_DEPTH];
     signal input commitmentProofSiblings[nOuts][MAX_DEPTH];
 
@@ -197,7 +197,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
         // compute pool commitment tree
         outMerkleRoots[i] <== BinaryMerkleRoot(MAX_DEPTH)(
                                                         outCommitments[i].out, 
-                                                        commitmentProofLengths[i], 
+                                                        commitmentProofLengths, 
                                                         commitmentProofIndices[i], 
                                                         commitmentProofSiblings[i]
                                                         );

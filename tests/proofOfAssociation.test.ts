@@ -77,25 +77,85 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
         }
     }
 
+   
     if (targetTxRecordIndex === -1) {
         throw new Error('No matching txRecord found !')
     }
 
     let r = txRecords[targetTxRecordIndex]
 
-    if r.publicVal > 0 {
-        let rIndex = associationTree.indexOf(r.hash())
-        let rProof = associationTree.generateProof(rIndex)    
-    }
-  
-    let rHash = r.hash()
-
     // compose private inputs
     let privIn : ProofPrivateInputs = {
         publicVal: r.publicVal,
+
+        associationProofLength: 0n,
+        associationProofIndices: new Array(maxDepth).fill(0n),
+        associationProofSiblings: new Array(maxDepth).fill(0n)
     }
 
 
+    if (privIn.publicVal > 0) {
+        let rIndex = associationTree.indexOf(r.hash())
+        let rProof = associationTree.generateProof(rIndex)    
+
+        const merkleProofLength = rProof.siblings.length
+        privIn.associationProofLength = BigInt(merkleProofLength)
+
+        const merkleProofIndices: bigint[] = []
+        const merkleProofSiblings = rProof.siblings
+
+        for (let i = 0; i < maxDepth; i += 1) {
+            merkleProofIndices.push((BigInt((rProof.index >> i) & 1)))
+
+            if (merkleProofSiblings[i] === undefined) {
+                merkleProofSiblings[i] = BigInt(0)
+            }
+        }
+        privIn.associationProofIndices = merkleProofIndices
+        privIn.associationProofSiblings = merkleProofSiblings
+    }
+
+     // for output commitments
+     r.outputCTXs.forEach((utxo, i) => {
+        privIn.outUnits.push(utxo.amount)
+        privIn.outPk.push(utxo.Pk.rawPubKey)
+        privIn.outBlinding.push(utxo.blinding)
+
+        // get account to sign CTX
+        const sig = acc.signCTX(utxo)
+
+        // attach sig components to proof inputs
+        privIn.outSigR8.push([sig.R8[0] as bigint, sig.R8[1]  as bigint])
+        privIn.outSigS.push(sig.S  as bigint)
+        privIn.outLeafIndices.push(utxo.index)
+
+        // get commitment
+        const commitment = GetCommitment(utxo)
+
+        const proof = commitmentTree.generateProof(Number(utxo.index))
+
+        const merkleProofLength = proof.siblings.length
+        proofInputs.merkleProofLength = BigInt(merkleProofLength)
+
+        const merkleProofIndices: bigint[] = []
+        const merkleProofSiblings = proof.siblings
+
+        for (let i = 0; i < maxDepth; i += 1) {
+            merkleProofIndices.push((BigInt((proof.index >> i) & 1)))
+
+            if (merkleProofSiblings[i] === undefined) {
+                merkleProofSiblings[i] = BigInt(0)
+            }
+            
+        proofInputs.merkleProofIndices.push(merkleProofIndices)
+        proofInputs.merkleProofSiblings.push(merkleProofSiblings)
+        }
+    });
+  
+
+   
+
+    return privIn
 }
 
 
@@ -169,7 +229,7 @@ describe("proofOfAssociation", () => {
             commitmentTree.insert(GetCommitment(r.outputCTXs[1]))
             r.outputCTXs[1].index = BigInt(commitmentTree.size)
 
-            if r.publicVal > 0n {
+            if (r.publicVal > 0n) {
                 associationTree.insert(r.hash())
             }
 

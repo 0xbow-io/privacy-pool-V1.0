@@ -14,6 +14,7 @@ export type ProofPrivateInputs = {
     outPk: bigint[][],
     outBlinding : bigint[],
 
+    commitmentProofLengths: bigint,
     commitmentProofIndices: bigint[][],
     commitmentProofSiblings: bigint[][],
 
@@ -23,6 +24,7 @@ export type ProofPrivateInputs = {
     outLeafIndices: bigint[],
 
     // tx record merkle proof
-    associationProofIndices: bigint[][],
-    associationProofSiblings: bigint[][],
+    associationProofLength: bigint,
+    associationProofIndices: bigint[],
+    associationProofSiblings: bigint[],
 }
