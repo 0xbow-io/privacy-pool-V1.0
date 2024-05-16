@@ -41,7 +41,6 @@ const privKey = keypair.privKey.rawPrivKey
 const pubKey = keypair.pubKey.rawPubKey
 const circomkit = new Circomkit(circomkitConf as CircomkitConfig);
 
-const txRecords: txRecord[] = []
 
 const associationTree = new LeanIMT(hashLeftRight)
 const commitmentTree = new LeanIMT(hashLeftRight)
@@ -51,14 +50,14 @@ function randomBlinder() {
     return BigInt(Math.floor(Math.random() * (Number(FIELD_SIZE) -  1)));
 }
 
-function getInputs(stepIn: bigint[]): ProofPrivateInputs {
 
-    //let pi : ProofPrivateInputs = {}
+const txRecords: txRecord[] = []
 
+function getInputs(stepIn: bigint[]): {priv: ProofPrivateInputs, stepOut: bigint[]} {
     // iterate through txRecords  backwards
     // find a Tx record where the nullifier of the ouptut commitment matches one of the challenge nulliifers in stepIn
     let targetTxRecordIndex = -1;
-    for (let i = txRecords.length - 1; i >= 0; i++) {
+    for (let i = txRecords.length - 1; i >= 0; i--) {
         let outNullifiers = [
             GetNullifier(txRecords[i].outputCTXs[0], acc.signCTX(txRecords[i].outputCTXs[0])),
             GetNullifier(txRecords[i].outputCTXs[1], acc.signCTX(txRecords[i].outputCTXs[1]))
@@ -66,7 +65,7 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
         // check if any of the outNullifiers match the first non-zero challenge nullifier in stepIn
         let foundMatch = false
         for (let j = 0; j < outNullifiers.length; j++) {
-            if (outNullifiers[j] === stepIn[4] || outNullifiers[j] === stepIn[5]) {
+            if (outNullifiers[j] === stepIn[2] || outNullifiers[j] === stepIn[3]) {
                 foundMatch = true
             }
         }
@@ -88,15 +87,54 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
     let privIn : ProofPrivateInputs = {
         publicVal: r.publicVal,
 
+        inUnits: [],
+        inPk: [],
+        inBlinding: [],
+        inLeafIndices: [],
+        inSigS: [],
+
+        outUnits: [],
+        outPk: [],
+        outBlinding: [],
+        outSigR8: [],
+        outSigS: [],
+        outLeafIndices: [],
+
+        commitmentProofLength: 0n,
+        commitmentProofIndices: [], 
+        commitmentProofSiblings: [],
+        
         associationProofLength: 0n,
         associationProofIndices: new Array(maxDepth).fill(0n),
         associationProofSiblings: new Array(maxDepth).fill(0n)
     }
 
+    // for input commitments
+    let nextNullifers: bigint[] =  [0,0]
+    r.inputCTXs.forEach((utxo, i) => {
+        privIn.inUnits.push(utxo.amount)
+        privIn.inPk.push(utxo.Pk.rawPubKey)
+        privIn.inBlinding.push(utxo.blinding)
+        privIn.inLeafIndices.push(utxo.index)
 
+
+        const sig = acc.signCTX(utxo)
+        privIn.inSigS.push(sig.S as bigint)
+
+        if (utxo.amount > 0) {
+            let nullifer = GetNullifier(utxo, acc.signCTX(utxo))
+            nextNullifers[i] = nullifer
+        }
+
+        
+    })
+
+    let associationMerkleRoot = 0n
     if (privIn.publicVal > 0) {
         let rIndex = associationTree.indexOf(r.hash())
         let rProof = associationTree.generateProof(rIndex)    
+
+        associationMerkleRoot = rProof.root
 
         const merkleProofLength = rProof.siblings.length
         privIn.associationProofLength = BigInt(merkleProofLength)
@@ -116,6 +154,7 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
     }
 
      // for output commitments
+     let commitmentMerkleRoot = 0n
      r.outputCTXs.forEach((utxo, i) => {
         privIn.outUnits.push(utxo.amount)
         privIn.outPk.push(utxo.Pk.rawPubKey)
@@ -133,9 +172,10 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
         const commitment = GetCommitment(utxo)
 
         const proof = commitmentTree.generateProof(Number(utxo.index))
+        commitmentMerkleRoot = proof.root
 
         const merkleProofLength = proof.siblings.length
-        proofInputs.merkleProofLength = BigInt(merkleProofLength)
+        privIn.commitmentProofLength = BigInt(merkleProofLength)
 
         const merkleProofIndices: bigint[] = []
         const merkleProofSiblings = proof.siblings
@@ -145,23 +185,33 @@ function getInputs(stepIn: bigint[]): ProofPrivateInputs {
 
             if (merkleProofSiblings[i] === undefined) {
                 merkleProofSiblings[i] = BigInt(0)
-            }
-            
-        proofInputs.merkleProofIndices.push(merkleProofIndices)
-        proofInputs.merkleProofSiblings.push(merkleProofSiblings)
+            }           
         }
+        privIn.commitmentProofIndices.push(merkleProofIndices)
+        privIn.commitmentProofSiblings.push(merkleProofSiblings)
     });
   
 
-   
-
-    return privIn
+    return {
+        priv: privIn, 
+        stepOut: [
+            commitmentMerkleRoot,
+            associationMerkleRoot,
+            nextNullifers[0],
+            nextNullifers[1],
+            nextNullifers[0],
+            nextNullifers[1]
+        ]
+    }
 }
 
 
 
-describe("proofOfAssociation", () => {
+describe("proofOfAssociation", ()  => {
+
     test("testing step circuit", async () => {
+        let circuit = await circomkit.WitnessTester("proofOfAssociation", proofOfAssociation)
+
 
         // Generate test txRecords 
         // Create test Association Tree
@@ -224,10 +274,10 @@ describe("proofOfAssociation", () => {
 
             // All output commitments are inserted into the commitment tree
             commitmentTree.insert(GetCommitment(r.outputCTXs[0]))
-            r.outputCTXs[0].index = BigInt(commitmentTree.size)
+            r.outputCTXs[0].index = BigInt(commitmentTree.size-1)
 
             commitmentTree.insert(GetCommitment(r.outputCTXs[1]))
-            r.outputCTXs[1].index = BigInt(commitmentTree.size)
+            r.outputCTXs[1].index = BigInt(commitmentTree.size-1)
 
             if (r.publicVal > 0n) {
                 associationTree.insert(r.hash())
@@ -254,17 +304,55 @@ describe("proofOfAssociation", () => {
         ]
         
         let stepIn = [
-            0n,
-            0n,
+            // commitment merkle root
             0n, 
+            // asocciation merkle root
             0n, 
+            // challenge nullifiers
             challengeNullifiers[0], 
             challengeNullifiers[1], 
+            // queue nullifiers
             0n, 
             0n
         ]
 
-        let privInputs = getInputs(stepIn);
+        let isDone = false
+        while (!isDone) {
+            let {priv: priv, stepOut: stepOut}  = getInputs(stepIn);
+        
+            console.log("stepIn: ", stepIn)
+            console.log("privInputs: ", priv)
+            console.log("stepOut: ", stepOut)
+    
+            circuit.expectPass(
+                    {    
+                        stepIn: stepIn,
+                        publicVal : priv.publicVal, 
+                        inUnits: priv.inUnits,
+                        inPk: priv.inPk,
+                        inBlinding: priv.inBlinding,
+                        inLeafIndices: priv.inLeafIndices,
+                        inSigS: priv.inSigS,
+                        outUnits: priv.outUnits,
+                        outPk: priv.outPk,
+                        outBlinding: priv.outBlinding,
+                        commitmentProofLength: priv.commitmentProofLength,
+                        commitmentProofIndices: priv.commitmentProofIndices,
+                        commitmentProofSiblings: priv.commitmentProofSiblings,
+                        outSigR8: priv.outSigR8,
+                        outSigS: priv.outSigS,
+                        outLeafIndices: priv.outLeafIndices,
+                        associationProofLength: priv.associationProofLength,
+                        associationProofIndices: priv.associationProofIndices,
+                        associationProofSiblings: priv.associationProofSiblings
+                    },{
+                        stepOut: stepOut
+                    }
+                );
+            stepIn = stepOut
+            if (stepOut[2] === 0n && stepOut[3] === 0n && stepOut[4] === 0n && stepOut[5] === 0n) {
+                isDone = true
+            }
+        }
     });
-
 });

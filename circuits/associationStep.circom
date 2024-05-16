@@ -20,10 +20,10 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
 
     /*
         Treat stepIn/stepOut as a stack ~ recursive proof as a stack machine. 
-        --> step[2] --> computed pool comitment merkle root
-        --> step[3] --> computed association merkle root
-        --> step[4:4+Ins] --> current input nullifiers to be proven
-        --> step[4+nIns:4+nIns+nIns] --> next queue of input nullifiers to be proven
+        --> step[0] --> computed pool comitment merkle root
+        --> step[1] --> computed association merkle root
+        --> step[2:2+nIns] --> current input nullifiers to be proven
+        --> step[2+nIns:2+nIns+nIns] --> next queue of input nullifiers to be proven
 
         Example Steps:
 
@@ -130,8 +130,8 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
      
     */  
 
-    signal input stepIn[nIns+nIns+4]; 
-    signal output stepOut[nIns+nIns+4]; 
+    signal input stepIn[nIns+nIns+2]; 
+    signal output stepOut[nIns+nIns+2]; 
 
     // data to compute input nullifier
     signal input publicVal;
@@ -147,7 +147,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     signal input outPk[nOuts][2];
     signal input outBlinding[nOuts];
 
-    signal input commitmentProofLengths;
+    signal input commitmentProofLength;
     signal input commitmentProofIndices[nOuts][MAX_DEPTH];
     signal input commitmentProofSiblings[nOuts][MAX_DEPTH];
 
@@ -197,7 +197,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
         // compute pool commitment tree
         outMerkleRoots[i] <== BinaryMerkleRoot(MAX_DEPTH)(
                                                         outCommitments[i].out, 
-                                                        commitmentProofLengths, 
+                                                        commitmentProofLength, 
                                                         commitmentProofIndices[i], 
                                                         commitmentProofSiblings[i]
                                                         );
@@ -210,7 +210,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     }
 
     // output commitment merkle root
-    stepOut[2] <== outMerkleRoots[nOuts-1];
+    stepOut[0] <== outMerkleRoots[nOuts-1];
 
     // compute input nullifierss
     component inNullifier[nIns];
@@ -267,45 +267,43 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     associationTreeMerkleRoot.siblings <== associationProofSiblings;
 
     // only output calculated association root if amount is non-zero
-    component isDeposit = getSign(248);
+    component isDeposit = IsPositive(248);
     isDeposit.in <== publicVal;
 
     component assMux1; 
     assMux1 = Mux1();
-    assMux1.c[0] <== associationTreeMerkleRoot.out;
-    assMux1.c[1] <== stepIn[3];
-    assMux1.s <== isDeposit.isLower;
-    assMux1.out ==> stepOut[3];  
+    assMux1.c[0] <== stepIn[1];
+    assMux1.c[1] <== associationTreeMerkleRoot.out;
+    assMux1.s <== isDeposit.result;
+    assMux1.out ==> stepOut[1];  
 
-
-    // carry over other data 
-    stepOut[0] <== stepIn[0];
-    stepOut[1] <== stepIn[1];
 
     /**** prover will check if the input nullifiers have been proven ****/
     // check that the set of input nullifers to prove is not 0 
     // no steps should begin with 0 input nullifiers to prove 
-    component isZero[nIns];
+    var sum = 0;
     for (var i = 0; i < nIns; i++) {
-        isZero[i] = IsZero();
-        isZero[i].in <== inUnits[i];
-        isZero[i].out === 0;
+        sum += stepIn[i+2];        
     }
+    component challengesEmtpy = IsZero();
+    challengesEmtpy.in <== sum;
+
+    challengesEmtpy.out === 0;
 
     // check if queue is empty
     // if queue is empty then we need to fill it with the current input nullifiers
     // otherwise in the case that we've proven all input nullifiers, we don't want to replace it with 0 values from the queue. 
-    var sum = 0;
+    sum = 0;
     component replaceWith[nIns];
     for (var i = 0; i < nIns; i++) {
-        sum = sum + stepIn[i+4+nIns]; // --> if empty, sum = 0
+        sum = sum + stepIn[i+2+nIns]; // --> if empty, sum = 0
 
         replaceWith[i] = Mux1(); 
         replaceWith[i].c[0] <== inNullifier[i].out;
         replaceWith[i].c[1] <==  0; 
         replaceWith[i].s <== IsZero()(inUnits[i]); // if input amount is zero, replace with 0
         // set the values for the next queue as well
-        replaceWith[i].out ==> stepOut[i+4+nIns];
+        replaceWith[i].out ==> stepOut[i+2+nIns];
     }
 
     component queueEmpty = IsZero();
@@ -316,7 +314,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     component queueMux[nIns];
     for (var i = 0; i < nIns; i++) {
         queueMux[i] = Mux1(); 
-        queueMux[i].c[0] <== stepIn[i+4+nIns];      // queue is not empty, assign current queued value
+        queueMux[i].c[0] <== stepIn[i+2+nIns];      // queue is not empty, assign current queued value
         queueMux[i].c[1] <== replaceWith[i].out;    // queue is empty, assign new value
         queueMux[i].s <== queueEmpty.out; 
     }
@@ -326,7 +324,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     var proven = 0;
     for (var i = 0; i < nIns; i++) {
         setMemberships[i] = IsElementInSet(nOuts);
-        setMemberships[i].element <== stepIn[i+4];
+        setMemberships[i].element <== stepIn[i+2];
         for (var j = 0; j < nOuts; j++) {
             // fill set with computed output nullifiers
             setMemberships[i].set[j] <== outNullifiers[j].out;
@@ -347,14 +345,18 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     component toProveMux[nIns];
     for (var i = 0; i < nIns; i++) {
         toProveMux[i] = Mux1(); 
-        toProveMux[i].c[0] <== stepIn[i+4] - (stepIn[i+4] * setMemberships[i].out);    // not all proven --> 0 or old value
+        toProveMux[i].c[0] <== stepIn[i+2] - (stepIn[i+2] * setMemberships[i].out);    // not all proven --> 0 or old value
         toProveMux[i].c[1] <== queueMux[i].out;                                        // all proven --> replace with queued value
         toProveMux[i].s <== allProven.out; 
-        toProveMux[i].out ==> stepOut[i+4]; 
+        toProveMux[i].out ==> stepOut[i+2]; 
     }
 
     // if this is the last step
-    // stepOut[4:4+nIns] should be all 0 values
-    // stepOut[4+nIns:4+nIns+nIns] should be all 0 values
+    // stepOut[2:2+nIns] should be all 0 values
+    // stepOut[2+nIns:2+nIns+nIns] should be all 0 values
     // improper linkage of nullifiers will result otherwise in leaking out unproven input nullifiers. 
+
+    for (var i = 0; i < nIns+nIns+2; i++) {
+       log(stepOut[i]);
+    }
 }

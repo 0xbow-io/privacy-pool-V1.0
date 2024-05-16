@@ -14,7 +14,7 @@ export type ProofPrivateInputs = {
     outPk: bigint[][],
     outBlinding : bigint[],
 
-    commitmentProofLengths: bigint,
+    commitmentProofLength: bigint,
     commitmentProofIndices: bigint[][],
     commitmentProofSiblings: bigint[][],
 
