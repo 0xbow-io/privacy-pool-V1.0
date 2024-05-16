@@ -20,8 +20,6 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
 
     /*
         Treat stepIn/stepOut as a stack ~ recursive proof as a stack machine. 
-        --> step[0] --> depth of the pool commitment merkle tree
-        --> step[1] --> depth of the association merkle tree
         --> step[2] --> computed pool comitment merkle root
         --> step[3] --> computed association merkle root
         --> step[4:4+Ins] --> current input nullifiers to be proven
@@ -149,6 +147,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     signal input outPk[nOuts][2];
     signal input outBlinding[nOuts];
 
+    signal input commitmentProofLengths[nOuts];
     signal input commitmentProofIndices[nOuts][MAX_DEPTH];
     signal input commitmentProofSiblings[nOuts][MAX_DEPTH];
 
@@ -158,6 +157,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     signal input outLeafIndices[nOuts];
 
     // tx record merkle proof
+    signal input associationProofLength;
     signal input associationProofIndices[MAX_DEPTH];
     signal input associationProofSiblings[MAX_DEPTH];
 
@@ -197,7 +197,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
         // compute pool commitment tree
         outMerkleRoots[i] <== BinaryMerkleRoot(MAX_DEPTH)(
                                                         outCommitments[i].out, 
-                                                        stepIn[0], 
+                                                        commitmentProofLengths[i], 
                                                         commitmentProofIndices[i], 
                                                         commitmentProofSiblings[i]
                                                         );
@@ -262,7 +262,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     component associationTreeMerkleRoot;
     associationTreeMerkleRoot = BinaryMerkleRoot(MAX_DEPTH);
     associationTreeMerkleRoot.leaf  <== txRecordHash.out;
-    associationTreeMerkleRoot.depth <== stepIn[1];
+    associationTreeMerkleRoot.depth <== associationProofLength;
     associationTreeMerkleRoot.indices <== associationProofIndices;
     associationTreeMerkleRoot.siblings <== associationProofSiblings;
 
@@ -348,7 +348,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
     for (var i = 0; i < nIns; i++) {
         toProveMux[i] = Mux1(); 
         toProveMux[i].c[0] <== stepIn[i+4] - (stepIn[i+4] * setMemberships[i].out);    // not all proven --> 0 or old value
-        toProveMux[i].c[1] <== queueMux;                                               // all proven --> replace with queued value
+        toProveMux[i].c[1] <== queueMux[i].out;                                        // all proven --> replace with queued value
         toProveMux[i].s <== allProven.out; 
         toProveMux[i].out ==> stepOut[i+4]; 
     }

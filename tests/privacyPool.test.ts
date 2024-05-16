@@ -1,5 +1,5 @@
 import {account} from '@core/account'
-import {GetCommitment, GetNullifier, UTXO, caclSignalHash} from '@core/utxo'
+import {GetCommitment, GetNullifier, CTX, caclSignalHash} from '@core/account'
 import { LeanIMT } from "@zk-kit/imt"
 import {ProofInputs, generateProof} from '@core/pool'
 import {FIELD_SIZE} from '@/store/variables'
@@ -53,7 +53,7 @@ const dummyAccount =  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as Hex
 
 
 
-function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]): {proofInputs: ProofInputs, outputUtxos: UTXO[], expectedMerkleRoot: bigint} {
+function generateProofInputs(units: bigint, feeVal: bigint, inputCTXs: CTX[]): {proofInputs: ProofInputs, outputUtxos: CTX[], expectedMerkleRoot: bigint} {
     let extVal = units - feeVal;
     let proofInputs: ProofInputs = {
         publicVal: extVal,
@@ -77,7 +77,7 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]):
     let expectedMerkleRoot = 0n;
 
     // prepare input data
-    inputUTXOs.forEach((utxo, i) => {
+    inputCTXs.forEach((utxo, i) => {
 
         proofInputs.inPk.push(utxo.Pk.rawPubKey)
 
@@ -88,16 +88,16 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]):
         // get commitment
         const commitment = GetCommitment(utxo)
 
-        // get account to sign UTXO
-        const sig = acc.signUTXO(utxo)
+        // get account to sign CTX
+        const sig = acc.signCTX(utxo)
         // attach sig components to proof inputs
         proofInputs.inSigR8.push([sig.R8[0] as bigint, sig.R8[1]  as bigint])
         proofInputs.inSigS.push(sig.S  as bigint)
 
-        // get nullifier for UTXO 
+        // get nullifier for CTX 
         proofInputs.inputNullifier.push(GetNullifier(utxo, sig))  
 
-        // prepare merkle proof for non-empty UTXO
+        // prepare merkle proof for non-empty CTX
         if (utxo.amount === 0n) {
             proofInputs.merkleProofIndices.push(new Array(maxDepth).fill(0n))
             proofInputs.merkleProofSiblings.push(new Array(maxDepth).fill(0n))
@@ -123,11 +123,11 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]):
         }
     });
 
-    let outputUtxos: UTXO[] = []
+    let outputUtxos: CTX[] = []
 
-    let outputAmount = inputUTXOs[0].amount + inputUTXOs[1].amount + extVal
+    let outputAmount = inputCTXs[0].amount + inputCTXs[1].amount + extVal
 
-    // Generate 1 Output UTXO that has a value of the input UTXOS + publicval 
+    // Generate 1 Output CTX that has a value of the input CTXS + publicval 
     outputUtxos[0] = {
         Pk: keypair.pubKey,
         amount: outputAmount,
@@ -139,7 +139,7 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]):
     proofInputs.outBlinding.push(outputUtxos[0].blinding) 
     proofInputs.outPk.push(outputUtxos[0].Pk.rawPubKey)
 
-    // Generate 1 Output UTXO that has a value of 0 
+    // Generate 1 Output CTX that has a value of 0 
     outputUtxos[1] = {
         Pk: keypair.pubKey,
         amount: 0n,
@@ -154,13 +154,13 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputUTXOs: UTXO[]):
 
     proofInputs.outUnits = [outputUtxos[0].amount,outputUtxos[1].amount]
 
-    // insert output UTXOs into the tree
+    // insert output CTXs into the tree
     tree.insert(outCommitment1) 
     tree.insert(outCommitment2)
 
     let cipherTexts = []
-    cipherTexts.push(acc.encryptUTXO(outputUtxos[0]))
-    cipherTexts.push(acc.encryptUTXO(outputUtxos[1]))
+    cipherTexts.push(acc.encryptCTX(outputUtxos[0]))
+    cipherTexts.push(acc.encryptCTX(outputUtxos[1]))
 
     console.log("cipherTexts: ", cipherTexts)
 
@@ -187,7 +187,7 @@ describe("PrivacyPool", () => {
         let extVals = [100n, 200n, -250n]
         let feeVals = [0n, 0n, 50n]
 
-        let unspentUTXO: UTXO = {
+        let unspentCTX: CTX = {
             Pk: keypair.pubKey,
             amount: 0n,
             blinding: randomBlinder(),
@@ -196,7 +196,7 @@ describe("PrivacyPool", () => {
 
         extVals.forEach((extVal, i) => {
             const {proofInputs: proofInputs, outputUtxos: outputUtxos, expectedMerkleRoot: expectedMerkleRoot} = generateProofInputs(extVal, feeVals[i], [
-                unspentUTXO,
+                unspentCTX,
                 {
                     Pk: keypair.pubKey,
                     amount: 0n,
@@ -205,7 +205,7 @@ describe("PrivacyPool", () => {
                 }
             ]);
 
-            unspentUTXO = outputUtxos[0]
+            unspentCTX = outputUtxos[0]
 
             console.log("proofInputs: ", stringifyBigInts(proofInputs))
             console.log("outputUtxos: ", outputUtxos)
