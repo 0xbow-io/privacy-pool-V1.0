@@ -47,7 +47,7 @@ contract TestPrivacyPool is Test {
         uint256 hash = pool.calcSignalHash(
             100, 0, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
         );
-        assertEq(hash, 20522700343222740729646563492806455675743905192170048688487104318430265754410);
+        assertEq(hash, 18937175923520281763335632801636284365647507147689795808174989680533635809126);
     }
 
     function testCalcPublicVal() public {
@@ -65,7 +65,7 @@ contract TestPrivacyPool is Test {
                 units: 100,
                 fee: 0,
                 account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
             }),
             IPrivacyPool.supplement({
                 ciphertexts: [
@@ -85,32 +85,32 @@ contract TestPrivacyPool is Test {
                 associationProofURI: "ipfs://"
             }),
             [
-                0x2189d34bfec0352fd4d3eefea2e188f2e1002b0707bbe470ec7bd64ffd43d8fd,
-                0x01f2b76f0c284fa62c108c1cc589a3bec7c1c3968762ec93569fd3a5501307f6
+                0x11cb0fc9174301a206cf63edf847ef69cbabc219d746654a7fe6eaf8db8b1097,
+                0x1886c8e7ec393f7c76246df703702ba037a1c0562337a53a1f978cbc6490a254
             ],
             [
                 [
-                    0x01ef747e7486cbdf3b6146aabde246bb199c0cb457e58e602d7ac7398f892841,
-                    0x0981105394f339d06106c7e513f93aa2c83c0b88543453784896de59dff20789
+                    0x177d81b7e81b123ab893e5f828e434ab4186563362a7af20ba828bfdec6a1006,
+                    0x2416a9a734ebb256cd9230d9dcc65ec30754f4ed98cdf2f8ae32ca879f5e94b6
                 ],
                 [
-                    0x2bd6820194a827ccae7c66d89c4cb037cdc5ba0a68d4c650d48fbf6b3a187759,
-                    0x0c119efeadbf653bf15e8d7366a4c5610330196170b1af52be1da2e11a5090b5
+                    0x2db43ba12cfb837d1bd4ecfbbb5d161ee0ff232dc55418ddfa9f2676dd244fbd,
+                    0x06f2fce89e061cae713e310b93b6ee1c4fec9db07b901e4389e0b2ceadf5d9dd
                 ]
             ],
             [
-                0x054ae98a351201af92adab0f9147e38b7391bbc91ef7d78c8854d38d2cc4db33,
-                0x05ce4e3498a2ab023be6884db4f533cf67030c83cc57723350f81d5eb9b40787
+                0x018e8ef290ec1d4dbd6f769f1244bef8aaff30a554d9829771e8b1e46a50c7f8,
+                0x1d8a716031deb1eb454ace60c0b179e10a99fe39a5f626f1f5c2b1a1084acbc2
             ],
             [
                 0x0000000000000000000000000000000000000000000000000000000000000000,
                 0x0000000000000000000000000000000000000000000000000000000000000064,
-                0x06c6df2743ac57aa19e025af0d2cfa88d633b9c2c3fee29657167b3175a91fa8,
+                0x0c138d79d2a0c9f1eb742d55eae4a3351dcae0a65eccbf3748c73ad56de9ab93,
                 0x0000000000000000000000000000000000000000000000000000000000000000,
-                0x0a619193dfabb8b59b17d0b4b989bb240112a270a11d7bd3b6912688f1df0f27,
-                0x0feda7ebe8af61ce39d59c7ae0d44cbf01c1bbb1ce5bc39af8ba34736e4525d3,
-                0x1e5a35660e0a109538d192c76145e202067f2477ff5ae22769c0068b762de9d7,
-                0x2659cab8f147b54b98e32f17c48ba156de7085a341fc0dea6c6b475199b30d95
+                0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f,
+                0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
             ]
         );
 
@@ -121,7 +121,7 @@ contract TestPrivacyPool is Test {
                 units: 200,
                 fee: 0,
                 account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
             }),
             IPrivacyPool.supplement({
                 ciphertexts: [
@@ -141,32 +141,32 @@ contract TestPrivacyPool is Test {
                 associationProofURI: "ipfs://"
             }),
             [
-                0x09574c64ae529158969f364beee9e7cc759694480926c041369b9a7edd783598,
-                0x28acbc005dc14fdcc914a6f17edce1c564a731b87964aef97ceba893bcf0b18a
+                0x196237b2053f86ee51e14e2bed607cdacdb348c05760ac416b1051cc18e7c1ae,
+                0x04e918cb383be46ac5e52fd7284f5a072628f02e388798274d323abe4f12cf64
             ],
             [
                 [
-                    0x2d9aa3dd1bf8951ee0abd84428f4ae7fe665f37a32c92239d4c340bab5d6920a,
-                    0x1743433749e8b504b144e9bf48eefdc2677897a872ecf01e172049c7fc789ed9
+                    0x1d0c0de89c31545c42144736ade9f29f4878a89197fbe9dd87ac765551b556b9,
+                    0x206c1e83bdff5f69f3bb578f90421efe38b8df67ec8520fb92a8099a9282eb47
                 ],
                 [
-                    0x1c466188a2e9a6ac7c80a29144c65e86e4085e454c6235a312cdbad042c94d1f,
-                    0x229bedc7513311c0f467b53fbb4291c5707ebb47cd0695e9bf07630618d66e8f
+                    0x00972db45a3902a117922589f4c501615e4396e51681f97e263c6944a2850a51,
+                    0x18989a231b678d9da6b2a6db0c74a0f92107154dd0b9cf865fd88d81e3c1b99f
                 ]
             ],
             [
-                0x2cbd8ed8f8bd9446248cc2beeed4b896377f220c6e3f473fe479f4349477681c,
-                0x12e3621ee8964be87ed63663fc835f1bfe8bba137ebab815f58a8068d075260b
+                0x026952d4d35220f60203379db5f1287a06ba4b1ad24457c913b0d3cdc44db437,
+                0x0fe685ceff7edb7a1b8cbae88142977866f330c47aeba2ca8abb27d34aecca35
             ],
             [
-                0x25cad47ebd8f64fba5d37e7b139efa0fa0893e6ac28721f22c0be5fa1d6a1434,
+                0x1aaaa8666a8dafc0f5626487e91c812e3e3d827331f9d43564bb0dd40e2615c1,
                 0x00000000000000000000000000000000000000000000000000000000000000c8,
-                0x0cd1e40b5ce1edb1611bc7d637f0504c63efb06c6181ef5a22bbe83db9d31691,
+                0x2a1fa261994753876355df8a85147bb56a148ba300462add27079fa63ae7bd2b,
                 0x0000000000000000000000000000000000000000000000000000000000000001,
-                0x2ac5ce11e00651a6b6d36679f06854e952c18d048f96094eb765425e2c219df4,
-                0x202bc9232a7391749ee73fdee6029fb7bbc6ed4eddc750438e5537e8e4d7ddf4,
-                0x183fcc1020ad3ae6b90493a8b133d7e7d8a77dfe57fef110d4a7fda2cc80349d,
-                0x22adcefdfe08d7c832d8f32530d62d2fcb345db41b716aa525bf4f69c9433375
+                0x180f48df2490c9a381d63e60adf7ec54fed4fe6c092dba7d5904ac08e3c56ae2,
+                0x0e889d1eedc9a5286a4a5d8f810aba00252279646e07d848ac04faf0198ee06f,
+                0x084e94cb460a35f4559023feb49db118520444962e6664c86293a0cb1e325d3c,
+                0x093b5058db4e02b3246bad75f71014847738f991d2ceb709ffd6572639bc1ff4
             ]
         );
 
@@ -177,7 +177,7 @@ contract TestPrivacyPool is Test {
                 units: -250,
                 fee: 50,
                 account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
             }),
             IPrivacyPool.supplement({
                 ciphertexts: [
@@ -197,41 +197,51 @@ contract TestPrivacyPool is Test {
                 associationProofURI: "ipfs://"
             }),
             [
-                0x06d5e9f1b146163f7ec1a82e0b3372d00d3c9e2cc4096e6e99e160ab7c357ad7,
-                0x1e640fcb6c8530c953f41af0dfbe6bc6176abfb90877144ef05f2be3f4d6cb9b
+                0x19f54c6a1d1b07ab260594cd3b8f99229b9b4c9825f98b05f1e0a69f7901c916,
+                0x065e7e702cee94d864334a9e73efb01eb5a519af7598b0d6bbd4deb3234d9ee6
             ],
             [
                 [
-                    0x2dd534d230291a10648fc704f168c6cf6f7ec1d4473f21d96a1895aa8645593d,
-                    0x0f198ab5559f925169ab3e68768738b34498d1990fbdd139f84f7429a1724053
+                    0x1f6b6248aa76a05c02d5ba6bf4d812a7ad814bf2f2d18343af9c5152885d1a7f,
+                    0x15557c6abb2bea2d1349ad8b20f7b250215c84c81f46260769ff51a3ae82656f
                 ],
                 [
-                    0x2e415c8308f211f7412330e0744fe97bc0d1547b745054dd4133f1f7bfc25570,
-                    0x065e9299c4589584117fce73273cdd82c904cb687f99feddaf10e99a874d9380
+                    0x1d2590777a7f091b6f72df6b2c11391520335f3e98ec6729c4f96ea8d02f4932,
+                    0x08c12b20402e027ac6ee7d65731b788c0a058059fec76521b31ad81490950fcd
                 ]
             ],
             [
-                0x0eeee7b523eb6d5c85ccd862b369569893cfe6d9637589237be834552c4c8730,
-                0x22d3271b6b6ce4bfd8440adf9b6185fa1015b00243ce4bfee2fc3879685f3905
+                0x1e8af99e87f2d6705a55b84d5f7356886f4c1dfca8dd48aac0388da536a3d376,
+                0x0fca9fc08771fcd0fa52a55de89b787745af5b645e572eeafa03c8a2047ac2ae
             ],
             [
-                0x0197e3c7725c943f8d400ef0dacb5f35428ce98a6bd967407e1798322610457c,
+                0x290b0958f172b8bb23df75bef923fb505d2bfc0d09738be2d5bfbebae3820c34,
                 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593effffed5,
-                0x21e68db8288c0d5dc0bfbe6a55cc7ff5205b7ccc382818d4a24375570bc28299,
+                0x252cca98d44669f2fa40a57ed1b60a324ae274b246244bdd77d0f2b1bd657941,
                 0x0000000000000000000000000000000000000000000000000000000000000002,
-                0x0c17499e05659d349ed3e5088ae677ef0ec2b3165f28d1933399e6394bccc330,
-                0x279b6210fed420b1a904d05798ebf075ff7f7445449d1bb1b76c4f1fb3efdf82,
-                0x1668111bc76ce68ef18f5eda870cfa4445a0389a6cfa5cfc050b8c734d1a357f,
-                0x2273b8716cb91c53d3f35e611b84c84d022603161fc1925baeee8f62873e9d63
+                0x16cc22c0da1baf6c5053559903f578c070dc638d20b96e2ee6bbac772035eafb,
+                0x11b18ae8cff3f846387a6b9d27f22868be724937de074cd5eafb4e463524f604,
+                0x227be0fb9ff6664647d480e7efaec8b9c5c67e9466d057de6d2728edc7c9528c,
+                0x2fb5171efce5bbd4a95fad451dac9caafdfd84bd2b0b5a2e72e0be6373654274
             ]
         );
 
         console.log("latestRoot: ", pool.latestRoot());
 
-        uint256 balance = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE).balance;
-        console.log("balance: ", balance);
+        uint256 AccBalance = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE).balance;
+        console.log("AccBalance: ", AccBalance);
 
-        assert(balance == 300);
+        assert(AccBalance == 250);
+
+        uint256 feeCollector = address(0xA9959D135F54F91b2f889be628E038cbc014Ec62).balance;
+        console.log("feeCollector: ", feeCollector);
+
+        assert(feeCollector == 50);
+
+        uint256 ContractBalance = address(pool).balance;
+        console.log("ContractBalance: ", ContractBalance);
+
+        assert(ContractBalance == 0);
 
         vm.stopPrank();
     }

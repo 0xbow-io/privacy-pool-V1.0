@@ -31,6 +31,6 @@ for VARIABLE in 0 1 2
 do
     circomkit prove $CIRCUITNAME test_$VARIABLE
     circomkit verify $CIRCUITNAME test_$VARIABLE
-    snarkjs zkey export soliditycalldata build//$CIRCUITNAME/test_$VARIABLE/public.json build/privacypool/test_$VARIABLE/groth16_proof.json
+    snarkjs zkey export soliditycalldata build/$CIRCUITNAME/test_$VARIABLE/public.json build/privacypool/test_$VARIABLE/groth16_proof.json
 done
 

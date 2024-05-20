@@ -47,9 +47,9 @@ const privKey = keypair.privKey.rawPrivKey
 const pubKey = keypair.pubKey.rawPubKey
 const tree = new LeanIMT(hashLeftRight)
 const circomkit = new Circomkit(circomkitConf as CircomkitConfig);
-const privacyPoolAddr = "0x896b974232550888C7210FC465E3a6a3908D5f63" as Hex // create2 address
+const privacyPoolAddr = "0xb96BdDD5b2a794deA4Cb4020D8574A3a5c98250C" as Hex // create2 address
 const dummyAccount =  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as Hex
-
+const dummFeeAccount =  "0xA9959D135F54F91b2f889be628E038cbc014Ec62" as Hex
 
 
 
@@ -57,7 +57,7 @@ function generateProofInputs(units: bigint, feeVal: bigint, inputCTXs: CTX[]): {
     let extVal = units - feeVal;
     let proofInputs: ProofInputs = {
         publicVal: extVal,
-        signalHash: caclSignalHash(privacyPoolAddr, units, feeVal, dummyAccount, dummyAccount),
+        signalHash: caclSignalHash(privacyPoolAddr, units, feeVal, dummyAccount, dummFeeAccount),
         inUnits: [],
         inPk: [],
         inSigR8: [],
