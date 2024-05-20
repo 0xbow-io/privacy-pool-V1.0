@@ -20,12 +20,6 @@ import {
 import {Address} from 'viem'
 import { ChainId } from '@/types/chain'
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import {CustomUtxo} from '@core/utxo'
-
-import { Keypair } from '@core/account'
-// import { preparePOIInputs } from '@core/poi'
-// prepareMembershipProof, prepareTransaction
-//import { getUtxoFromKeypair } from '@/store/account'
 
 
 import {
@@ -58,17 +52,21 @@ import {SelectPoolForm} from './pools'
 const Association_Set_Providers = ['None', 'OxBow.io']
 
 
-export function UTXO() {
+export function CTX() {
     const [error, setError] = useState('')
     const [poolBalance, setPoolBalance] = useState(0)
+
+    /*
+    const [keypair, setKeypair] = useState<Keypair | null>(null)
     const [unspentUtxos, setUnspentUtxos] = useState<CustomUtxo[]>([]) 
-    const [targetUTXO, setTargetUTXO] = useState<CustomUtxo | undefined>(undefined)
-    const [targetUTXOBalance, setTargetUTXOBalance] = useState('0')
+    const [targetCTX, setTargetCTX] = useState<CustomUtxo | undefined>(undefined)
+    */ 
+   
+    const [targetCTXBalance, setTargetCTXBalance] = useState('0')
     const [amount, setAmount] = useState('')
     const [balance, setBalance] = useState('0')
     const [aspSource, setASPSource] = useState(1)
 
-    const [keypair, setKeypair] = useState<Keypair | null>(null)
     const [isKeyGenerated, setIsKeyGenerated] = useState(false)
 
     const [curChainId, setCurChainId] = useState(0)
@@ -80,9 +78,9 @@ export function UTXO() {
         <Card>
             <CardHeader>
                 <CardTitle>
-                    <h2 className="text-2xl font-semibold tracking-tight pt-1">
-                        Pool: {targetPool.slice(0, 6)}...{targetPool.slice(-4)}
-                    </h2>
+                    <label className="text-2xl font-semibold tracking-tight pt-1">
+                            Pool: {targetPool.slice(0, 6)}...{targetPool.slice(-4)}
+                    </label>
                 </CardTitle>
                 <CardDescription>
                 </CardDescription>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { cn } from "@/lib/utils";
 import DotPattern from "@/components/magicui/dot-pattern";
-import {UTXO} from './components/utxo'
+import {CTX} from './components/ctx'
 
 import privacyPoolsLogo from '@images/privacy-pools-logo.svg'
 import Image from 'next/image'
@@ -41,7 +41,7 @@ export default function AppPage() {
                         <TabsTrigger value="help">Help</TabsTrigger>
                     </TabsList>
                     <TabsContent value="utxo">
-                        <UTXO />
+                        <CTX />
                     </TabsContent>
                 </Tabs> 
             </div>
