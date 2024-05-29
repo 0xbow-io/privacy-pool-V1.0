@@ -1,20 +1,12 @@
 import './globals.css';
 
 import { initAnalytics } from '@/utils/analytics';
-import { inter } from './fonts';
-import type { Metadata } from 'next';
+import { ibmPlexSans, inter } from './fonts';
 import { generateMetadata } from '@/utils/generateMetadata';
-
-
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1.0,
-};
 
 export const metadata = generateMetadata({
   title: 'privacy pool v1',
-  description:
-    'privacy pool v1',
+  description: 'privacy pool v1',
   images: 'themes.png',
   pathname: '',
 });
@@ -29,9 +21,7 @@ initAnalytics();
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.className}`}>
-      <body className="flex flex-1 flex-col">
-        {children}
-      </body>
+      <body className="flex flex-1 flex-col">{children}</body>
     </html>
   );
 }
