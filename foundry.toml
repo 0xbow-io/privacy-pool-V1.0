@@ -1,0 +1,8 @@
+[profile.default]
+src = 'contracts/src'
+out = 'out'
+test = "contracts/test"
+
+libs = ['node_modules', 'lib']
+cache_path = 'cache_forge'
+fs_permissions = [{ access = "read", path = "./" }]

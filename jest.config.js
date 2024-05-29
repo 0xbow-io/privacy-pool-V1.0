@@ -3,7 +3,7 @@ const createJestConfig = nextJest({
   dir: './',
 });
 const customJestConfig = {
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!**/node_modules/**'],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!**/node_modules/**', 'test/**/*.{ts,tsx}'],
   coverageReporters: ['clover', 'json', 'lcov', 'text'],
   moduleNameMapper: {
     'rehype-pretty-code': '<rootDir>/node_modules/rehype-pretty-code',
