@@ -1,17 +1,27 @@
 {
   "compilerOptions": {
     "target": "es2020",
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "declaration": true,
+    "noEmitOnError": true,
+    "noImplicitReturns": true,
+    "pretty": true,
+    "sourceMap": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["bun-types"],
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "ES2020"
     ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "commonjs",
+    "module": "esnext",
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
@@ -56,10 +66,9 @@
     ".next/types/**/*.ts",
     "src",
     "styled-system",
-    "postcss.config.cjs"
+    "postcss.config.cjs",
+    "src/types/**/*.*", "src/**/*.*", "tests/**/*.ts"
   ],
-  "exclude": [
-    "contracts",
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "build", "dist", "ptau", "contracts"]
+
 }
