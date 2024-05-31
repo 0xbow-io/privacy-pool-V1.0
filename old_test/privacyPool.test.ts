@@ -1,7 +1,7 @@
 import { account } from '@core/account';
 import { GetCommitment, GetNullifier, CTX, caclSignalHash } from '@core/account';
 import { LeanIMT } from '@zk-kit/lean-imt';
-import { ProofInputs, generateProof } from '@core/pool';
+import { ProofInputs } from '@core/pool';
 import { FIELD_SIZE } from '@/store/variables';
 
 import { hashLeftRight, hash2, stringifyBigInts } from 'maci-crypto';
@@ -36,7 +36,7 @@ const circomkitConf = {
 };
 
 const acc = new account();
-const keypair = acc.genKeyPair();
+const keypair = acc.genKeyPair(false);
 const privKey = keypair.privKey.rawPrivKey;
 const pubKey = keypair.pubKey.rawPubKey;
 const tree = new LeanIMT(hashLeftRight);
@@ -62,7 +62,6 @@ function generateProofInputs(
     inLeafIndices: [],
     inputNullifier: [],
     merkleProofLength: BigInt(0),
-    merkleProofIndices: [],
     merkleProofSiblings: [],
     outCommitment: [],
     outUnits: [],
@@ -94,7 +93,6 @@ function generateProofInputs(
 
     // prepare merkle proof for non-empty CTX
     if (utxo.amount === 0n) {
-      proofInputs.merkleProofIndices.push(new Array(maxDepth).fill(0n));
       proofInputs.merkleProofSiblings.push(new Array(maxDepth).fill(0n));
     } else {
       const proof = tree.generateProof(Number(utxo.index));
@@ -113,7 +111,6 @@ function generateProofInputs(
           merkleProofSiblings[i] = BigInt(0);
         }
       }
-      proofInputs.merkleProofIndices.push(merkleProofIndices);
       proofInputs.merkleProofSiblings.push(merkleProofSiblings);
     }
   });
@@ -227,7 +224,6 @@ describe('PrivacyPool', () => {
             inSigR8: proofInputs.inSigR8,
             inSigS: proofInputs.inSigS,
             inLeafIndices: proofInputs.inLeafIndices,
-            merkleProofIndices: proofInputs.merkleProofIndices,
             merkleProofSiblings: proofInputs.merkleProofSiblings,
             outCommitment: proofInputs.outCommitment,
             outUnits: proofInputs.outUnits,
@@ -250,7 +246,6 @@ describe('PrivacyPool', () => {
           inSigR8: proofInputs.inSigR8,
           inSigS: proofInputs.inSigS,
           inLeafIndices: proofInputs.inLeafIndices,
-          merkleProofIndices: proofInputs.merkleProofIndices,
           merkleProofSiblings: proofInputs.merkleProofSiblings,
           outCommitment: proofInputs.outCommitment,
           outUnits: proofInputs.outUnits,

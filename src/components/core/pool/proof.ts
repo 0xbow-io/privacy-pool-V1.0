@@ -22,7 +22,6 @@ export type ProofInputs = {
 
   inBlinding: bigint[];
   inLeafIndices: bigint[];
-  merkleProofIndices: bigint[][];
   merkleProofSiblings: bigint[][];
 
   outCommitment: bigint[];

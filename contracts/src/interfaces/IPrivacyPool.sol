@@ -7,12 +7,15 @@ interface IPrivacyPool {
     error ExceedsMax(uint256 got, uint256 expected);
     error NullifierIsKnown(uint256 nullifier);
 
+    error InvalidFeeCollector(); // M-02
     error InvalidFee(uint256 got, uint256 expected);
     error InvalidUnits(uint256 got, uint256 expected);
 
     error FeeFailed();
 
     error InvalidMerkleRoot(uint256 root);
+    // M-01
+    error InvalidMerkleDepth(uint256 got, uint256 expected);
 
     error ProofVerificationFailed();
 

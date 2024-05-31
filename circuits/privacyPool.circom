@@ -29,7 +29,6 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
 
     // merkle proofs for each input nullifiers
     signal input inLeafIndices[nIns];
-    signal input merkleProofIndices[nIns][MAX_DEPTH];
     signal input merkleProofSiblings[nIns][MAX_DEPTH];
 
     // data for nOuts Commitments
@@ -78,7 +77,7 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
         inMux1[i].c[0] <== BinaryMerkleRoot(MAX_DEPTH)(
                                                         inCommitment[i].out, 
                                                         merkleProofLength, 
-                                                        merkleProofIndices[i], 
+                                                        Num2Bits(MAX_DEPTH)(inLeafIndices[i]), // leaf index C-01
                                                         merkleProofSiblings[i]
                                                         );
         inMux1[i].c[1] <== i == 0 ? 0 : inMerkleRoots[i-1];

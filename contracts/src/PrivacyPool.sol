@@ -4,19 +4,24 @@ pragma solidity ^0.8.4;
 import {InternalLeanIMT, LeanIMTData} from "./library/InternalLeanIMT.sol";
 import {IGroth16Verifier} from "./interfaces/IGroth16Verifier.sol";
 import {IPoseidonT3} from "./interfaces/IPoseidonT3.sol";
-import {MAX_FEE, NATIVE_REPRESENTATION, SNARK_SCALAR_FIELD} from "./library/Constants.sol";
+import {NATIVE_REPRESENTATION, SNARK_SCALAR_FIELD} from "./library/Constants.sol";
 import {IPrivacyPool} from "./interfaces/IPrivacyPool.sol";
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 /// @title PrivacyPool pools contract.
-contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
+contract PrivacyPool is IPrivacyPool {
     using InternalLeanIMT for LeanIMTData;
+    using SignedMath for int256;
 
     /// @dev merkleTree that stores the commitments
     /// The tree is an Incremental Merkle Tree
     /// which a merkle tree with dynamic depth.
     LeanIMTData commitmentTree;
+
+    // M-01
+    /// @dev MaxMerkleTreeDepth is the maximum allowed depth of the merkle tree
+    uint256 MaxMerkleTreeDepth;
 
     /// @dev verifier is the SNARK verifier for the pool
     uint256 constant nIns = 2;
@@ -44,12 +49,14 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
      * @param _treeHasher address of poseidon hasher contract for the commitment tree
      * @param _maxCommitVal maximum value that can be committed to the pool at once
      * @param _valueUnitRepresentative address of the external contract that represents the unit of value
+     * @param _maxMerkleTreeDepth maximum allowed depth of the merkle tree   M-01
      */
     constructor(
         address _groth16Verifier,
         address _treeHasher,
         uint256 _maxCommitVal,
-        address _valueUnitRepresentative
+        address _valueUnitRepresentative,
+        uint256 _maxMerkleTreeDepth // M-01
     ) {
         if (_groth16Verifier == address(0)) {
             revert IsZeroAddress();
@@ -60,6 +67,8 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         if (_treeHasher == address(0)) {
             revert IsZeroAddress();
         }
+
+        MaxMerkleTreeDepth = _maxMerkleTreeDepth; // M-01
 
         commitmentTree.PoseidonT3 = IPoseidonT3(_treeHasher);
 
@@ -113,7 +122,18 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             if (knownNullifiers[_pubSignals[4 + i]]) {
                 revert NullifierIsKnown(_pubSignals[4 + i]);
             }
+            knownNullifiers[_pubSignals[4 + i]] = true; //C-02
             emit NewNullifier(_pubSignals[4 + i]);
+        }
+
+        // M-01
+        // Zk-Kit Binary merkle Root circuit will verify merkle root = 0 for depth > MAX_DEPTH
+        // Hence need to make sure to enfoce `depth <= MAX_DEPTH` outside the circuit.
+        // Depth is a public signal at _pubSignals[3]
+        // MAX_DEPTH is MaxMerkleTreeDepth
+
+        if (_pubSignals[3] > MaxMerkleTreeDepth) {
+            revert InvalidMerkleDepth(_pubSignals[3], MaxMerkleTreeDepth);
         }
 
         // check merkle root against history
@@ -129,15 +149,18 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
             revert ProofVerificationFailed();
         }
 
+        // W-04
+        uint256 newRoot = 0;
         // commit output commitments to commitmentTree
         for (uint256 i = 0; i < nOuts; i++) {
             // insert commitment
-            uint256 newRoot = commitmentTree._insert(_pubSignals[4 + nIns + i]);
-            // update known roots
-            KnownRoots[newRoot] = true;
+            newRoot = commitmentTree._insert(_pubSignals[4 + nIns + i]);
             // emit commitment
             emit NewCommitment(_pubSignals[4 + nIns + i], commitmentTree.size - 1, sp.ciphertexts[i]);
         }
+
+        // update known roots
+        KnownRoots[newRoot] = true; // W-04
 
         // finalize any commitments
         _commit(s.account, s.units, s.fee, s.feeCollector);
@@ -148,10 +171,6 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         emit NewTxRecord(
             _pubSignals[4], _pubSignals[5], _pubSignals[6], _pubSignals[7], _pubSignals[1], commitmentTree.size - 2
         );
-    }
-
-    function abs(int256 x) private pure returns (uint256) {
-        return x >= 0 ? uint256(x) : uint256(-x);
     }
 
     // publicVal is the value that is publicly released
@@ -172,22 +191,29 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         return uint256(keccak256(abi.encode(address(this), units, fee, account, feeCollector))) % SNARK_SCALAR_FIELD;
     }
 
-    function _verifyFeeAndUnits(int256 units, uint256 fee) internal view returns (bool) {
-        // fee must be < max fee
-        // fee must be < units committed or released
-        if (fee > MAX_FEE || abs(units) < fee) {
-            revert InvalidFee(fee, uint256(units));
+    function _verifyFeeAndUnits(uint256 absUnits, uint256 fee, address feeCollector) internal view returns (bool) {
+        // M-02
+        if (feeCollector == address(0) && fee > 0) {
+            revert InvalidFeeCollector();
+        }
+
+        // C-05
+        // fee must be always lower than the units value
+        if (absUnits <= fee) {
+            revert InvalidFee(fee, absUnits);
         }
         // check units value against maximum commitment allowed (- if release, + if commit)
-        if (abs(units) > maxCommitVal) {
-            revert ExceedsMax(uint256(units), maxCommitVal);
+        if (absUnits > maxCommitVal) {
+            revert ExceedsMax(absUnits, maxCommitVal);
         }
         return true;
     }
 
     function _commit(address account, int256 units, uint256 fee, address feeCollector) internal {
+        uint256 absUnits = units.abs(); //W-08
+
         // commit when units is +ve
-        if (units > 0 && _verifyFeeAndUnits(units, fee)) {
+        if (units > 0 && _verifyFeeAndUnits(absUnits, fee, feeCollector)) {
             uint256 unitsCommitted = 0;
 
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
@@ -198,28 +224,27 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
                 uint256 _before = _sumViaRepresentative();
 
                 // commitment of value from account
-                commitFromViaRepresentative(account, uint256(units));
+                commitFromViaRepresentative(account, absUnits);
 
                 // Check if the value sent with the commitment
                 // matches the specified units value
                 unitsCommitted = _sumViaRepresentative() - _before;
             } else {
-                unitsCommitted = msg.value - fee;
+                // C-04
+                unitsCommitted = msg.value;
             }
             // check units received from the commitment
-            if (uint256(units) != unitsCommitted) {
-                revert InvalidUnits(unitsCommitted, uint256(units));
+            if (absUnits != unitsCommitted) {
+                revert InvalidUnits(unitsCommitted, absUnits);
             }
 
             // Send the specified fee to the feeCollector
-            if (feeCollector != address(0) && fee > 0) {
+            if (fee > 0) {
+                // C-03
                 if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
-                    commitFromViaRepresentative(feeCollector, fee);
+                    releaseToViaRepresentative(feeCollector, fee);
                 } else {
-                    (bool sent,) = feeCollector.call{value: fee}("");
-                    if (!sent) {
-                        revert FeeFailed();
-                    }
+                    releaseToNative(feeCollector, fee);
                 }
             }
         }
@@ -234,24 +259,25 @@ contract PrivacyPool is IPrivacyPool, ReentrancyGuard {
         uint256 inputNullifier1,
         uint256 inputNullifier2
     ) internal {
+        uint256 absUnits = units.abs(); //W-08
+
         // commit when units is -ve
-        if (units < 0 && _verifyFeeAndUnits(units, fee)) {
+        if (units < 0 && _verifyFeeAndUnits(absUnits, fee, feeCollector)) {
             // release units back to account
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
-                releaseToViaRepresentative(account, abs(units));
+                releaseToViaRepresentative(account, absUnits);
             } else {
-                releaseToNative(account, abs(units));
+                releaseToNative(account, absUnits);
             }
             // Send the specified fee to the feeCollector
-            // Send the specified fee to the feeCollector
-            if (feeCollector != address(0) && fee > 0) {
+            if (fee > 0) {
                 if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
                     releaseToViaRepresentative(feeCollector, fee);
                 } else {
                     releaseToNative(feeCollector, fee);
                 }
             }
-            emit NewRelease(account, feeCollector, abs(units), associationProofURI, inputNullifier1, inputNullifier2);
+            emit NewRelease(account, feeCollector, absUnits, associationProofURI, inputNullifier1, inputNullifier2);
         }
     }
 
