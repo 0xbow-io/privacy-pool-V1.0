@@ -1,17 +1,12 @@
 import { generatePrivateKey, privateKeyToAccount, PrivateKeyAccount } from 'viem/accounts';
 import { Hex, hexToBigInt } from 'viem';
 import { numbers } from '@/store/variables';
-import { toFixedHex, toBuffer } from '@/utils/hash';
-import { encrypt, decrypt, getEncryptionPublicKey } from 'eth-sig-util';
-import { packEncryptedMessage, unpackEncryptedMessage } from '@/utils/encrypt';
 import { CTX, BYTES_31, BYTES_62, GetCommitment, GetNullifier, NewCTX } from './ctx';
-import { Commitment, PrivacyPool, PrivacyPools, stateManager } from '@core/pool';
-import { Chain } from 'viem/chains';
-import { Address } from 'viem';
+import { PrivacyPool } from '@core/pool';
+import { downloadJSON } from '@/utils/files';
 
 import {
   hash2,
-  hash3,
   sign,
   Signature,
   genEcdhSharedKey,
@@ -38,9 +33,9 @@ export type privacyKeys = {
 };
 
 export interface Account {
-  genKeyPair(): Keypair;
+  genKeyPair(exportToJSON: boolean): Keypair;
   importPrivKey(privateKey: Hex): Keypair;
-  ExportToJSON(): string;
+  ExportToJSON(download: boolean): string;
   LoadFromJSON(data: string): void;
   encryptCTX(utxo: CTX): Ciphertext;
   decryptCTX(ciphertext: Ciphertext, utxo: CTX): { amount: bigint; blinding: bigint };
@@ -51,6 +46,16 @@ export type PoolCTXs = {
   Pool: PrivacyPool;
   NullifierToCommitments: Map<bigint, bigint>; // map of nullifiers to commitment hashes
   commitmentToCTXs: Map<bigint, CTX>; // map of commitment hashes to CTXs
+};
+
+// UI Friendly types
+export type PrivacyKeyUI = {
+  Address: string;
+  PrivateKey: string;
+  pK: string;
+  Pk: string;
+  eK: string[];
+  noOfCtx: number;
 };
 
 export class account implements Account {
@@ -64,7 +69,7 @@ export class account implements Account {
     this.poolIDCTXMap = new Map<string, PoolCTXs>();
   }
 
-  public genKeyPair(): Keypair {
+  public genKeyPair(exportToJSON: boolean): Keypair {
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
 
@@ -81,6 +86,9 @@ export class account implements Account {
       keypair: keypair,
       eK: genEcdhSharedKey(keypair.privKey.rawPrivKey, keypair.pubKey.rawPubKey),
     });
+    if (exportToJSON) {
+      this.ExportToJSON(true);
+    }
     return keypair;
   }
 
@@ -159,8 +167,8 @@ export class account implements Account {
     return sign(this.pKFromPk(utxo.Pk), hash2([GetCommitment(utxo), utxo.index]));
   }
 
-  public ExportToJSON(): string {
-    return JSON.stringify({
+  public ExportToJSON(download: boolean): string {
+    let json = JSON.stringify({
       privateKeys: Array.from(this.keypairs.values()).map((keys) => {
         return {
           pk: keys.pk,
@@ -171,6 +179,10 @@ export class account implements Account {
         };
       }),
     });
+    if (download) {
+      downloadJSON(json, 'privacy_pool_keys.json');
+    }
+    return json;
   }
 
   public LoadFromJSON(data: string) {
@@ -238,6 +250,34 @@ export class account implements Account {
     } else {
       return NewCTX(SuggestedPk, 0n, SuggestedIndex);
     }
+  }
+
+  // iterates through the known CTXs for a pool and counts the number of CTXs
+  // where the CTX's Pk matches the given Pk
+  public CTXCountForPk(poolID: string, Pk: bigint): number {
+    let count = 0;
+    this.poolIDCTXMap.get(poolID)?.commitmentToCTXs.forEach((ctx) => {
+      if (ctx.Pk.hash() == Pk) {
+        count++;
+      }
+    });
+    return count;
+  }
+
+  // Used to render on UI all the Keys the Account own
+  public KeyList(poolID: string): PrivacyKeyUI[] {
+    console.log('KeyList :', this.keypairs.values());
+    let uiKeys = Array.from(this.keypairs.values()).map((keys) => {
+      return {
+        Address: keys.pubAddr.toString(),
+        PrivateKey: keys.pk.toString(),
+        pK: keys.keypair.privKey.serialize(),
+        Pk: keys.keypair.pubKey.serialize(),
+        eK: keys.eK.map((x) => x.toString(16)),
+        noOfCtx: this.CTXCountForPk(poolID, keys.keypair.pubKey.hash()),
+      } as PrivacyKeyUI;
+    });
+    return uiKeys;
   }
 }
 

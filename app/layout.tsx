@@ -1,7 +1,7 @@
 import './globals.css';
 
 import { initAnalytics } from '@/utils/analytics';
-import { ibmPlexSans, inter } from './fonts';
+import { jetBrainMono, inter } from './fonts';
 import { generateMetadata } from '@/utils/generateMetadata';
 
 export const metadata = generateMetadata({
@@ -20,7 +20,7 @@ initAnalytics();
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.className}`}>
+    <html lang="en" className={`${jetBrainMono.className}`}>
       <body className="flex flex-1 flex-col">{children}</body>
     </html>
   );

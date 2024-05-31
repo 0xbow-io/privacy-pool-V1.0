@@ -1,4 +1,4 @@
-import { Roboto_Mono, Inter, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { Roboto_Mono, Inter, JetBrains_Mono } from 'next/font/google';
 
 export const roboto = Roboto_Mono({
   subsets: ['latin'],
@@ -12,10 +12,10 @@ export const inter = Inter({
   variable: '--font-inter',
 });
 
-export const ibmPlexSans = IBM_Plex_Mono({
-  weight: ['100', '200', '300', '400', '500', '600', '700'],
+export const jetBrainMono = JetBrains_Mono({
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
   style: 'normal',
   display: 'swap',
   subsets: ['latin'],
-  variable: '--font-ibm-plex-sans',
+  variable: '--font-jetbrains-mono',
 });

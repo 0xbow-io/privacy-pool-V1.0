@@ -10,12 +10,7 @@
     "sourceMap": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["bun-types"],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "ES2020"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "ES2020"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -34,27 +29,14 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@store/*": [
-        "src/store/*"
-      ],
-      "@core/*": [
-        "src/components/core/*"
-      ],
-      "@contracts": [
-        "contracts/index"
-      ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
-      "@images/*": [
-        "public/images/*"
-      ],
-      "@circuits/*": [
-        "circuits/*"
-      ]
+      "@sections/*": ["app/app/sections/*"],
+      "@/*": ["src/*"],
+      "@store/*": ["src/store/*"],
+      "@core/*": ["src/components/core/*"],
+      "@contracts": ["contracts/index"],
+      "@utils/*": ["src/utils/*"],
+      "@images/*": ["public/images/*"],
+      "@circuits/*": ["circuits/*"]
     },
     "moduleResolution": "node"
   },
@@ -67,8 +49,9 @@
     "src",
     "styled-system",
     "postcss.config.cjs",
-    "src/types/**/*.*", "src/**/*.*", "tests/**/*.ts"
+    "src/types/**/*.*",
+    "src/**/*.*",
+    "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "build", "dist", "ptau", "contracts"]
-
 }

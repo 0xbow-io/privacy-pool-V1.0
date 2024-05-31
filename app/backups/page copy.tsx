@@ -502,7 +502,7 @@ export default function AppPage() {
                 {publicVal < 0 ? (publicVal * -1n).toString() : publicVal.toString()} ETH
               </a>{' '}
               with
-            </div>
+cass            </div>
             <div>{AccountPrivKeyDropDown()}</div>
             <h1>
               {' '}
