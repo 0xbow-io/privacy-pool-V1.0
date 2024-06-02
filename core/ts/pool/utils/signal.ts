@@ -1,12 +1,7 @@
-import { keccak256, Hex, fromHex, encodeAbiParameters } from 'viem';
+import { keccak256, fromHex, encodeAbiParameters } from 'viem';
+import { Signal } from '@core/pool/types';
 
-function caclSignalHash(
-  poolAddr: Hex,
-  units: bigint,
-  fee: bigint,
-  account: Hex,
-  feeCollector: Hex,
-): bigint {
+function hashSignal(signal: Signal): bigint {
   const encodedData = encodeAbiParameters(
     [
       { name: 'poolAddr', type: 'address' },
@@ -15,9 +10,9 @@ function caclSignalHash(
       { name: 'account', type: 'address' },
       { name: 'feeCollector', type: 'address' },
     ],
-    [poolAddr, units, fee, account, feeCollector],
+    [signal.pool, signal.extVal, signal.feeVal, signal.account, signal.feeCollector],
   );
   return fromHex(keccak256(encodedData), 'bigint');
 }
 
-export { caclSignalHash };
+export { hashSignal };
