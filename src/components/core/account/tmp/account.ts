@@ -4,7 +4,7 @@ import { numbers } from '@/store/variables';
 import { CTX, BYTES_31, BYTES_62, GetCommitment, GetNullifier, NewCTX } from './ctx';
 import { PrivacyPool } from '@core/pool';
 import { downloadJSON } from '@/utils/files';
-
+import { txRecord, txRecordEvent } from './txRecords';
 import {
   hash2,
   sign,
@@ -33,19 +33,12 @@ export type privacyKeys = {
 };
 
 export interface Account {
-  genKeyPair(exportToJSON: boolean): Keypair;
-  importPrivKey(privateKey: Hex): Keypair;
-  ExportToJSON(download: boolean): string;
-  LoadFromJSON(data: string): void;
-  encryptCTX(utxo: CTX): Ciphertext;
-  decryptCTX(ciphertext: Ciphertext, utxo: CTX): { amount: bigint; blinding: bigint };
-  GetPrivacyKeys(): privacyKeys[];
+  // Checks if
+  VerifyTxRecordEvent(event: txRecordEvent): boolean;
 }
 
 export type PoolCTXs = {
   Pool: PrivacyPool;
-  NullifierToCommitments: Map<bigint, bigint>; // map of nullifiers to commitment hashes
-  commitmentToCTXs: Map<bigint, CTX>; // map of commitment hashes to CTXs
 };
 
 // UI Friendly types
@@ -61,12 +54,15 @@ export type PrivacyKeyUI = {
 export class account implements Account {
   keypairs: Map<bigint, privacyKeys>; // map of hash(pk) to keypair
   esdcaAccounts: Map<string, PrivateKeyAccount>; // map of pub to account
-  poolIDCTXMap: Map<string, PoolCTXs>; // mapping of poolID to poolCTXMap
+  poolTxRecords: Map<string, txRecord[]>; // mapping of poolID to TxRecords
+
+  availNullifiers: Set<bigint>; // set of nullifiers that are
 
   public constructor() {
     this.keypairs = new Map<bigint, privacyKeys>();
     this.esdcaAccounts = new Map<string, PrivateKeyAccount>();
-    this.poolIDCTXMap = new Map<string, PoolCTXs>();
+    this.poolTxRecords = new Map<string, txRecord[]>();
+    this.availNullifiers = new Set<bigint>();
   }
 
   public genKeyPair(exportToJSON: boolean): Keypair {
@@ -87,7 +83,7 @@ export class account implements Account {
       eK: genEcdhSharedKey(keypair.privKey.rawPrivKey, keypair.pubKey.rawPubKey),
     });
     if (exportToJSON) {
-      this.ExportToJSON(true);
+      this.exportToJSON(true);
     }
     return keypair;
   }
@@ -113,18 +109,23 @@ export class account implements Account {
 
   // given a pubkey hash, return the associated private key as string
   public pKFromPk(Pk: PubKey): string {
-    let keys = this.keypairs.get(Pk.hash()) as privacyKeys;
-    return keys.keypair.privKey.rawPrivKey.toString();
+    return this.pkFromPkHash(Pk.hash()).toString();
   }
 
   // given a pubkey hash, return the associated private key as bigint
-  public pKFromPkBigInt(Pk: PubKey): bigint {
-    let keys = this.keypairs.get(Pk.hash()) as privacyKeys;
+  public pkFromPkHash(PkHash: bigint): bigint {
+    let keys = this.keypairs.get(PkHash) as privacyKeys;
     return keys.keypair.privKey.rawPrivKey as bigint;
   }
 
   // given a pubkey hash, return the associated encryption public key
   public eKFromPk(Pk: PubKey): EcdhSharedKey {
+    let keys = this.keypairs.get(Pk.hash()) as privacyKeys;
+    return keys.eK;
+  }
+
+  // given a pubkey hash, return the associated encryption public key
+  public eKFromPkHahs(Pk: PubKey): EcdhSharedKey {
     let keys = this.keypairs.get(Pk.hash()) as privacyKeys;
     return keys.eK;
   }
@@ -147,27 +148,7 @@ export class account implements Account {
     return keys.keypair;
   }
 
-  public encryptCTX(utxo: CTX): Ciphertext {
-    const sharedKey = this.eKFromPk(utxo.Pk);
-    // using utxo index as a nonce
-    return poseidonEncrypt([utxo.amount, utxo.blinding], sharedKey, utxo.index);
-  }
-
-  // attempts to decrypt the encryptedOutput of a commitment event
-  // reveals which private key was used to encrypt the CTX
-  public decryptCTX(ciphertext: Ciphertext, utxo: CTX): { amount: bigint; blinding: bigint } {
-    const sharedKey = this.eKFromPk(utxo.Pk);
-    const plainText = poseidonDecrypt(ciphertext, sharedKey, utxo.index, 2);
-    return { amount: plainText[0], blinding: plainText[1] };
-  }
-
-  // generates a signature for a CTX
-  // with pk associated with CTX Pk
-  public signCTX(utxo: CTX): Signature {
-    return sign(this.pKFromPk(utxo.Pk), hash2([GetCommitment(utxo), utxo.index]));
-  }
-
-  public ExportToJSON(download: boolean): string {
+  public exportToJSON(download: boolean): string {
     let json = JSON.stringify({
       privateKeys: Array.from(this.keypairs.values()).map((keys) => {
         return {
@@ -208,48 +189,55 @@ export class account implements Account {
     return Array.from(this.keypairs.values()).map((keys) => keys);
   }
 
-  // used to retrieve CTX from commitment events
-  // verifies against the commitment if the CTX is valid
-  // otherwise returns CTX, commitment, nullifier, and bool
-  recoverCTX(
-    Pk: PubKey,
-    decryptedOutput: string,
-    commitment: bigint,
-    index: bigint,
-  ): { utxo: CTX; commitment: bigint; nullifier: bigint; ismatch: boolean } {
-    const buf = Buffer.from(decryptedOutput, 'base64');
-    let amountBuffer = ('0x' + buf.subarray(numbers.ZERO, BYTES_31).toString('hex')) as Hex;
-    let blindingBuffer = ('0x' + buf.subarray(BYTES_31, BYTES_62).toString('hex')) as Hex;
-
-    let utxo: CTX = {
-      amount: hexToBigInt(amountBuffer),
-      blinding: hexToBigInt(blindingBuffer),
-      Pk: Pk,
-      index: index,
-    };
-    let utxoCommitment = GetCommitment(utxo);
-    return {
-      utxo: utxo,
-      commitment: utxoCommitment,
-      nullifier: GetNullifier(utxo, this.signCTX(utxo)),
-      ismatch: utxoCommitment == commitment,
-    };
+  VerifyTxRecordEvent(event: txRecordEvent): boolean {
+    // try to decrypt the event by iterating through known encruption keys
   }
 
-  // Tries to fetch CTX from history
-  // If doesn't exist, create a virvual CTX if a pubkey is given
+  /*
+  this.CommitmentHash = hash4([
+    this.Amount,
+    pubkey.rawPubKey[0],
+    pubkey.rawPubKey[1],
+    this.Blinding,
+  ]);
+  */
+
+  // attempts to restore CTX from a cipher Text via all the known sharedKeys
+  // if keys are exhausted then strongly indicates CTX was not generated by this account
+  public restoreCTX(cipher: Ciphertext, hash: bigint, index: bigint): CTX | void {
+    for (let [pubkeyHash, keys] of this.keypairs) {
+    }
+    /*
+    this.keypairs.forEach((keys) => {
+      try {
+        const plainText = poseidonDecrypt(cipher, keys.eK, hash, 2);
+        if (plainText) {
+          let ctx = new CTX(keys.keypair.pubKey, plainText[0], index, plainText[1]);
+          // checks the computed commitmenthash wiht the given hash
+          // if they match, return the CTX
+          // else continue
+          if (ctx.CommitmentHash === hash) {
+            return ctx;
+          }
+        }
+      } catch (e) {}
+    });
+    */
+  }
+
+  // Tries to fetch CTX from txRecords
+  // If doesn't exist, create a virtual CTX if a pubkey is given
   public FetchCTX(
     poolID: string,
     ctxHash: bigint,
     SuggestedPk: PubKey,
     SuggestedIndex: bigint,
   ): CTX {
-    let ctx = this.poolIDCTXMap.get(poolID)?.commitmentToCTXs.get(ctxHash);
-    if (ctx) {
-      return ctx;
-    } else {
-      return NewCTX(SuggestedPk, 0n, SuggestedIndex);
+    if (this.poolTxRecords.has(poolID)) {
+      let txRecord = this.poolTxRecords.get(poolID);
     }
+
+    return NewCTX(SuggestedPk, 0n, SuggestedIndex);
   }
 
   // iterates through the known CTXs for a pool and counts the number of CTXs
@@ -329,5 +317,26 @@ export class account implements Account {
             )
 
     }
+
+*/
+
+/*
+merkleProof(tree: LeanIMT):  {
+  try {
+    if (this.index == -1n) {
+      this.index = BigInt(tree.indexOf(this.commitment));
+    }
+    let siblings: bigint[][] = [];
+    const proofSiblings = proof.siblings;
+    for (let i = 0; i < maxDepth; i += 1) {
+      if (proofSiblings[i] === undefined) {
+        proofSiblings[i] = BigInt(0);
+      }
+    }
+    siblings.push(proofSiblings);
+  } catch (e) {
+    throw new Error('CTX not found in commitment tree');
+  }
+}
 
 */

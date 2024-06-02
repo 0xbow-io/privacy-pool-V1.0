@@ -32,11 +32,12 @@
       "@sections/*": ["app/app/sections/*"],
       "@/*": ["src/*"],
       "@store/*": ["src/store/*"],
-      "@core/*": ["src/components/core/*"],
       "@contracts": ["contracts/index"],
       "@utils/*": ["src/utils/*"],
       "@images/*": ["public/images/*"],
-      "@circuits/*": ["circuits/*"]
+      "@circuits/*": ["circuits/*"],
+      "@core/*": ["core/ts/*"],
+      "@core/store/*": ["src/store/core/*"]
     },
     "moduleResolution": "node"
   },

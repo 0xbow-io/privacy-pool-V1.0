@@ -83,7 +83,7 @@ describe('Privacy Pool V1', function () {
     // regenerate 3 account
     accounts = Array.from({ length: 3 }, () => new account());
     accounts.forEach((account) => {
-      account.genKeyPair();
+      account.genKeyPair(false);
     });
     // reset tree
     commitmentTree = new LeanIMT(hashLeftRight);
@@ -112,7 +112,6 @@ describe('Privacy Pool V1', function () {
             inSigR8: proofInputs.inSigR8,
             inSigS: proofInputs.inSigS,
             inLeafIndices: proofInputs.inLeafIndices,
-            merkleProofIndices: proofInputs.merkleProofIndices,
             merkleProofSiblings: proofInputs.merkleProofSiblings,
             outCommitment: proofInputs.outCommitment,
             outUnits: proofInputs.outUnits,

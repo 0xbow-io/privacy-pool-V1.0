@@ -1,13 +1,4 @@
-import path from 'path';
-import { LeanIMT } from '@zk-kit/lean-imt';
-import { GetCommitment, GetNullifier, CTX, caclSignalHash } from '@core/account';
-import { Hex, hexToBigInt } from 'viem';
-
-import { stringifyBigInts } from 'maci-crypto';
-
-export const maxDepth = 32;
-
-export type ProofInputs = {
+export type CircuitInputs = {
   publicVal: bigint;
   signalHash: bigint;
   merkleProofLength: bigint;

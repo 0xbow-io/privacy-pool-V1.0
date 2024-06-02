@@ -1,11 +1,28 @@
-import { getContract, Address, AbiEvent } from 'viem';
-import * as PrivacyPool from './artifacts/PrivacyPool.json';
+import { AbiEvent } from 'viem';
 
-export type Commitment = {
-  commitment: string;
-  index: bigint;
-  encryptedOutput: string;
-};
+export const privacyPoolABI = [
+  {
+    name: 'latestRoot',
+    type: 'function',
+    inputs: [],
+    stateMutability: 'view',
+    outputs: [{ name: 'root', type: 'uint256' }],
+  },
+  {
+    name: 'currentDepth',
+    type: 'function',
+    inputs: [],
+    stateMutability: 'view',
+    outputs: [{ name: 'deopth', type: 'uint256' }],
+  },
+  {
+    name: 'size',
+    type: 'function',
+    inputs: [],
+    stateMutability: 'view',
+    outputs: [{ name: 'size', type: 'uint256' }],
+  },
+];
 
 export const NewCommitmentEvent: AbiEvent = {
   name: 'NewCommitment',
@@ -16,9 +33,7 @@ export const NewCommitmentEvent: AbiEvent = {
     { name: 'encryptedOutput', type: 'bytes' },
   ],
 };
-export type Nullifer = {
-  nullifier: bigint;
-};
+
 
 export const NewNullifierEvent: AbiEvent = {
   name: 'NewNullifier',
