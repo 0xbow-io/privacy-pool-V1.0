@@ -16,7 +16,7 @@ export interface ICommitment {
   exhausted: boolean;
   dummy: boolean;
 
-  PubKeyHash(): bigint;
+  pubKeyHash: bigint;
   SameAs(commitment: ICommitment | IVirtualCommitment): boolean;
   SameKey(key: KeyActions): boolean;
   SignWithKey(key: KeyActions, index: bigint): Signature;
@@ -36,7 +36,7 @@ class Commitment extends VirtualCommitment implements ICommitment {
     leafIndex?: bigint,
     options: { sign?: boolean; encrypt?: boolean; encryptionNonce?: bigint } = {},
   ) {
-    super(key.PubKey(), secrets);
+    super(key.pubKey, secrets);
     if (options?.sign) {
       if (leafIndex === undefined) {
         console.log('Index must be provided to sign commitment');
@@ -77,7 +77,7 @@ class Commitment extends VirtualCommitment implements ICommitment {
 
   ToJSON(): string {
     return JSON.stringify({
-      pubkey: this.PubKeyHash().toString(16),
+      pubkey: this.pubKeyHash.toString(16),
       hash: this.hash.toString(16),
       index: this.index.toString(),
       nullifier: this.nullifier?.toString(16) || '',

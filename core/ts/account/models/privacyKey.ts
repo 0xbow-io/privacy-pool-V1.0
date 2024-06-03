@@ -1,4 +1,4 @@
-import { Hex, PrivateKeyAccount, hexToBigInt } from 'viem';
+import { Hex, PrivateKeyAccount, hexToBigInt, Address } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { Keypair, PrivKey } from 'maci-domainobjs';
 
@@ -22,9 +22,9 @@ interface Keys {
 }
 
 export interface KeyActions {
-  PubKey(): bigint[];
-  PublicAddress(): Hex;
-  PubKeyHash(): bigint;
+  pubKey: bigint[];
+  publicAddress: Address;
+  pubKeyHash: bigint;
   signMsg(msg: bigint): Signature;
   encrypt(secret: bigint[], nonce: bigint): Ciphertext;
   decrypt(cipher: Ciphertext, nonce: bigint, secretLen: number): Plaintext | void;
@@ -58,21 +58,21 @@ class privacyKey implements PrivacyKey {
     }
   }
 
-  PubKey(): bigint[] {
+  get pubKey(): bigint[] {
     if (!this.keypair) {
       throw new Error('No keypair found');
     }
     return this.keypair.pubKey.rawPubKey;
   }
 
-  PubKeyHash(): bigint {
+  get pubKeyHash(): bigint {
     if (!this.keypair) {
       throw new Error('No keypair found');
     }
     return this.keypair.pubKey.hash();
   }
 
-  PublicAddress(): Hex {
+  get publicAddress(): Address {
     return this.account.address;
   }
 

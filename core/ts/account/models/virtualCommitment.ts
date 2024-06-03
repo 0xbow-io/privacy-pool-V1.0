@@ -49,12 +49,12 @@ class VirtualCommitment implements IVirtualCommitment {
   }
 
   // get hash of the public key associated with the commitment
-  PubKeyHash(): bigint {
+  get pubKeyHash(): bigint {
     return PubKeyHash(this.pubKey);
   }
 
   SameKey(key: KeyActions): boolean {
-    return key.PubKeyHash() === this.PubKeyHash();
+    return key.pubKeyHash === this.pubKeyHash;
   }
 
   Encrypt(key: KeyActions, nonce: bigint): Ciphertext {

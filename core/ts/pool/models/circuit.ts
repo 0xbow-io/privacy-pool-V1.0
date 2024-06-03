@@ -1,13 +1,11 @@
-import { ISignal } from '@core/pool/models';
 import { CircuitInputs } from '@core/pool/types';
-import { ICommitment } from '@core/account/models';
-import { PrivacyPool } from '@core/pool/models';
-import { Intent, PoolMetadata, Signal } from '@core/pool/types';
-import { Address } from 'viem';
+import { Pool } from '@core/pool/models';
+import { Intent, Signal } from '@core/pool/types';
 import { hashSignal } from '@core/pool/utils';
 
-export interface circuit {
+export interface PoolCircuit {
   publicVal: bigint;
+  Intent: Intent;
   extVal: bigint;
   signal: Signal;
   BuildInputs(): {
@@ -24,37 +22,37 @@ export interface circuit {
   */
 }
 
-export class PrivacyPoolCircuit extends PrivacyPool implements circuit {
-  constructor(
-    meta: PoolMetadata,
-    public intent: Intent,
-  ) {
-    super(meta);
+export class PrivacyPoolCircuit implements PoolCircuit {
+  intent?: Intent;
+  constructor(private pool: Pool) {}
+
+  set Intent(intent: Intent) {
+    this.intent = intent;
   }
 
   get publicVal(): bigint {
-    const outputSum = this.intent.outputs.reduce(
+    const outputSum = this.intent?.outputs.reduce(
       (acc, commitment) => acc + commitment.secrets.amount,
       0n,
     );
-    const inputSum = this.intent.inputs.reduce(
+    const inputSum = this.intent?.inputs.reduce(
       (acc, commitment) => acc + commitment.secrets.amount,
       0n,
     );
-    return outputSum - inputSum;
+    return (outputSum ?? 0n) - (inputSum ?? 0n);
   }
 
   get extVal(): bigint {
-    return this.publicVal + this.intent.feeVal;
+    return this.publicVal + (this.intent?.feeVal ?? 0n);
   }
 
   get signal(): Signal {
     return {
-      pool: this.meta.address,
+      pool: this.pool.address,
       extVal: this.extVal,
-      feeVal: this.intent.feeVal,
-      account: this.intent.account,
-      feeCollector: this.intent.feeCollector,
+      feeVal: this.intent?.feeVal ?? 0n,
+      account: this.intent?.account ?? '0x',
+      feeCollector: this.intent?.feeCollector ?? '0x',
     };
   }
 
@@ -65,13 +63,16 @@ export class PrivacyPoolCircuit extends PrivacyPool implements circuit {
     signal: Signal;
     isRelease: boolean;
   } {
+    if (this.intent === undefined) {
+      throw new Error('intent is undefined');
+    }
     if (this.intent.inputs.length != 2 || this.intent.outputs.length != 2) {
       throw new Error('Invalid txRecordEvent, incorrect number of commitments');
     }
 
     const proofs = [
-      this.MerkleProof(this.intent.inputs[0].hash),
-      this.MerkleProof(this.intent.inputs[1].hash),
+      this.pool.MerkleProof(this.intent.inputs[0].dummy ? undefined : this.intent.inputs[0].index),
+      this.pool.MerkleProof(this.intent.inputs[1].dummy ? undefined : this.intent.inputs[1].index),
     ];
 
     const circuitInputs: CircuitInputs = {
@@ -92,11 +93,11 @@ export class PrivacyPoolCircuit extends PrivacyPool implements circuit {
       inSigR8: [
         [
           this.intent.inputs[0].Signature().R8[0] as bigint,
-          this.intent.inputs[0].Signature().R8[0] as bigint,
+          this.intent.inputs[0].Signature().R8[1] as bigint,
         ],
         [
           this.intent.inputs[1].Signature().R8[0] as bigint,
-          this.intent.inputs[1].Signature().R8[0] as bigint,
+          this.intent.inputs[1].Signature().R8[1] as bigint,
         ],
       ],
       inSigS: [

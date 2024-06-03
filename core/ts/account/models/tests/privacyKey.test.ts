@@ -32,7 +32,7 @@ describe('Test PrivacyKey Actions', () => {
     pK = new privacyKey();
   });
   test('PublicAddress should return a valid address', () => {
-    const address = pK.PublicAddress();
+    const address = pK.publicAddress;
     const expected = pK.account.address;
     expect(address).toBe(expected);
   });

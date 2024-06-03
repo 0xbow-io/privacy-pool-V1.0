@@ -2,34 +2,90 @@ import { LeanIMT } from '@zk-kit/lean-imt';
 import { hashLeftRight } from 'maci-crypto';
 import { MAX_DEPTH } from '@core/pool/constants';
 import { PoolMetadata } from '@core/pool/types';
+import { PublicClient, WalletClient, Address } from 'viem';
 
-interface view {
+interface View {
+  id: string;
+  address: Address;
+  valueUnitRepresentative: Promise<Address>;
   MerkleProof(commitment?: bigint): {
     root: bigint;
     depth: bigint;
     siblings: bigint[];
   };
   NullifierIsKnown(nullifier: bigint): boolean;
+  VerifyProofOnChain(proof: {
+    _pA: bigint[];
+    _pB: bigint[][];
+    _pC: bigint[];
+    _pubSignals: bigint[];
+  }): Promise<boolean>;
 }
 
-interface state {
+interface State {
   mt: LeanIMT;
   nullifiers: Set<bigint>;
 }
 
-export interface chain {
+export type ChainConf = {
   meta: PoolMetadata;
+  pubCL?: PublicClient;
+  wallets?: WalletClient[];
+  contracts?: {
+    pool: any;
+    verifier: any;
+  };
+};
+
+export interface Chain {
+  chain: ChainConf;
 }
 
-export type Pool = state & view & chain;
+export type Pool = State & View & Chain;
 
 export class PrivacyPool implements Pool {
-  nullifiers: Set<bigint>;
-  mt: LeanIMT;
+  public mt: LeanIMT = new LeanIMT(hashLeftRight);
+  public nullifiers: Set<bigint> = new Set();
+  constructor(public chain: ChainConf) {}
 
-  constructor(public meta: PoolMetadata) {
-    this.mt = new LeanIMT(hashLeftRight);
-    this.nullifiers = new Set();
+  get id(): string {
+    return this.chain.meta.id;
+  }
+
+  get address(): Address {
+    return this.chain.meta.address;
+  }
+
+  get valueUnitRepresentative(): Promise<Address> {
+    return (async () => {
+      try {
+        const val = await this.chain.contracts?.pool.read.valueUnitRepresentative();
+        return val as Address;
+      } catch (error) {
+        console.log('Error reading valueUnitRepresentative');
+        return '0x';
+      }
+    })();
+  }
+
+  async VerifyProofOnChain(proof: {
+    _pA: bigint[];
+    _pB: bigint[][];
+    _pC: bigint[];
+    _pubSignals: bigint[];
+  }): Promise<boolean> {
+    try {
+      var res = await this.chain.contracts?.verifier.read.verifyProof([
+        proof._pA,
+        proof._pB,
+        proof._pC,
+        proof._pubSignals,
+      ]);
+      return res as boolean;
+    } catch (error) {
+      console.log('unable to verifying proof onchain');
+      return false;
+    }
   }
 
   Insert(record: { inNullifiers: bigint[]; outCommitments: bigint[]; index: bigint }): {
