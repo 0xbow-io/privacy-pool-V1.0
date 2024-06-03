@@ -15,10 +15,10 @@ interface View {
   };
   NullifierIsKnown(nullifier: bigint): boolean;
   VerifyProofOnChain(proof: {
-    _pA: bigint[];
-    _pB: bigint[][];
-    _pC: bigint[];
-    _pubSignals: bigint[];
+    pi_a: bigint[];
+    pi_b: bigint[][];
+    pi_c: bigint[];
+    publicSignals: bigint[];
   }): Promise<boolean>;
 }
 
@@ -69,17 +69,17 @@ export class PrivacyPool implements Pool {
   }
 
   async VerifyProofOnChain(proof: {
-    _pA: bigint[];
-    _pB: bigint[][];
-    _pC: bigint[];
-    _pubSignals: bigint[];
+    pi_a: bigint[];
+    pi_b: bigint[][];
+    pi_c: bigint[];
+    publicSignals: bigint[];
   }): Promise<boolean> {
     try {
       var res = await this.chain.contracts?.verifier.read.verifyProof([
-        proof._pA,
-        proof._pB,
-        proof._pC,
-        proof._pubSignals,
+        proof.pi_a,
+        proof.pi_b,
+        proof.pi_c,
+        proof.publicSignals,
       ]);
       return res as boolean;
     } catch (error) {

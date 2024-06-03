@@ -1,41 +1,9 @@
 import { privacyKey, Commitment, ICommitment } from '@core/account/models';
-
-import { MAX_DEPTH } from '@core/pool/constants';
-import { Circomkit, CircomkitConfig, CircuitConfig } from 'circomkit';
+import { Circomkit } from 'circomkit';
 import { PrivacyPoolCircuit, PoolCircuit, PrivacyPool, ChainConf, Pool } from '@core/pool/models';
 import { Intent } from '@core/pool/types';
-
-const CIRCUIT_NAME = 'PrivacyPool';
-const PROTOCOL = 'groth16';
-
-const circuitConf: CircuitConfig = {
-  file: CIRCUIT_NAME,
-  template: CIRCUIT_NAME,
-  dir: 'main',
-  pubs: ['publicVal', 'signalHash', 'merkleProofLength', 'inputNullifier', 'outCommitment'],
-  params: [MAX_DEPTH, 2, 2],
-};
-
-const circomkitConf: CircomkitConfig = {
-  protocol: 'groth16',
-  prime: 'bn128',
-  version: '2.1.9',
-  verbose: true,
-  logLevel: 'debug',
-  circuits: './circuits.json',
-  dirPtau: './ptau',
-  dirCircuits: './circuits',
-  dirInputs: '',
-  dirBuild: './build',
-  circomPath: './node_modules/circom',
-  groth16numContributions: 2,
-  groth16askForEntropy: false,
-  optimization: 0,
-  inspect: false,
-  include: [''],
-  cWitness: false,
-  prettyCalldata: false,
-};
+import { groth16Calldata } from '@core/pool/utils';
+import { CIRCUIT_NAME, PROTOCOL, circuitConf, circomkitConf } from './conf';
 
 // allocate timeout
 jest.setTimeout(100 * 1000);
@@ -63,7 +31,7 @@ describe('Generate Proofs', () => {
     }
   });
 
-  test('[dummy,dummy] Ins & [dummy, non-dummy] Outs with 1 Key', async () => {
+  test('[0,0] Ins & [100, 0] Outs with 1 Key, 0 fee', async () => {
     const proofTester = await circomkit.ProofTester(CIRCUIT_NAME, PROTOCOL);
 
     const pK = new privacyKey();
@@ -113,7 +81,7 @@ describe('Generate Proofs', () => {
     }
   });
 
-  test('[dummy,dummy] Ins & [non-dummy, non-dummy] Outs with 1 Key', async () => {
+  test('[0,0] Ins & [100, 100] Outs with 1 Key, 0 fee', async () => {
     const proofTester = await circomkit.ProofTester(CIRCUIT_NAME, PROTOCOL);
 
     const pK = new privacyKey();
@@ -125,7 +93,7 @@ describe('Generate Proofs', () => {
       ],
       outputs: [
         new Commitment(pK, { amount: 100n }, 0n, { sign: false }) as ICommitment, // non-dummy
-        new Commitment(pK, { amount: 100n }, 0n, { sign: false }) as ICommitment, // dummy
+        new Commitment(pK, { amount: 100n }, 0n, { sign: false }) as ICommitment, //  non-dummy
       ],
       account: pK.publicAddress,
       feeCollector: pK.publicAddress,
@@ -156,6 +124,9 @@ describe('Generate Proofs', () => {
       );
       await Promise.resolve(proofTester.expectPass(proof, publicSignals));
       const ok = await Promise.resolve(proofTester.verify(proof, publicSignals));
+      const calldata = groth16Calldata(proof, false);
+      console.log(calldata);
+      console.log(publicSignals);
       expect(ok).toBe(true);
     } catch (e) {
       console.log(e);

@@ -5,10 +5,11 @@ import '@nomicfoundation/hardhat-foundry';
 const config: HardhatUserConfig = {
   solidity: '0.8.24',
   paths: {
-    sources: './contracts/src',
-    tests: './contracts/test',
-    cache: './contracts/cache',
-    artifacts: './contracts/artifacts',
+    sources: './contracts',
+    tests: './tests',
+    cache: './cache',
+    artifacts: './artifacts',
   },
 };
+
 export default config;

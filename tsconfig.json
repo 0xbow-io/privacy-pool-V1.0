@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
+    "moduleDetection": "force",
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "declaration": true,
@@ -9,14 +10,13 @@
     "pretty": true,
     "sourceMap": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["bun-types"],
-    "lib": ["dom", "dom.iterable", "esnext", "ES2020"],
+    "types": ["bun-types", "jest", "node"],
+    "lib": ["dom", "dom.iterable", "ESNext", "ES2020"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
@@ -39,6 +39,12 @@
       "@core/*": ["core/ts/*"],
       "@core/store/*": ["src/store/core/*"]
     },
+    "allowImportingTsExtensions": true,
+    // Some stricter flags
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "module": "commonjs",
     "moduleResolution": "node"
   },
   "include": [
@@ -54,5 +60,5 @@
     "src/**/*.*",
     "tests/**/*.ts"
   ],
-  "exclude": ["node_modules", "build", "dist", "ptau", "contracts"]
+  "exclude": ["build", "dist", "ptau", "contracts"]
 }
