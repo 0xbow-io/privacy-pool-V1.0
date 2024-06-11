@@ -87,8 +87,9 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
           it('setting the extraData for uninitialized slot reverts', async function () {
             const extraData = 12345;
-            await expect(this.erc721aCounter.setExtraDataAt(2, extraData))
-              .to.be.revertedWith('OwnershipNotInitializedForExtraData');
+            await expect(this.erc721aCounter.setExtraDataAt(2, extraData)).to.be.revertedWith(
+              'OwnershipNotInitializedForExtraData',
+            );
             await this.erc721aCounter.transferFrom(this.owner.address, this.addr1.address, 2);
             await this.erc721aCounter.setExtraDataAt(2, extraData);
             const ownership = await this.erc721aCounter.getOwnershipAt(2);
@@ -104,5 +105,5 @@ describe(
   createTestSuite({
     contract: 'ERC721ATransferCounterMock',
     constructorArgs: ['Azuki', 'AZUKI'],
-  })
+  }),
 );

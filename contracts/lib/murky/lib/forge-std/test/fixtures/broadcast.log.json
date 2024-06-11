@@ -6,7 +6,11 @@
       "contractName": "Test",
       "contractAddress": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
       "function": "multiple_arguments(uint256,address,uint256[]):(uint256)",
-      "arguments": ["1", "0000000000000000000000000000000000001337", "[3,4]"],
+      "arguments": [
+        "1",
+        "0000000000000000000000000000000000001337",
+        "[3,4]"
+      ],
       "tx": {
         "type": "0x02",
         "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
@@ -42,7 +46,9 @@
       "contractName": "Test",
       "contractAddress": "0x7c6b4bbe207d642d98d5c537142d85209e585087",
       "function": "t(uint256):(uint256)",
-      "arguments": ["1"],
+      "arguments": [
+        "1"
+      ],
       "tx": {
         "type": "0x02",
         "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",

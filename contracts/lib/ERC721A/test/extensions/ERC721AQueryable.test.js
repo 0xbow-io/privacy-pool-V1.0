@@ -166,11 +166,13 @@ const createTestSuite = ({ contract, constructorArgs }) =>
             await this.erc721aQueryable['safeMint(address,uint256)'](this.addr3.address, 3);
             await this.erc721aQueryable['safeMint(address,uint256)'](this.addr3.address, 2);
             const nextTokenId = this.owner.expected.tokens[this.owner.expected.tokens.length - 1].add(1);
-            expect(await this.erc721aQueryable.tokensOfOwner(this.addr3.address))
-              .to.eql(this.addr3.expected.tokens.concat(Array.from({length: 5}, (_, i) => nextTokenId.add(i))));
+            expect(await this.erc721aQueryable.tokensOfOwner(this.addr3.address)).to.eql(
+              this.addr3.expected.tokens.concat(Array.from({ length: 5 }, (_, i) => nextTokenId.add(i))),
+            );
             await this.erc721aQueryable.directSetBurnBit(nextTokenId);
-            expect(await this.erc721aQueryable.tokensOfOwner(this.addr3.address))
-              .to.eql(this.addr3.expected.tokens.concat(Array.from({length: 2}, (_, i) => nextTokenId.add(3 + i))));
+            expect(await this.erc721aQueryable.tokensOfOwner(this.addr3.address)).to.eql(
+              this.addr3.expected.tokens.concat(Array.from({ length: 2 }, (_, i) => nextTokenId.add(3 + i))),
+            );
           });
         });
 
@@ -178,11 +180,11 @@ const createTestSuite = ({ contract, constructorArgs }) =>
           const expectCorrect = async function (addr, start, stop) {
             if (BigNumber.from(start).gte(BigNumber.from(stop))) {
               await expect(this.erc721aQueryable.tokensOfOwnerIn(addr, start, stop)).to.be.revertedWith(
-                'InvalidQueryRange'
+                'InvalidQueryRange',
               );
             } else {
               const expectedTokens = (await this.erc721aQueryable.tokensOfOwner(addr)).filter(
-                (x) => BigNumber.from(start).lte(x) && BigNumber.from(stop).gt(x)
+                (x) => BigNumber.from(start).lte(x) && BigNumber.from(stop).gt(x),
               );
               const tokens = await this.erc721aQueryable.tokensOfOwnerIn(addr, start, stop);
               expect(tokens).to.eql(expectedTokens);
@@ -234,12 +236,14 @@ const createTestSuite = ({ contract, constructorArgs }) =>
             await this.erc721aQueryable['safeMint(address,uint256)'](this.addr3.address, 3);
             await this.erc721aQueryable['safeMint(address,uint256)'](this.addr3.address, 2);
             const nextTokenId = this.owner.expected.tokens[this.owner.expected.tokens.length - 1].add(1);
-            expect(await this.erc721aQueryable.tokensOfOwnerIn(this.addr3.address, 0, 99))
-              .to.eql(this.addr3.expected.tokens.concat(Array.from({length: 5}, (_, i) => nextTokenId.add(i))));
+            expect(await this.erc721aQueryable.tokensOfOwnerIn(this.addr3.address, 0, 99)).to.eql(
+              this.addr3.expected.tokens.concat(Array.from({ length: 5 }, (_, i) => nextTokenId.add(i))),
+            );
             await this.erc721aQueryable.directSetBurnBit(nextTokenId);
-            expect(await this.erc721aQueryable.tokensOfOwnerIn(this.addr3.address, 0, 99))
-              .to.eql(this.addr3.expected.tokens.concat(Array.from({length: 2}, (_, i) => nextTokenId.add(3 + i))));
-          })
+            expect(await this.erc721aQueryable.tokensOfOwnerIn(this.addr3.address, 0, 99)).to.eql(
+              this.addr3.expected.tokens.concat(Array.from({ length: 2 }, (_, i) => nextTokenId.add(3 + i))),
+            );
+          });
         });
 
         describe('explicitOwnershipOf', async function () {
@@ -328,7 +332,7 @@ describe(
   createTestSuite({
     contract: 'ERC721AQueryableMock',
     constructorArgs: ['Azuki', 'AZUKI'],
-  })
+  }),
 );
 
 describe(
@@ -336,5 +340,5 @@ describe(
   createTestSuite({
     contract: 'ERC721AQueryableStartTokenIdMock',
     constructorArgs: ['Azuki', 'AZUKI', 1],
-  })
+  }),
 );

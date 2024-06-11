@@ -20,7 +20,6 @@ if (!rpcUrl) {
 
 const wagmiConfig = createWagmiConfig(rpcUrl);
 
-
 function OnchainProviders({ children }: Props) {
   return (
     <WagmiProvider config={wagmiConfig}>

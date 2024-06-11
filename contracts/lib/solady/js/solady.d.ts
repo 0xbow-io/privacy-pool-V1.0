@@ -19,48 +19,47 @@
  *   - `address`: Canonical address of Solady's ERC1967Factory.
  *   - `abi`: ABI of Solady's ERC1967Factory.
  */
-declare module "solady" {
+declare module 'solady' {
+  /**
+   * FastLZ and calldata compression / decompression functions.
+   */
+  namespace LibZip {
     /**
-     * FastLZ and calldata compression / decompression functions.
+     * Compresses hex encoded data with the FastLZ LZ77 algorithm.
+     * @param data - A hex encoded string representing the original data.
+     * @returns The compressed result as a hex encoded string.
      */
-    namespace LibZip {
-        /**
-         * Compresses hex encoded data with the FastLZ LZ77 algorithm.
-         * @param data - A hex encoded string representing the original data.
-         * @returns The compressed result as a hex encoded string.
-         */
-        function flzCompress(data: string): string;
-        /**
-         * Decompresses hex encoded data with the FastLZ LZ77 algorithm.
-         * @param data - A hex encoded string representing the compressed data.
-         * @returns The decompressed result as a hex encoded string.
-         */
-        function flzDecompress(data: string): string;
-        /**
-         * Compresses hex encoded calldata.
-         * @param data - A hex encoded string representing the original data.
-         * @returns The compressed result as a hex encoded string.
-         */
-        function cdCompress(data: string): string;
-        /**
-         * Decompresses hex encoded calldata.
-         * @param data - A hex encoded string representing the compressed data.
-         * @returns The decompressed result as a hex encoded string.
-         */
-        function cdDecompress(data: string): string;
-    }
+    function flzCompress(data: string): string;
     /**
-     * ERC1967Factory canonical address and ABI.
+     * Decompresses hex encoded data with the FastLZ LZ77 algorithm.
+     * @param data - A hex encoded string representing the compressed data.
+     * @returns The decompressed result as a hex encoded string.
      */
-    namespace ERC1967Factory {
-        /**
-         * Canonical address of Solady's ERC1967Factory.
-         */
-        var address: string;
-        /**
-         * ABI of Solady's ERC1967Factory.
-         */
-        var abi: any;
-    }
+    function flzDecompress(data: string): string;
+    /**
+     * Compresses hex encoded calldata.
+     * @param data - A hex encoded string representing the original data.
+     * @returns The compressed result as a hex encoded string.
+     */
+    function cdCompress(data: string): string;
+    /**
+     * Decompresses hex encoded calldata.
+     * @param data - A hex encoded string representing the compressed data.
+     * @returns The decompressed result as a hex encoded string.
+     */
+    function cdDecompress(data: string): string;
+  }
+  /**
+   * ERC1967Factory canonical address and ABI.
+   */
+  namespace ERC1967Factory {
+    /**
+     * Canonical address of Solady's ERC1967Factory.
+     */
+    var address: string;
+    /**
+     * ABI of Solady's ERC1967Factory.
+     */
+    var abi: any;
+  }
 }
-

@@ -1,5 +1,6 @@
 import { Circomkit, CircomkitConfig, CircuitConfig } from 'circomkit';
 import { MAX_DEPTH } from '@core/pool/constants';
+import { cleanThreads } from '@core/utils';
 
 const CIRCUIT_NAME = 'PrivacyPool';
 const PROTOCOL = 'groth16';
@@ -83,6 +84,7 @@ class CircuitBuilder {
       this.instantiate();
       await this.compile();
       await this.setup();
+      await cleanThreads();
     } catch (e) {
       console.log(e);
       throw new Error('Failed to build circuit', { cause: e });

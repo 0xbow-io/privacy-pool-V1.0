@@ -7,10 +7,10 @@ jobs:
   tests:
     name: Forge Testing all via-ir
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        profile: [via-ir-0,via-ir-1,via-ir-2,via-ir-3]
+        profile: [via-ir-0, via-ir-1, via-ir-2, via-ir-3]
 
     steps:
       - uses: actions/checkout@v4

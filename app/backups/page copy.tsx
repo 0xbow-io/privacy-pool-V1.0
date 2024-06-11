@@ -256,7 +256,7 @@ export default function AppPage() {
     }
     return (
       <Select value={accPubKey} onValueChange={(value) => setAccPubKey(value)}>
-        <SelectTrigger className=" text-dark-2  max-w-fit justify-start border-none bg-inherit text-3xl font-semibold underline decoration-orange decoration-4 duration-300 ease-in hover:bg-black-2 hover:text-white">
+        <SelectTrigger className=" text-dark-2  decoration-orange hover:bg-black-2 max-w-fit justify-start border-none bg-inherit text-3xl font-semibold underline decoration-4 duration-300 ease-in hover:text-white">
           <SelectValue placeholder="{choose account}">
             {GetAccPublicAddrr().substring(0, 6)}...{GetAccPublicAddrr().substring(26, 32)}
           </SelectValue>
@@ -297,7 +297,7 @@ export default function AppPage() {
     }
     return (
       <Select value={currentASP} onValueChange={(value) => UpdateCurrentASP(value)}>
-        <SelectTrigger className=" text-dark-2 max-w-fit  border-none bg-inherit text-3xl font-semibold underline decoration-orange decoration-4 duration-300 ease-in hover:bg-black-2 hover:text-white">
+        <SelectTrigger className=" text-dark-2 decoration-orange  hover:bg-black-2 max-w-fit border-none bg-inherit text-3xl font-semibold underline decoration-4 duration-300 ease-in hover:text-white">
           <SelectValue placeholder="{choose ASP}">{currentASP}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -335,7 +335,7 @@ export default function AppPage() {
     }
     return (
       <Select value={currentASP} onValueChange={(value) => UpdateCurrentASP(value)}>
-        <SelectTrigger className="text-dark-2 justify-start border-none bg-inherit text-4xl font-semibold duration-300 ease-in hover:bg-white hover:text-black-2">
+        <SelectTrigger className="text-dark-2 hover:text-black-2 justify-start border-none bg-inherit text-4xl font-semibold duration-300 ease-in hover:bg-white">
           <SelectValue placeholder="Choose Relayer">{currentASP}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -375,7 +375,7 @@ export default function AppPage() {
         }
         onValueChange={(value) => handleOutCommitmentKeyChoice(value, commitmentID)}
       >
-        <SelectTrigger className="justify-start border border-blue bg-white text-sm font-semibold text-blue duration-300 ease-in hover:bg-black-2 hover:text-white">
+        <SelectTrigger className="border-blue text-blue hover:bg-black-2 justify-start border bg-white text-sm font-semibold duration-300 ease-in hover:text-white">
           <SelectValue placeholder="Attach Privacy key">
             {commitmentID === 1
               ? outCommitmentPubkey1.substring(0, 20)
@@ -454,7 +454,7 @@ export default function AppPage() {
         value={commitmentID == 1 ? inputCommitment1 : inputCommitment2}
         onValueChange={(value) => HandleInputCommitmentChange(value, commitmentID)}
       >
-        <SelectTrigger className="justify-start border-none bg-inherit text-4xl font-semibold text-white duration-300 ease-in hover:bg-white hover:text-black-2">
+        <SelectTrigger className="hover:text-black-2 justify-start border-none bg-inherit text-4xl font-semibold text-white duration-300 ease-in hover:bg-white">
           <SelectValue placeholder="Commitment">
             {commitmentID == 1 ? inputCommitment1 : inputCommitment2}
           </SelectValue>
@@ -495,19 +495,19 @@ export default function AppPage() {
         <div className="flex flex-col justify-start gap-10">
           <div className="flex flex-row flex-wrap">
             <div>
-              <a className={publicVal == 0n ? ' text-red-dark' : 'font-bold text-sea-green'}>
+              <a className={publicVal == 0n ? ' text-red-dark' : 'text-sea-green font-bold'}>
                 {publicVal >= 0 ? 'Committing' : 'Releasing'}{' '}
               </a>
-              <a className="underline decoration-orange decoration-4">
+              <a className="decoration-orange underline decoration-4">
                 {publicVal < 0 ? (publicVal * -1n).toString() : publicVal.toString()} ETH
               </a>{' '}
-              with
-cass            </div>
+              with cass{' '}
+            </div>
             <div>{AccountPrivKeyDropDown()}</div>
             <h1>
               {' '}
               paying{' '}
-              <a className=" underline decoration-orange decoration-4"> {feeVal.toString()} </a> ETH
+              <a className=" decoration-orange underline decoration-4"> {feeVal.toString()} </a> ETH
               fee to
             </h1>
             <div>{ASPSelectionDropDown()}</div>
@@ -518,7 +518,7 @@ cass            </div>
               onClick={handleCreateAccount}
               className={cn(
                 'z-10 min-h-fit min-w-fit rounded-full font-semibold text-white',
-                publicVal == 0n ? 'bg-red-dark' : 'duration-10000 animate-pulse bg-sea-green',
+                publicVal == 0n ? 'bg-red-dark' : 'duration-10000 bg-sea-green animate-pulse',
               )}
             >
               <h1 className="text-3xl font-bold text-white"> Compute </h1>
@@ -533,16 +533,16 @@ cass            </div>
     return (
       <Xwrapper>
         <div ref={ref} className={cn('grid grid-cols-4 grid-rows-3 gap-x-6', className)}>
-          <div className="z-0 col-span-4 col-start-1 row-start-1 mt-6 grid grid-cols-subgrid items-start bg-black-2 px-6 py-6">
+          <div className="bg-black-2 z-0 col-span-4 col-start-1 row-start-1 mt-6 grid grid-cols-subgrid items-start px-6 py-6">
             <div className="col-start-1">
               <h1 className="text-7xl font-bold text-white"> Inputs </h1>
             </div>
             <div className="col-span-2 col-start-2 flex flex-col gap-10 ">
               <div className="flex flex-row justify-between">
-                <div className="rounded-3xl border border-white bg-black-2 ">
+                <div className="bg-black-2 rounded-3xl border border-white ">
                   {InputCommitmentCard('text-white py-6', InCommitment1Ref, 1)}
                 </div>
-                <div className="rounded-3xl border border-white bg-black-2 ">
+                <div className="bg-black-2 rounded-3xl border border-white ">
                   {InputCommitmentCard('text-white py-6', 2)}
                 </div>
               </div>
@@ -555,14 +555,14 @@ cass            </div>
             </div>
           </div>
 
-          <div className="z-0 col-span-4 col-start-1  row-start-3 mb-6 grid grid-cols-subgrid items-center bg-black-2 px-6 py-10">
+          <div className="bg-black-2 z-0 col-span-4  col-start-1 row-start-3 mb-6 grid grid-cols-subgrid items-center px-6 py-10">
             <div className="col-start-1">
               <h1 className="text-7xl font-bold text-white"> Outputs </h1>
             </div>
-            <div className=" col-start-2 rounded-3xl border border-white bg-black-2 ">
+            <div className=" bg-black-2 col-start-2 rounded-3xl border border-white ">
               {OutCommitmentCard('text-white px-6', '', 1, OutCommitment1Ref)}
             </div>
-            <div className="col-start-3 rounded-3xl border border-white bg-black-2">
+            <div className="bg-black-2 col-start-3 rounded-3xl border border-white">
               {OutCommitmentCard('text-white px-6', '', 2, OutCommitment2Ref)}
             </div>
           </div>
@@ -625,7 +625,7 @@ cass            </div>
       <div ref={ref} className={cn('flex flex-row', className)}>
         <div>
           <Select onValueChange={handleSetPool}>
-            <SelectTrigger className="rounded-none border-0 bg-inherit  p-8 text-sm font-bold  hover:bg-black-2 hover:text-white ">
+            <SelectTrigger className="hover:bg-black-2 rounded-none border-0  bg-inherit p-8 text-sm  font-bold hover:text-white ">
               <SelectValue placeholder="Privacy Pool" />
             </SelectTrigger>
             <SelectContent>
@@ -644,7 +644,7 @@ cass            </div>
         </div>
         <div>
           <Select onValueChange={UpdateCurrentASP}>
-            <SelectTrigger className="rounded-none border-0 bg-inherit p-8 text-sm font-bold hover:bg-black-2  hover:text-white ">
+            <SelectTrigger className="hover:bg-black-2 rounded-none border-0 bg-inherit p-8 text-sm font-bold  hover:text-white ">
               <SelectValue placeholder="ASP" />
             </SelectTrigger>
             <SelectContent>
@@ -745,7 +745,7 @@ cass            </div>
         className="absolute z-30 flex h-full w-full flex-col items-center justify-center rounded-xl border-b bg-page-background  shadow-2xl"
         style={{ visibility: isAccountLoaded ? 'hidden' : 'visible' }}
       >
-        <div className="flex flex-col gap-6 rounded-xl border-b bg-card-background px-10 py-10 text-blue shadow-2xl">
+        <div className="bg-card-background text-blue flex flex-col gap-6 rounded-xl border-b px-10 py-10 shadow-2xl">
           <div className="flex flex-col gap-4">
             <h2 className="mb-10 text-4xl font-bold text-black">Welcome To Privacy Pool</h2>
             <h2 className="text-xl font-semibold underline decoration-1 underline-offset-4">
@@ -783,7 +783,7 @@ cass            </div>
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCreateAccount}
-                    className="rounded-3xl bg-blue p-6 text-lg font-semibold text-white"
+                    className="bg-blue rounded-3xl p-6 text-lg font-semibold text-white"
                   >
                     <UserRoundPlus className="mr-2 h-10 w-10" /> Create New Account
                   </Button>
@@ -809,9 +809,9 @@ cass            </div>
           </div>
         </div>
 
-        <div className="relative mb-20 grid h-full w-full grid-cols-9 grid-rows-6 gap-x-6 border-b border-t border-black-2 bg-inherit ">
+        <div className="border-black-2 relative mb-20 grid h-full w-full grid-cols-9 grid-rows-6 gap-x-6 border-b border-t bg-inherit ">
           <div
-            className=" relative col-span-7 row-span-6 flex flex-col items-end border-r border-black-2"
+            className=" border-black-2 relative col-span-7 row-span-6 flex flex-col items-end border-r"
             ref={containerRef}
           >
             {TxRecordBuilder('relative px-6', TxRecordRef)}

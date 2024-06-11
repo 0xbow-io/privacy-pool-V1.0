@@ -18,7 +18,17 @@ jobs:
 
     strategy:
       matrix:
-        profile: [post-cancun,post-cancun-via-ir,solc-past-versions-0,solc-past-versions-1,via-ir,min-solc,min-solc-via-ir,intense]
+        profile:
+          [
+            post-cancun,
+            post-cancun-via-ir,
+            solc-past-versions-0,
+            solc-past-versions-1,
+            via-ir,
+            min-solc,
+            min-solc-via-ir,
+            intense,
+          ]
 
     steps:
       - uses: actions/checkout@v4

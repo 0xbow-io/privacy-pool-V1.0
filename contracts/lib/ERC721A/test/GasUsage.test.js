@@ -71,23 +71,23 @@ describe('ERC721A Gas Usage', function () {
 
   it('mintOneERC2309', async function () {
     // The following call `_mintERC3201` outside of contract creation.
-    // This is non-compliant with the ERC721 standard, 
+    // This is non-compliant with the ERC721 standard,
     // and is only meant for gas comparisons.
     let args = ['Azuki', 'AZUKI', this.owner.address, 0, false];
     let contract = await deployContract('ERC721AWithERC2309Mock', args);
     await contract.mintOneERC2309(this.owner.address);
     await contract.mintOneERC2309(this.owner.address);
-    await contract.mintOneERC2309(this.addr1.address); 
+    await contract.mintOneERC2309(this.addr1.address);
   });
 
   it('mintTenERC2309', async function () {
     // The following call `_mintERC3201` outside of contract creation.
-    // This is non-compliant with the ERC721 standard, 
+    // This is non-compliant with the ERC721 standard,
     // and is only meant for gas comparisons.
     let args = ['Azuki', 'AZUKI', this.owner.address, 0, false];
     let contract = await deployContract('ERC721AWithERC2309Mock', args);
     await contract.mintTenERC2309(this.owner.address);
     await contract.mintTenERC2309(this.owner.address);
-    await contract.mintTenERC2309(this.addr1.address);  
+    await contract.mintTenERC2309(this.addr1.address);
   });
 });

@@ -392,7 +392,7 @@ export default function AppPage() {
     }
     return (
       <Select value={accPubKey} onValueChange={(value) => setAccPubKey(value)}>
-        <SelectTrigger className=" border-font-color bg-font-color hover:text-font-color z-10 rounded-3xl border-2 px-6 text-lg font-bold  text-page-background duration-300 ease-in hover:bg-page-background">
+        <SelectTrigger className=" z-10 rounded-3xl border-2 border-font-color bg-font-color px-6 text-lg font-bold text-page-background  duration-300 ease-in hover:bg-page-background hover:text-font-color">
           <SelectValue placeholder="Choose Account">
             {GetAccPublicAddrr().substring(0, 6)}...{GetAccPublicAddrr().substring(36, 42)}
           </SelectValue>
@@ -427,7 +427,7 @@ export default function AppPage() {
             {publicVal >= 0 ? 'Commit With' : 'Release To'} :
           </label>
         </div>
-        <div className="hover:bg-font-color relative col-span-2 rounded-3xl  font-semibold  hover:text-page-background">
+        <div className="relative col-span-2 rounded-3xl font-semibold  hover:bg-font-color  hover:text-page-background">
           {AccountPrivKeyDropDown()}
         </div>
       </div>
@@ -440,7 +440,7 @@ export default function AppPage() {
     }
     return (
       <Select value={currentASP} onValueChange={(value) => UpdateCurrentASP(value)}>
-        <SelectTrigger className="bg-font-color hover:text-font-color shadow-font-color relative rounded-3xl bg-inherit px-10 text-lg font-bold text-page-background shadow-none duration-300 ease-in hover:bg-page-background">
+        <SelectTrigger className="relative rounded-3xl bg-font-color bg-inherit px-10 text-lg font-bold text-page-background shadow-none shadow-font-color duration-300 ease-in hover:bg-page-background hover:text-font-color">
           <SelectValue placeholder="Select ASP">{currentASP}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -470,12 +470,12 @@ export default function AppPage() {
           <div>
             <label className="">Association Set Provider :</label>
           </div>
-          <div className="bg-font-color relative col-span-2 rounded-3xl text-page-background">
+          <div className="relative col-span-2 rounded-3xl bg-font-color text-page-background">
             {ASPSelectionDropDown()}
           </div>
         </div>
         <div className="relative place-self-end self-center">
-          <Button className="border-border-color hover:bg-font-color relative rounded-3xl  border-2 bg-page-background text-inherit duration-300 ease-in hover:text-page-background">
+          <Button className="relative rounded-3xl border-2 border-border-color  bg-page-background text-inherit duration-300 ease-in hover:bg-font-color hover:text-page-background">
             <Users2 className="mr-4" /> View Association Set ⇨
           </Button>
         </div>
@@ -490,7 +490,7 @@ export default function AppPage() {
     }
     return (
       <Select value={currentASP} onValueChange={(value) => UpdateCurrentASP(value)}>
-        <SelectTrigger className="text-dark-2 justify-start border-none bg-inherit text-4xl font-semibold duration-300 ease-in hover:bg-white hover:text-black-2">
+        <SelectTrigger className="text-dark-2 hover:text-black-2 justify-start border-none bg-inherit text-4xl font-semibold duration-300 ease-in hover:bg-white">
           <SelectValue placeholder="Choose Relayer">{currentASP}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -516,7 +516,7 @@ export default function AppPage() {
         }
         onValueChange={(value) => handleOutCommitmentKeyChoice(value, commitmentID)}
       >
-        <SelectTrigger className=" bg-font-color hover:text-font-color rounded-3xl text-lg font-bold text-page-background duration-300 ease-in hover:bg-page-background">
+        <SelectTrigger className=" rounded-3xl bg-font-color text-lg font-bold text-page-background duration-300 ease-in hover:bg-page-background hover:text-font-color">
           <SelectValue placeholder="Encrypt with key 🔐">
             🔐 :{' '}
             {commitmentID === 1
@@ -544,7 +544,7 @@ export default function AppPage() {
       <div
         id={'OutCommitmentCard' + commitmentID}
         className={cn(
-          'text-font-color relative grid grid-cols-2  grid-rows-2 items-center justify-items-start text-sm duration-300 ease-in',
+          'relative grid grid-cols-2 grid-rows-2  items-center justify-items-start text-sm text-font-color duration-300 ease-in',
           className,
         )}
       >
@@ -563,7 +563,7 @@ export default function AppPage() {
             />
           </div>
         </div>
-        <div className="border-border-color relative col-span-2 w-full flex-row border-t-2 pt-4">
+        <div className="relative col-span-2 w-full flex-row border-t-2 border-border-color pt-4">
           <div className="">{OutCommitmentKeyDropDown(commitmentID)}</div>
         </div>
       </div>
@@ -624,9 +624,9 @@ export default function AppPage() {
         )}
       >
         <div className="">
-          <label className="text-font-color text-xl font-bold">Select Privacy Pool :</label>
+          <label className="text-xl font-bold text-font-color">Select Privacy Pool :</label>
         </div>
-        <div className="text-font-color hover:bg-font-color bg-page-background hover:text-page-background">
+        <div className="bg-page-background text-font-color hover:bg-font-color hover:text-page-background">
           {PoolSelectionDropDown()}
         </div>
       </div>
@@ -638,14 +638,14 @@ export default function AppPage() {
       <div
         id="SaveStateContainer"
         className={cn(
-          'justif-start text-font-color relative flex w-full  flex-row duration-300 ease-in',
+          'justif-start relative flex w-full flex-row  text-font-color duration-300 ease-in',
           className,
         )}
       >
         <div>
           <Button
             onClick={handleSaveAccountState}
-            className="text-font-color border-deep-oceanic hover:bg-font-color w-full rounded-none border-2 bg-page-background text-lg font-bold hover:text-page-background"
+            className="border-deep-oceanic w-full rounded-none border-2 bg-page-background text-lg font-bold text-font-color hover:bg-font-color hover:text-page-background"
           >
             Save Account
           </Button>
@@ -659,14 +659,14 @@ export default function AppPage() {
       <div
         id="GeneratePrivacyKeyContainer"
         className={cn(
-          'text-font-color relative  flex w-full flex-row  justify-start duration-300 ease-in',
+          'relative flex  w-full flex-row justify-start  text-font-color duration-300 ease-in',
           className,
         )}
       >
         <div>
           <Button
             onClick={handleAddPrivacyKey}
-            className="text-font-color border-deep-oceanic hover:bg-font-color w-full rounded-none border-2 bg-page-background text-lg font-bold hover:text-page-background"
+            className="border-deep-oceanic w-full rounded-none border-2 bg-page-background text-lg font-bold text-font-color hover:bg-font-color hover:text-page-background"
           >
             Add Privacy Key
           </Button>
@@ -735,17 +735,17 @@ export default function AppPage() {
       <div
         id="txRecordGrid"
         className={cn(
-          ' text-font-color relative z-10 flex flex-col items-start justify-start rounded-tl-3xl bg-page-background duration-300 ease-in',
+          ' relative z-10 flex flex-col items-start justify-start rounded-tl-3xl bg-page-background text-font-color duration-300 ease-in',
           className,
         )}
       >
-        <div className=" border-border-color relative w-full  border-b-2 px-4 py-10">
+        <div className=" relative w-full border-b-2  border-border-color px-4 py-10">
           <h1 className={cn('text-5xl font-bold ')}>Account </h1>
         </div>
-        <div className="text-font-color border-border-color relative w-full border-b-2 px-4 py-4">
+        <div className="relative w-full border-b-2 border-border-color px-4 py-4 text-font-color">
           {PoolSelectContainer('pl-4')}
         </div>
-        <div className="text-font-color border-border-color relative border-b-2 px-4 py-4">
+        <div className="relative border-b-2 border-border-color px-4 py-4 text-font-color">
           {ASPSelectionCard('text-lg text-font-color w-full')}
         </div>
 
@@ -766,7 +766,7 @@ export default function AppPage() {
           className,
         )}
       >
-        <div className="border-dominant-blue border-b-2 pb-2">
+        <div className="border-b-2 border-dominant-blue pb-2">
           <label className="text-xl font-semibold">Compute Output </label>
         </div>
         <div className="place-self-end ">
@@ -778,14 +778,14 @@ export default function AppPage() {
         <div className=" place-self-end border-b-2 border-page-background">
           <div className="flex flex-row items-center justify-center">
             <div>
-              <Plus className="stroke-dominant-blue size-10" />
+              <Plus className="size-10 stroke-dominant-blue" />
             </div>
             <div>
               <Input
                 type="number"
                 placeholder="Enter Extra Value"
                 onChange={(e) => handleOutCommitmentAmntChange(e)}
-                className="placeholder:text-dominant-blue  text-dominant-blue border-dominant-blue	focus:outline-cool-green rounded-none border-0  border-b-2 bg-page-background px-0 text-end  text-xl font-semibold"
+                className="rounded-none  border-0 border-b-2	border-dominant-blue bg-page-background px-0  text-end text-xl font-semibold text-dominant-blue  placeholder:text-dominant-blue focus:outline-cool-green"
               />
             </div>
           </div>
@@ -799,13 +799,13 @@ export default function AppPage() {
       <div
         id="txRecordGrid"
         className={cn(
-          ' text-font-color relative flex flex-col items-start justify-start gap-4 rounded-xl bg-page-background  px-10  duration-300 ease-in',
+          ' relative flex flex-col items-start justify-start gap-4 rounded-xl bg-page-background px-10  text-font-color  duration-300 ease-in',
           currentPool === '' ? 'z-10 blur-2xl' : ' ',
           className,
         )}
       >
-        <div className="border-border-color flex h-full w-full border-b-4 py-10">
-          <h1 className={cn('text-font-color text-5xl font-bold')}>
+        <div className="flex h-full w-full border-b-4 border-border-color py-10">
+          <h1 className={cn('text-5xl font-bold text-font-color')}>
             Create {publicVal >= 0 ? 'Commit' : 'Release'}:
           </h1>
         </div>
@@ -836,7 +836,7 @@ export default function AppPage() {
         className="absolute z-30 flex h-full w-full flex-col items-center justify-center rounded-xl border-b bg-page-background shadow-2xl"
         style={{ visibility: isAccountLoaded ? 'hidden' : 'visible' }}
       >
-        <div className="text-font-color flex flex-col gap-6 rounded-xl border-b bg-card-background px-10 py-10 shadow-2xl">
+        <div className="bg-card-background flex flex-col gap-6 rounded-xl border-b px-10 py-10 text-font-color shadow-2xl">
           <div className="flex flex-col gap-4">
             <h2 className="mb-10 text-4xl font-bold text-black">Welcome To Privacy Pool</h2>
             <h2 className="text-xl font-semibold underline decoration-1 underline-offset-4">
@@ -874,7 +874,7 @@ export default function AppPage() {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={handleCreateAccount}
-                    className="rounded-3xl bg-blue p-6 text-lg font-semibold text-white"
+                    className="bg-blue rounded-3xl p-6 text-lg font-semibold text-white"
                   >
                     <UserRoundPlus className="mr-2 h-10 w-10" /> Create New Account
                   </Button>
@@ -895,12 +895,12 @@ export default function AppPage() {
               <Image src={privacyPoolsLogo} alt="Privacy Pool Logo" className="h-20 w-20" />
             </div>
             <div className="mx-4">
-              <h2 className=" text-font-color text-5xl font-bold">Privacy Pool</h2>
+              <h2 className=" text-5xl font-bold text-font-color">Privacy Pool</h2>
             </div>
           </div>
         </div>
         <Xwrapper>
-          <div className="relative mb-20 flex h-full w-full flex-row items-start justify-start gap-x-2 border-b border-t-2 border-black-2 bg-inherit px-4 py-4">
+          <div className="border-black-2 relative mb-20 flex h-full w-full flex-row items-start justify-start gap-x-2 border-b border-t-2 bg-inherit px-4 py-4">
             {GlobalAccountSection('relative border-2 border-border-color min-h-full w-1/3')}
             {TxRecordSection('relative border-2 border-border-color rounded-3xl ')}
           </div>

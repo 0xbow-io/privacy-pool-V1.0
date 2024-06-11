@@ -15,7 +15,6 @@ const customJestConfig = {
   },
   roots: ['<rootDir>'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  globalTeardown: '<rootDir>/core/hooks/teardown.js',
 };
 const asyncConfig = createJestConfig(customJestConfig);
 

@@ -118,7 +118,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
             it('reverts when tokenId does not exist', async function () {
               await expect(this.erc721a.tokenURI(offsetted(this.expectedMintCount))).to.be.revertedWith(
-                'URIQueryForNonexistentToken'
+                'URIQueryForNonexistentToken',
               );
             });
           });
@@ -254,7 +254,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
           it('rejects an unapproved caller', async function () {
             await expect(this.erc721a.approve(this.addr2.address, this.tokenId)).to.be.revertedWith(
-              'ApprovalCallerNotOwnerNorApproved'
+              'ApprovalCallerNotOwnerNorApproved',
             );
           });
 
@@ -264,24 +264,23 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
           it('approval allows token transfer', async function () {
             await expect(
-              this.erc721a.connect(this.addr3).transferFrom(this.addr1.address, this.addr3.address, this.tokenId)
+              this.erc721a.connect(this.addr3).transferFrom(this.addr1.address, this.addr3.address, this.tokenId),
             ).to.be.revertedWith('TransferCallerNotOwnerNorApproved');
             await this.erc721a.connect(this.addr1).approve(this.addr3.address, this.tokenId);
             await this.erc721a.connect(this.addr3).transferFrom(this.addr1.address, this.addr3.address, this.tokenId);
             await expect(
-              this.erc721a.connect(this.addr1).transferFrom(this.addr3.address, this.addr1.address, this.tokenId)
+              this.erc721a.connect(this.addr1).transferFrom(this.addr3.address, this.addr1.address, this.tokenId),
             ).to.be.revertedWith('TransferCallerNotOwnerNorApproved');
           });
 
           it('token owner can approve self as operator', async function () {
             expect(await this.erc721a.getApproved(this.tokenId)).to.not.equal(this.addr1.address);
-            await expect(this.erc721a.connect(this.addr1).approve(this.addr1.address, this.tokenId)
-            ).to.not.be.reverted;
+            await expect(this.erc721a.connect(this.addr1).approve(this.addr1.address, this.tokenId)).to.not.be.reverted;
             expect(await this.erc721a.getApproved(this.tokenId)).to.equal(this.addr1.address);
           });
 
           it('self-approval is cleared on token transfer', async function () {
-            await this.erc721a.connect(this.addr1).approve(this.addr1.address, this.tokenId); 
+            await this.erc721a.connect(this.addr1).approve(this.addr1.address, this.tokenId);
             expect(await this.erc721a.getApproved(this.tokenId)).to.equal(this.addr1.address);
 
             await this.erc721a.connect(this.addr1).transferFrom(this.addr1.address, this.addr2.address, this.tokenId);
@@ -290,7 +289,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
           it('direct approve works', async function () {
             expect(await this.erc721a.getApproved(this.tokenId)).to.not.equal(this.addr1.address);
-            await this.erc721a.connect(this.addr2).directApprove(this.addr1.address, this.tokenId); 
+            await this.erc721a.connect(this.addr2).directApprove(this.addr1.address, this.tokenId);
             expect(await this.erc721a.getApproved(this.tokenId)).to.equal(this.addr1.address);
           });
         });
@@ -305,15 +304,12 @@ const createTestSuite = ({ contract, constructorArgs }) =>
           });
 
           it('caller can approve all with self as operator', async function () {
-            expect(
-              await this.erc721a.connect(this.addr1).isApprovedForAll(this.addr1.address, this.addr1.address)
-            ).to.be.false;
-            await expect(
-              this.erc721a.connect(this.addr1).setApprovalForAll(this.addr1.address, true)
-            ).to.not.be.reverted;
-            expect(
-              await this.erc721a.connect(this.addr1).isApprovedForAll(this.addr1.address, this.addr1.address)
-            ).to.be.true;
+            expect(await this.erc721a.connect(this.addr1).isApprovedForAll(this.addr1.address, this.addr1.address)).to
+              .be.false;
+            await expect(this.erc721a.connect(this.addr1).setApprovalForAll(this.addr1.address, true)).to.not.be
+              .reverted;
+            expect(await this.erc721a.connect(this.addr1).isApprovedForAll(this.addr1.address, this.addr1.address)).to
+              .be.true;
           });
         });
 
@@ -374,21 +370,21 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
             it('rejects unapproved transfer', async function () {
               await expect(
-                this.erc721a.connect(this.sender)[transferFn](this.addr2.address, this.sender.address, this.tokenId)
+                this.erc721a.connect(this.sender)[transferFn](this.addr2.address, this.sender.address, this.tokenId),
               ).to.be.revertedWith('TransferCallerNotOwnerNorApproved');
             });
 
             it('rejects transfer from incorrect owner', async function () {
               await this.erc721a.connect(this.addr2).setApprovalForAll(this.sender.address, true);
               await expect(
-                this.erc721a.connect(this.sender)[transferFn](this.addr3.address, this.sender.address, this.tokenId)
+                this.erc721a.connect(this.sender)[transferFn](this.addr3.address, this.sender.address, this.tokenId),
               ).to.be.revertedWith('TransferFromIncorrectOwner');
             });
 
             it('rejects transfer to zero address', async function () {
               await this.erc721a.connect(this.addr2).setApprovalForAll(this.sender.address, true);
               await expect(
-                this.erc721a.connect(this.sender)[transferFn](this.addr2.address, ZERO_ADDRESS, this.tokenId)
+                this.erc721a.connect(this.sender)[transferFn](this.addr2.address, ZERO_ADDRESS, this.tokenId),
               ).to.be.revertedWith('TransferToZeroAddress');
             });
           };
@@ -481,7 +477,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
           it('revert if approvalCheck is true', async function () {
             await expect(
-              this.erc721a.connect(this.addr2)['burn(uint256,bool)'](this.tokenIdToBurn, true)
+              this.erc721a.connect(this.addr2)['burn(uint256,bool)'](this.tokenIdToBurn, true),
             ).to.be.revertedWith('TransferCallerNotOwnerNorApproved');
           });
 
@@ -676,26 +672,25 @@ const createTestSuite = ({ contract, constructorArgs }) =>
             it('reverts for non-receivers', async function () {
               const nonReceiver = this.erc721a;
               await expect(this.erc721a['safeMint(address,uint256)'](nonReceiver.address, 1)).to.be.revertedWith(
-                'TransferToNonERC721ReceiverImplementer'
+                'TransferToNonERC721ReceiverImplementer',
               );
             });
 
             it('reverts when the receiver reverted', async function () {
               await expect(
-                this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x01')
+                this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x01'),
               ).to.be.revertedWith('reverted in the receiver contract!');
             });
 
             it('reverts if the receiver returns the wrong value', async function () {
               await expect(
-                this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x02')
+                this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x02'),
               ).to.be.revertedWith('TransferToNonERC721ReceiverImplementer');
             });
 
             it('reverts with reentrant call', async function () {
-              await expect(
-                this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x03')
-              ).to.be.reverted;
+              await expect(this.erc721a['safeMint(address,uint256,bytes)'](this.receiver.address, 1, '0x03')).to.be
+                .reverted;
             });
           });
         });
@@ -713,14 +708,17 @@ const createTestSuite = ({ contract, constructorArgs }) =>
           await this.erc721a.directSetBurnBit(this.startTokenId + 3);
           for (let i = 0; i < 3 + 2 + 1; ++i) {
             if (3 <= i && i < 3 + 2) {
-              await expect(this.erc721a.ownerOf(this.startTokenId + i))
-                .to.be.revertedWith('OwnerQueryForNonexistentToken');
-              await expect(this.erc721a.getApproved(this.startTokenId + i))
-                .to.be.revertedWith('ApprovalQueryForNonexistentToken');
-              await expect(this.erc721a.tokenURI(this.startTokenId + i))
-                .to.be.revertedWith('URIQueryForNonexistentToken');
+              await expect(this.erc721a.ownerOf(this.startTokenId + i)).to.be.revertedWith(
+                'OwnerQueryForNonexistentToken',
+              );
+              await expect(this.erc721a.getApproved(this.startTokenId + i)).to.be.revertedWith(
+                'ApprovalQueryForNonexistentToken',
+              );
+              await expect(this.erc721a.tokenURI(this.startTokenId + i)).to.be.revertedWith(
+                'URIQueryForNonexistentToken',
+              );
             } else {
-              expect(await this.erc721a.ownerOf(this.startTokenId + i)).to.eq(owner.address);  
+              expect(await this.erc721a.ownerOf(this.startTokenId + i)).to.eq(owner.address);
             }
           }
         });
@@ -742,7 +740,7 @@ describe('ERC721A', createTestSuite({ contract: 'ERC721AMock', constructorArgs: 
 
 describe(
   'ERC721A override _startTokenId()',
-  createTestSuite({ contract: 'ERC721AStartTokenIdMock', constructorArgs: ['Azuki', 'AZUKI', 1] })
+  createTestSuite({ contract: 'ERC721AStartTokenIdMock', constructorArgs: ['Azuki', 'AZUKI', 1] }),
 );
 
 describe('ERC721A with ERC2309', async function () {
@@ -758,13 +756,13 @@ describe('ERC721A with ERC2309', async function () {
     this.erc721aMint10 = await deployContract('ERC721AWithERC2309Mock', args);
   });
 
-  it('emits a ConsecutiveTransfer event for single mint', async function () {    
+  it('emits a ConsecutiveTransfer event for single mint', async function () {
     expect(this.erc721aMint1.deployTransaction)
       .to.emit(this.erc721aMint1, 'ConsecutiveTransfer')
       .withArgs(0, 0, ZERO_ADDRESS, this.owner.address);
   });
 
-  it('emits a ConsecutiveTransfer event for a batch mint', async function () {    
+  it('emits a ConsecutiveTransfer event for a batch mint', async function () {
     expect(this.erc721aMint10.deployTransaction)
       .to.emit(this.erc721aMint10, 'ConsecutiveTransfer')
       .withArgs(0, 9, ZERO_ADDRESS, this.owner.address);
@@ -777,7 +775,7 @@ describe('ERC721A with ERC2309', async function () {
     await deployContract('ERC721AWithERC2309Mock', args);
     args = ['Azuki', 'AZUKI', this.owner.address, mintLimit + 1, true];
     await expect(deployContract('ERC721AWithERC2309Mock', args)).to.be.revertedWith('MintERC2309QuantityExceedsLimit');
-  })
+  });
 
   it('rejects mints to the zero address', async function () {
     let args = ['Azuki', 'AZUKI', ZERO_ADDRESS, 1, true];

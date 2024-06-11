@@ -5,19 +5,18 @@ const { constants } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = constants;
 
 describe('ERC721ASpot', function () {
-
   context('constructor', function () {
     const testConstructor = async (args, expectedError) => {
       const deployment = deployContract('ERC721ASpotMock', args);
-      if (expectedError) await expect(deployment).to.be.revertedWith(expectedError);  
+      if (expectedError) await expect(deployment).to.be.revertedWith(expectedError);
       else await deployment;
     };
-    
+
     it('reverts if _sequentialUpTo is not greater than _startTokenId', async function () {
       const t = async (startTokenId, sequentialUpTo, expectSuccess) => {
         await testConstructor(
-          ['Azuki', 'AZUKI', startTokenId, sequentialUpTo, 0, false], 
-          expectSuccess ? false : 'SequentialUpToTooSmall'
+          ['Azuki', 'AZUKI', startTokenId, sequentialUpTo, 0, false],
+          expectSuccess ? false : 'SequentialUpToTooSmall',
         );
       };
       await t(0, 0, true);
@@ -32,8 +31,8 @@ describe('ERC721ASpot', function () {
     it('reverts if ERC2309 mint exceeds limit', async function () {
       const t = async (startTokenId, sequentialUpTo, quantity, expectSuccess) => {
         await testConstructor(
-          ['Azuki', 'AZUKI', startTokenId, sequentialUpTo, quantity, true], 
-          expectSuccess ? false : 'SequentialMintExceedsLimit'
+          ['Azuki', 'AZUKI', startTokenId, sequentialUpTo, quantity, true],
+          expectSuccess ? false : 'SequentialMintExceedsLimit',
         );
       };
       await t(0, 1, 1, true);
@@ -84,34 +83,42 @@ describe('ERC721ASpot', function () {
       expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql([]);
 
       await this.erc721aSpot.safeMint(this.addr1.address, 5);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14].map(BigNumber.from));
-      
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14].map(BigNumber.from),
+      );
+
       await this.erc721aSpot.safeMintSpot(this.addr1.address, 21);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14, 21].map(BigNumber.from));
-      
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14, 21].map(BigNumber.from),
+      );
+
       await this.erc721aSpot.safeMintSpot(this.addr1.address, 31);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14, 21, 31].map(BigNumber.from));
-      
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14, 21, 31].map(BigNumber.from),
+      );
+
       await this.erc721aSpot.safeMintSpot(this.addr1.address, 22);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14, 21, 22, 31].map(BigNumber.from));
-      
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14, 21, 22, 31].map(BigNumber.from),
+      );
+
       await this.erc721aSpot.safeMint(this.addr1.address, 5);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 31].map(BigNumber.from));
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 31].map(BigNumber.from),
+      );
 
       await this.erc721aSpot.safeMintSpot(this.addr1.address, 20);
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295))
-        .to.eql([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31].map(BigNumber.from));
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 4294967295)).to.eql(
+        [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31].map(BigNumber.from),
+      );
 
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 32))
-        .to.eql([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31].map(BigNumber.from));
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 32)).to.eql(
+        [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 31].map(BigNumber.from),
+      );
 
-      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 31))
-        .to.eql([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].map(BigNumber.from));
+      expect(await this.erc721aSpot.tokensOfOwnerIn(this.addr1.address, 0, 31)).to.eql(
+        [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].map(BigNumber.from),
+      );
     });
 
     it('explicitOwnershipOf', async function () {
@@ -139,43 +146,31 @@ describe('ERC721ASpot', function () {
     });
 
     it('tokensOfOwner reverts', async function () {
-      await expect(this.erc721aSpot.tokensOfOwner(this.addr1.address)).to.be.revertedWith(
-        'NotCompatibleWithSpotMints'
-      );
+      await expect(this.erc721aSpot.tokensOfOwner(this.addr1.address)).to.be.revertedWith('NotCompatibleWithSpotMints');
     });
 
     it('spot minting to an existing token reverts', async function () {
       await this.erc721aSpot.safeMintSpot(this.addr1.address, 20);
-      await expect(this.erc721aSpot.safeMintSpot(this.addr1.address, 20)).to.be.revertedWith(
-        'TokenAlreadyExists'
-      );
+      await expect(this.erc721aSpot.safeMintSpot(this.addr1.address, 20)).to.be.revertedWith('TokenAlreadyExists');
     });
 
     it('reverts if sequential mint exceeds limit', async function () {
-      await expect(this.erc721aSpot.safeMint(this.addr1.address, 11)).to.be.revertedWith(
-        'SequentialMintExceedsLimit'
-      );
+      await expect(this.erc721aSpot.safeMint(this.addr1.address, 11)).to.be.revertedWith('SequentialMintExceedsLimit');
       await this.erc721aSpot.safeMint(this.addr1.address, 10);
     });
 
     it('reverts if _mintSpot tokenId is too small', async function () {
-      await expect(this.erc721aSpot.safeMintSpot(this.addr1.address, 19)).to.be.revertedWith(
-        'SpotMintTokenIdTooSmall'
-      );
+      await expect(this.erc721aSpot.safeMintSpot(this.addr1.address, 19)).to.be.revertedWith('SpotMintTokenIdTooSmall');
     });
 
     context('with transfers', function () {
       it('reverts if token is not minted', async function () {
         await this.erc721aSpot.safeMint(this.addr1.address, 10);
-        await expect(this.erc721aSpot
-          .connect(this.addr1)
-          .transferFrom(this.addr1.address, this.owner.address, 21)).to.be.revertedWith(
-            'OwnerQueryForNonexistentToken'
-          );
+        await expect(
+          this.erc721aSpot.connect(this.addr1).transferFrom(this.addr1.address, this.owner.address, 21),
+        ).to.be.revertedWith('OwnerQueryForNonexistentToken');
         await this.erc721aSpot.safeMintSpot(this.addr1.address, 21);
-        await this.erc721aSpot
-          .connect(this.addr1)
-          .transferFrom(this.addr1.address, this.owner.address, 21);
+        await this.erc721aSpot.connect(this.addr1).transferFrom(this.addr1.address, this.owner.address, 21);
       });
 
       it('edge case 1', async function () {
@@ -230,11 +225,11 @@ describe('ERC721ASpot', function () {
         await this.erc721aSpot.connect(this.addr1).burn(10);
         expect(await this.erc721aSpot.balanceOf(this.addr1.address)).to.eq(6);
         expect(await this.erc721aSpot.totalSupply()).to.eq(6);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(20);
         expect(await this.erc721aSpot.balanceOf(this.addr1.address)).to.eq(5);
         expect(await this.erc721aSpot.totalSupply()).to.eq(5);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(30);
         expect(await this.erc721aSpot.balanceOf(this.addr1.address)).to.eq(4);
         expect(await this.erc721aSpot.totalSupply()).to.eq(4);
@@ -251,10 +246,10 @@ describe('ERC721ASpot', function () {
         expect(await this.erc721aSpot.balanceOf(this.addr1.address)).to.eq(7);
         await this.erc721aSpot.connect(this.addr1).burn(10);
         expect(await this.erc721aSpot.totalMinted()).to.eq(7);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(20);
         expect(await this.erc721aSpot.totalMinted()).to.eq(7);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(30);
         expect(await this.erc721aSpot.totalMinted()).to.eq(7);
       });
@@ -264,11 +259,11 @@ describe('ERC721ASpot', function () {
         await this.erc721aSpot.connect(this.addr1).burn(10);
         expect(await this.erc721aSpot.numberBurned(this.addr1.address)).to.eq(1);
         expect(await this.erc721aSpot.totalBurned()).to.eq(1);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(20);
         expect(await this.erc721aSpot.numberBurned(this.addr1.address)).to.eq(2);
         expect(await this.erc721aSpot.totalBurned()).to.eq(2);
-        
+
         await this.erc721aSpot.connect(this.addr1).burn(30);
         expect(await this.erc721aSpot.numberBurned(this.addr1.address)).to.eq(3);
         expect(await this.erc721aSpot.totalBurned()).to.eq(3);
@@ -285,7 +280,7 @@ describe('ERC721ASpot', function () {
         expect(await this.erc721aSpot.exists(0)).to.eq(false);
         expect(await this.erc721aSpot.exists(9)).to.eq(false);
         expect(await this.erc721aSpot.exists(10)).to.eq(true);
-        
+
         expect(await this.erc721aSpot.exists(20)).to.eq(true);
 
         await this.erc721aSpot.connect(this.addr1).burn(20);

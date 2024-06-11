@@ -12,8 +12,7 @@ export function createWagmiConfig(rpcUrl: string, projectId?: string) {
 
   return createConfig({
     chains: [baseSepolia],
-    connectors: [
-    ],
+    connectors: [],
     ssr: true,
     transports: {
       [baseSepolia.id]: http(baseSepoliaUrl),

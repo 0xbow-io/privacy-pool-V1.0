@@ -37,10 +37,10 @@ const createTestSuite = ({ contract, constructorArgs }) =>
           const [owner, addr1] = await ethers.getSigners();
           this.owner = owner;
           this.addr1 = addr1;
-          
+
           await this.erc4097a['mint(address,uint256)'](this.owner.address, 1);
           await this.erc4097a['mint(address,uint256)'](this.addr1.address, 2);
-          
+
           this.expires = (await getBlockTimestamp()) + 123;
           this.tokenId = 2;
           this.user = this.owner;
@@ -66,9 +66,9 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
         describe('setUser', async function () {
           beforeEach(async function () {
-            this.setUser = async () => await this.erc4097a.connect(this.addr1)
-              .setUser(this.tokenId, this.user.address, this.expires);
-            
+            this.setUser = async () =>
+              await this.erc4097a.connect(this.addr1).setUser(this.tokenId, this.user.address, this.expires);
+
             this.setupAuthTest = async () => {
               this.tokenId = 0;
               await expect(this.setUser()).to.be.revertedWith('SetUserCallerNotOwnerNorApproved');
@@ -95,7 +95,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
               .to.emit(this.erc4097a, 'UpdateUser')
               .withArgs(this.tokenId, this.user.address, this.expires);
           });
-          
+
           it('reverts for an invalid token', async function () {
             this.tokenId = 123;
             await expect(this.setUser()).to.be.revertedWith('OwnerQueryForNonexistentToken');
@@ -106,7 +106,7 @@ const createTestSuite = ({ contract, constructorArgs }) =>
             await this.erc4097a.transferFrom(this.owner.address, this.addr1.address, this.tokenId);
             await this.setUser();
           });
-          
+
           it('requires token approval', async function () {
             await this.setupAuthTest();
             await this.erc4097a.approve(this.addr1.address, this.tokenId);
@@ -117,13 +117,12 @@ const createTestSuite = ({ contract, constructorArgs }) =>
             await this.setupAuthTest();
             await this.erc4097a.setApprovalForAll(this.addr1.address, 1);
             await this.setUser();
-          });          
+          });
         });
-        
+
         describe('after expiry', async function () {
           beforeEach(async function () {
-            await this.erc4097a.connect(this.addr1)
-              .setUser(this.tokenId, this.user.address, this.expires);
+            await this.erc4097a.connect(this.addr1).setUser(this.tokenId, this.user.address, this.expires);
           });
 
           it('userOf returns zero address after expires', async function () {
@@ -151,5 +150,5 @@ describe(
   createTestSuite({
     contract: 'ERC4907AMock',
     constructorArgs: ['Azuki', 'AZUKI'],
-  })
+  }),
 );

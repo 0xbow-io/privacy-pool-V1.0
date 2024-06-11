@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "esnext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "moduleDetection": "force",
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -10,8 +12,17 @@
     "pretty": true,
     "sourceMap": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["bun-types", "jest", "node"],
-    "lib": ["dom", "dom.iterable", "ESNext", "ES2020"],
+    "types": [
+      "bun-types",
+      "jest",
+      "node"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ESNext",
+      "ES2020"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -29,23 +40,38 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@sections/*": ["app/app/sections/*"],
-      "@/*": ["src/*"],
-      "@store/*": ["src/store/*"],
-      "@contracts": ["contracts/index"],
-      "@utils/*": ["src/utils/*"],
-      "@images/*": ["public/images/*"],
-      "@circuits/*": ["circuits/*"],
-      "@core/*": ["core/ts/*"],
-      "@core/store/*": ["src/store/core/*"]
+      "@sections/*": [
+        "app/app/sections/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "@store/*": [
+        "src/store/*"
+      ],
+      "@contracts": [
+        "contracts/index"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@images/*": [
+        "public/images/*"
+      ],
+      "@circuits/*": [
+        "circuits/*"
+      ],
+      "@core/*": [
+        "core/ts/*"
+      ],
+      "@core/store/*": [
+        "src/store/core/*"
+      ]
     },
     "allowImportingTsExtensions": true,
-    // Some stricter flags
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "module": "commonjs",
-    "moduleResolution": "node"
+    "noPropertyAccessFromIndexSignature": true
   },
   "include": [
     "custom.d.ts",
@@ -60,5 +86,10 @@
     "src/**/*.*",
     "tests/**/*.ts"
   ],
-  "exclude": ["build", "dist", "ptau", "contracts"]
+  "exclude": [
+    "build",
+    "dist",
+    "ptau",
+    "contracts"
+  ]
 }

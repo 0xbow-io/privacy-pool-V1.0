@@ -1,4 +1,4 @@
-name: "Build"
+name: 'Build'
 on:
   pull_request:
   push:
@@ -38,4 +38,3 @@ jobs:
 
       - name: Run tests with foundry
         run: forge test -vvv
-

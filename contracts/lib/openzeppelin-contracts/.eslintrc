@@ -1,20 +1,17 @@
 {
   "root": true,
-  "extends" : [
-    "eslint:recommended",
-    "prettier",
-  ],
+  "extends": ["eslint:recommended", "prettier"],
   "env": {
     "es2022": true,
     "browser": true,
     "node": true,
-    "mocha": true,
+    "mocha": true
   },
-  "globals" : {
+  "globals": {
     "artifacts": "readonly",
     "contract": "readonly",
     "web3": "readonly",
     "extendEnvironment": "readonly",
-    "expect": "readonly",
+    "expect": "readonly"
   }
 }

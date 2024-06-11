@@ -190,11 +190,11 @@ const createTestSuite = ({ contract, constructorArgs }) =>
 
         it('with last token burned', async function () {
           await expect(this.erc721aBurnable.ownerOf(offsetted(this.numTestTokens))).to.be.revertedWith(
-            'OwnerQueryForNonexistentToken'
+            'OwnerQueryForNonexistentToken',
           );
           await this.erc721aBurnable.connect(this.addr1).burn(offsetted(this.numTestTokens - 1));
           await expect(this.erc721aBurnable.ownerOf(offsetted(this.numTestTokens - 1))).to.be.revertedWith(
-            'OwnerQueryForNonexistentToken'
+            'OwnerQueryForNonexistentToken',
           );
         });
       });
@@ -205,5 +205,5 @@ describe('ERC721ABurnable', createTestSuite({ contract: 'ERC721ABurnableMock', c
 
 describe(
   'ERC721ABurnable override _startTokenId()',
-  createTestSuite({ contract: 'ERC721ABurnableStartTokenIdMock', constructorArgs: ['Azuki', 'AZUKI', 1] })
+  createTestSuite({ contract: 'ERC721ABurnableStartTokenIdMock', constructorArgs: ['Azuki', 'AZUKI', 1] }),
 );

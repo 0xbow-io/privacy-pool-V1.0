@@ -6,21 +6,18 @@ export async function read_file_async(path) {
   return res;
 }
 
-export async function generate_witness_browser_async(
-  input_json_string,
-  wasm_file
-) {
+export async function generate_witness_browser_async(input_json_string, wasm_file) {
   const input = JSON.parse(input_json_string);
   const buffer = await read_file_async(wasm_file);
 
-  console.log("computing witness...");
-  console.log("input: ", JSON.stringify(input));
+  console.log('computing witness...');
+  console.log('input: ', JSON.stringify(input));
 
   const witnessCalculator = await wc(buffer);
-  console.log("witnessCalculator created");
+  console.log('witnessCalculator created');
   try {
     const buff = await witnessCalculator.calculateWTNSBin(input, 0);
-    console.log("computed witness");
+    console.log('computed witness');
     return buff;
   } catch (err) {
     console.error(err);
@@ -40,52 +37,50 @@ const wc = async function builder(code, options) {
     wasmModule = await WebAssembly.compile(code);
   } catch (err) {
     console.log(err);
-    console.log(
-      "\nTry to run circom --c in order to generate c++ code instead\n"
-    );
+    console.log('\nTry to run circom --c in order to generate c++ code instead\n');
     throw new Error(err);
   }
 
   let wc;
 
-  let errStr = "";
-  let msgStr = "";
+  let errStr = '';
+  let msgStr = '';
 
   const instance = await WebAssembly.instantiate(wasmModule, {
     runtime: {
       exceptionHandler: function (code) {
         let err;
         if (code == 1) {
-          err = "Signal not found.\n";
+          err = 'Signal not found.\n';
         } else if (code == 2) {
-          err = "Too many signals set.\n";
+          err = 'Too many signals set.\n';
         } else if (code == 3) {
-          err = "Signal already set.\n";
+          err = 'Signal already set.\n';
         } else if (code == 4) {
-          err = "Assert Failed.\n";
+          err = 'Assert Failed.\n';
         } else if (code == 5) {
-          err = "Not enough memory.\n";
+          err = 'Not enough memory.\n';
         } else if (code == 6) {
-          err = "Input signal array access exceeds the size.\n";
+          err = 'Input signal array access exceeds the size.\n';
         } else {
-          err = "Unknown error.\n";
+          err = 'Unknown error.\n';
         }
         throw new Error(err + errStr);
       },
       printErrorMessage: function () {
-        errStr += getMessage() + "\n";
+        errStr += getMessage() + '\n';
         // console.error(getMessage());
       },
       writeBufferMessage: function () {
         const msg = getMessage();
         // Any calls to `log()` will always end with a `\n`, so that's when we print and reset
-        if (msg === "\n") {
+        if (msg === '\n') {
           console.log(msgStr);
-          msgStr = "";
+          msgStr = '';
         } else {
           // If we've buffered other content, put a space in between the items
-          if (msgStr !== "") {
-            msgStr += " ";
+          if (msgStr !== '') {
+            msgStr += ' ';
           }
           // Then append the message to the message we are creating
           msgStr += msg;
@@ -111,7 +106,7 @@ const wc = async function builder(code, options) {
   return wc;
 
   function getMessage() {
-    var message = "";
+    var message = '';
     var c = instance.exports.getMessageChar();
     while (c != 0) {
       message += String.fromCharCode(c);
@@ -124,13 +119,12 @@ const wc = async function builder(code, options) {
     const shared_rw_memory_size = instance.exports.getFieldNumLen32();
     const arr = new Uint32Array(shared_rw_memory_size);
     for (let j = 0; j < shared_rw_memory_size; j++) {
-      arr[shared_rw_memory_size - 1 - j] =
-        instance.exports.readSharedRWMemory(j);
+      arr[shared_rw_memory_size - 1 - j] = instance.exports.readSharedRWMemory(j);
     }
 
     // If we've buffered other content, put a space in between the items
-    if (msgStr !== "") {
-      msgStr += " ";
+    if (msgStr !== '') {
+      msgStr += ' ';
     }
     // Then append the value to the message we are creating
     msgStr += fromArray32(arr).toString();
@@ -196,7 +190,7 @@ class WitnessCalculator {
     });
     if (input_counter < this.instance.exports.getInputSize()) {
       throw new Error(
-        `Not all inputs have been set. Only ${input_counter} out of ${this.instance.exports.getInputSize()}`
+        `Not all inputs have been set. Only ${input_counter} out of ${this.instance.exports.getInputSize()}`,
       );
     }
   }
@@ -240,10 +234,10 @@ class WitnessCalculator {
     await this._doCalculateWitness(input, sanityCheck);
 
     //"wtns"
-    buff[0] = "w".charCodeAt(0);
-    buff[1] = "t".charCodeAt(0);
-    buff[2] = "n".charCodeAt(0);
-    buff[3] = "s".charCodeAt(0);
+    buff[0] = 'w'.charCodeAt(0);
+    buff[1] = 't'.charCodeAt(0);
+    buff[2] = 'n'.charCodeAt(0);
+    buff[3] = 's'.charCodeAt(0);
 
     //version 2
     buff32[1] = 2;
@@ -351,7 +345,7 @@ function normalize(n, prime) {
 
 function fnvHash(str) {
   const uint64_max = BigInt(2) ** BigInt(64);
-  let hash = BigInt("0xCBF29CE484222325");
+  let hash = BigInt('0xCBF29CE484222325');
   for (var i = 0; i < str.length; i++) {
     hash ^= BigInt(str[i].charCodeAt());
     hash *= BigInt(0x100000001b3);
@@ -359,6 +353,6 @@ function fnvHash(str) {
   }
   let shash = hash.toString(16);
   let n = 16 - shash.length;
-  shash = "0".repeat(n).concat(shash);
+  shash = '0'.repeat(n).concat(shash);
   return shash;
 }

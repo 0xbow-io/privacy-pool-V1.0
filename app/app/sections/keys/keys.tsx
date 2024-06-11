@@ -19,8 +19,8 @@ export default function KeySection({ getKeyList, genKeyPair, className }: State)
   const RenderKeyListSection = () => {
     return (
       <div className="flex w-full flex-col  gap-10">
-        <div className=" border-dominant-blue border-b-4">
-          <h1 className="text-dominant-blue text-4xl font-normal">Privacy Keys: </h1>
+        <div className=" border-b-4 border-dominant-blue">
+          <h1 className="text-4xl font-normal text-dominant-blue">Privacy Keys: </h1>
         </div>
         <div className="">
           <KeysSection keyList={getKeyList()} />
@@ -33,8 +33,8 @@ export default function KeySection({ getKeyList, genKeyPair, className }: State)
   const RenderCommitmentSection = () => {
     return (
       <div className=" w-full items-start justify-between gap-y-4">
-        <div className="border-dominant-blue border-b-4">
-          <h1 className="text-dominant-blue text-4xl font-normal">CTX Records: </h1>
+        <div className="border-b-4 border-dominant-blue">
+          <h1 className="text-4xl font-normal text-dominant-blue">CTX Records: </h1>
         </div>
         <div className="w-full"></div>
         <div></div>
@@ -45,8 +45,8 @@ export default function KeySection({ getKeyList, genKeyPair, className }: State)
   const ASPSection = () => {
     return (
       <div className="flex w-full flex-col items-start justify-between gap-y-4">
-        <div className="border-dominant-blue border-b-4">
-          <h1 className="text-dominant-blue text-4xl font-normal">Associations: </h1>
+        <div className="border-b-4 border-dominant-blue">
+          <h1 className="text-4xl font-normal text-dominant-blue">Associations: </h1>
         </div>
         <div className="w-full"></div>
         <div></div>
@@ -58,22 +58,22 @@ export default function KeySection({ getKeyList, genKeyPair, className }: State)
       <div
         id="GeneratePrivacyKeyContainer"
         className={cn(
-          'text-font-color relative flex w-full flex-row items-center justify-end gap-x-4 duration-300 ease-in',
+          'relative flex w-full flex-row items-center justify-end gap-x-4 text-font-color duration-300 ease-in',
           className,
         )}
       >
-        <div className="border-b-dominant-blue flex  flex-row border-b-2">
+        <div className="flex flex-row  border-b-2 border-b-dominant-blue">
           <Button
             onClick={genKeyPair}
-            className="text-font-color hover:bg-font-color hover:text-calming-white w-full rounded-none  border-0 bg-page-background text-lg font-bold"
+            className="w-full rounded-none border-0 bg-page-background text-lg  font-bold text-font-color hover:bg-font-color hover:text-calming-white"
           >
             Add Key
           </Button>
         </div>
-        <div className="border-b-dominant-blue flex  flex-row border-b-2">
+        <div className="flex flex-row  border-b-2 border-b-dominant-blue">
           <Button
             onClick={genKeyPair}
-            className="text-font-color  hover:bg-font-color hover:text-calming-white w-full rounded-none border-0 bg-page-background text-lg font-bold"
+            className="w-full  rounded-none border-0 bg-page-background text-lg font-bold text-font-color hover:bg-font-color hover:text-calming-white"
           >
             Export Keys
           </Button>
@@ -89,16 +89,16 @@ export default function KeySection({ getKeyList, genKeyPair, className }: State)
         className,
       )}
     >
-      <div className="grid-col-2 border-dominant-blue col-span-2 row-start-1  border-b-4 px-4 py-10">
-        <h1 className="text-dominant-blue text-8xl font-normal"> Privacy Pool</h1>
+      <div className="grid-col-2 col-span-2 row-start-1 border-b-4  border-dominant-blue px-4 py-10">
+        <h1 className="text-8xl font-normal text-dominant-blue"> Privacy Pool</h1>
       </div>
-      <div className="border-dominant-blue col-span-1 col-start-1 row-span-2 row-start-2   px-4 py-10">
+      <div className="col-span-1 col-start-1 row-span-2 row-start-2 border-dominant-blue   px-4 py-10">
         <RenderKeyListSection />
       </div>
-      <div className="border-dominant-blue col-span-1 col-start-2 row-start-2  border-b-4 px-4 py-10">
+      <div className="col-span-1 col-start-2 row-start-2 border-b-4  border-dominant-blue px-4 py-10">
         <RenderCommitmentSection />
       </div>
-      <div className="border-dominant-blue col-span-1 col-start-2 row-start-3  border-b-4 px-4 py-10">
+      <div className="col-span-1 col-start-2 row-start-3 border-b-4  border-dominant-blue px-4 py-10">
         <ASPSection />
       </div>
     </div>

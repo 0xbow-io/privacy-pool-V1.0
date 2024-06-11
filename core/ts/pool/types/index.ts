@@ -1,4 +1,2 @@
-export * from './commitment';
+export * from './privacypool';
 export * from './proof';
-export * from './signal';
-export * from './pool';
