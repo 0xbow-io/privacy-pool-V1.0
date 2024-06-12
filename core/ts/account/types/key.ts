@@ -1,6 +1,6 @@
-import { Hex, PrivateKeyAccount } from 'viem';
+import {type Hex, type PrivateKeyAccount } from 'viem';
 import { Keypair } from 'maci-domainobjs';
-import { Ciphertext, Signature, Plaintext, EcdhSharedKey } from 'maci-crypto';
+import { type Ciphertext, type Signature, type Plaintext, type EcdhSharedKey } from 'maci-crypto';
 
 export namespace TPrivacyKey {
   export type KeyT<PkT = Hex, AccT = PrivateKeyAccount, KPairT = Keypair, EkT = EcdhSharedKey> = {

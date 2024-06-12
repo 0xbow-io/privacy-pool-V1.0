@@ -1,7 +1,0 @@
-const ETHEREUM_SEPOLIA_CHAIN_ID = 11155111;
-
-export enum ChainId {
-  ETHEREUM_SEPOLIA = ETHEREUM_SEPOLIA_CHAIN_ID,
-}
-
-export type PoolChainId = typeof ChainId.ETHEREUM_SEPOLIA;

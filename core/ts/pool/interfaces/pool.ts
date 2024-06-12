@@ -1,7 +1,7 @@
 import { Address } from 'viem';
-import { TCommitment } from '@core/account/types';
-import { MerkleProofT, TPrivacyPool } from '@core/pool/types';
-// @ts-expect-error
+import { TCommitment } from '@privacy-pool-v1/core-ts/account/types';
+import { TPrivacyPool } from '@privacy-pool-v1/core-ts/pool/types';
+import { MerkleProofT } from '@privacy-pool-v1/core-ts/zk-circuit/types';
 import { LeanIMT } from '@zk-kit/lean-imt';
 
 export namespace IPrivacyPool {

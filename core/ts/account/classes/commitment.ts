@@ -1,9 +1,10 @@
-import { ICommitment } from '@core/account/interfaces';
+import { type ICommitment } from '@privacy-pool-v1/core-ts/account/interfaces';
+import { type TCommitment } from '@privacy-pool-v1/core-ts/account/types';
+import { type IPrivacyKey } from '@privacy-pool-v1/core-ts/account/interfaces';
+import { type Signature, type Ciphertext } from 'maci-crypto';
+
+import { FnCommitment } from '@privacy-pool-v1/core-ts/account/functions';
 import { PubKey } from 'maci-domainobjs';
-import { TCommitment } from '@core/account/types';
-import { FnCommitment } from '@core/account/functions';
-import { IPrivacyKey } from '@core/account/interfaces';
-import { Signature, Ciphertext } from 'maci-crypto';
 
 // Useful aliases
 export type Commitment = ICommitment.CommitmentI;

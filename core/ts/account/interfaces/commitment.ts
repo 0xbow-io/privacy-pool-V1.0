@@ -1,6 +1,7 @@
+import { type Signature, type Ciphertext } from 'maci-crypto';
+import { type TCommitment } from '@privacy-pool-v1/core-ts/account/types';
+
 import { PubKey } from 'maci-domainobjs';
-import { Signature, Ciphertext } from 'maci-crypto';
-import { TCommitment } from '@core/account/types';
 
 export namespace ICommitment {
   export interface CommitmentI<

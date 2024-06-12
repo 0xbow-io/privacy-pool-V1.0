@@ -1,12 +1,13 @@
-import { IPrivacyPool } from '@core/pool/interfaces';
-import { MerkleProofT, TPrivacyPool } from '@core/pool/types';
-import { FnPrivacyPool } from '@core/pool/functions';
-import { TCommitment } from '@core/account/types';
+import { type IPrivacyPool } from '@privacy-pool-v1/core-ts/pool/interfaces';
+import { type TPrivacyPool } from '@privacy-pool-v1/core-ts/pool/types';
+import { type TCommitment } from '@privacy-pool-v1/core-ts/account/types';
+import { type MerkleProofT } from '@privacy-pool-v1/core-ts/zk-circuit/types';
+import { type Address } from 'viem';
 
-// @ts-expect-error
+import { FnPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit/functions';
+
 import { LeanIMT } from '@zk-kit/lean-imt';
 import { hashLeftRight } from 'maci-crypto';
-import { Address } from 'viem';
 
 // Handy Aliases
 export namespace CPrivacyPool {

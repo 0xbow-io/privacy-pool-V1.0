@@ -1,7 +1,8 @@
-import { Address } from 'viem';
-import { TPrivacyKey } from '@core/account/types';
 import { PubKey } from 'maci-domainobjs';
-import { Ciphertext, Signature, Plaintext } from 'maci-crypto';
+
+import { type Ciphertext, type Signature, type Plaintext } from 'maci-crypto';
+import { type Address } from 'viem';
+import { type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
 
 export namespace IPrivacyKey {
   export interface KeyI<

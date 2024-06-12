@@ -1,1 +1,0 @@
-export { cleanThreads } from './globals';

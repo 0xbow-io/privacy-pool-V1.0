@@ -1,9 +1,9 @@
-import { Hex, Address } from 'viem';
+import { type Hex, type Address } from 'viem';
+import { type Ciphertext, type Signature, type Plaintext } from 'maci-crypto';
+import { type IPrivacyKey } from '@privacy-pool-v1/core-ts/account/interfaces';
+import { type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
+import { FnPrivacyKey } from '@privacy-pool-v1/core-ts/account/functions';
 import { PubKey } from 'maci-domainobjs';
-import { Ciphertext, Signature, Plaintext } from 'maci-crypto';
-import { IPrivacyKey } from '@core/account/interfaces';
-import { TPrivacyKey } from '@core/account/types';
-import { FnPrivacyKey } from '@core/account/functions';
 
 // Useful aliases
 export type PrivacyKey = IPrivacyKey.KeyI;
@@ -17,7 +17,7 @@ export namespace CPrivacyKey {
     readonly encryptor: TPrivacyKey.EncryptorT = this.encrypt.bind(this);
     readonly decryptor: TPrivacyKey.DecryptorT = this.decrypt.bind(this);
 
-    private constructor(private _key: TPrivacyKey.KeyT) {}
+    private constructor(private _key: TPrivacyKey.KeyT) { }
 
     static create(privateKey?: Hex): IPrivacyKey.KeyI {
       return new PrivacyKeyC(FnPrivacyKey.GenPrivacyKeyFn(privateKey));

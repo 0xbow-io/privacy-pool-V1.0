@@ -1,3 +1,0 @@
-## Generate Circom Artifacts:
-
-Run ./compile.sh to compile & setup circuit, prove & test the circuit and copy the artifacts to the poi-wasm-nova/wasm folder for wasm build.

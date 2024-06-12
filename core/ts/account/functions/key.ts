@@ -1,19 +1,25 @@
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { Hex, hexToBigInt } from 'viem';
-import { Keypair, PrivKey, PubKey } from 'maci-domainobjs';
-import { hashLeftRight } from 'maci-crypto';
 
-import { TPrivacyKey } from '@core/account/types';
+import { type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
+import {type Hex } from 'viem';
+import {
+  type Signature,
+  type EcdhSharedKey,
+  type Ciphertext,
+  type Plaintext,
+} from 'maci-crypto';
+
+
 import {
   genEcdhSharedKey,
-  Signature,
   sign,
-  EcdhSharedKey,
-  Ciphertext,
   poseidonEncrypt,
   poseidonDecrypt,
-  Plaintext,
 } from 'maci-crypto';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { Keypair, PrivKey, PubKey } from 'maci-domainobjs';
+import { hashLeftRight } from 'maci-crypto';
+import {hexToBigInt } from 'viem';
+
 
 export namespace FnPrivacyKey {
   export function HashhPubKeyFn(pubKey: PubKey): bigint {

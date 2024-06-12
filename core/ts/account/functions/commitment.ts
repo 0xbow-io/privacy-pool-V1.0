@@ -1,8 +1,9 @@
-import { TCommitment, TPrivacyKey } from '@core/account/types';
+import { type TCommitment, type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
 import { PubKey } from 'maci-domainobjs';
-import { Signature } from 'maci-crypto';
-import { FIELD_SIZE } from '@core/pool/constants';
-import { hash2, hash3, hash4, Ciphertext } from 'maci-crypto';
+import { type Signature } from 'maci-crypto';
+import { FIELD_SIZE } from '@privacy-pool-v1/core-ts/pool/constants';
+import { hash2, hash3, hash4 } from 'maci-crypto';
+import {type Ciphertext} from 'maci-crypto';
 
 export namespace FnCommitment {
   export function HashFn(secrets: TCommitment.SecretsT, pubKey: PubKey): bigint {

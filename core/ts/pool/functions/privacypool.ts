@@ -1,6 +1,6 @@
-import { TPrivacyPool } from '@core/circuit/types';
-import { CPrivacyPool } from '@core/pool/classes';
-import { MerkleProofT } from '@core/pool/types';
+import { TPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit/types';
+import { CPrivacyPool } from '@privacy-pool-v1/core-ts/pool/classes';
+import { MerkleProofT } from '@privacy-pool-v1/core-ts/zk-circuit/types';
 
 import { keccak256, Address, fromHex, encodeAbiParameters } from 'viem';
 

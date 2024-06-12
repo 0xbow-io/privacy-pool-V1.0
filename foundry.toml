@@ -1,8 +1,0 @@
-[profile.default]
-src = 'contracts/src'
-out = 'contracts/out'
-test = "contracts/test"
-
-libs = ['contracts/node_modules', 'contracts/lib']
-cache_path = 'contracts/cache_forge'
-fs_permissions = [{ access = "read", path = "./" }]

@@ -1,95 +1,43 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    // Enable latest features
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "target": "ESNext",
+    "module": "ESNext",
     "moduleDetection": "force",
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    "declaration": true,
-    "noEmitOnError": true,
-    "noImplicitReturns": true,
-    "pretty": true,
-    "sourceMap": true,
-    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "allowJs": true,
     "types": [
-      "bun-types",
-      "jest",
+      "bun-types", // add Bun global
       "node"
     ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ESNext",
-      "ES2020"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@sections/*": [
-        "app/app/sections/*"
-      ],
-      "@/*": [
-        "src/*"
-      ],
-      "@store/*": [
-        "src/store/*"
-      ],
-      "@contracts": [
-        "contracts/index"
-      ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
-      "@images/*": [
-        "public/images/*"
-      ],
-      "@circuits/*": [
-        "circuits/*"
-      ],
-      "@core/*": [
-        "core/ts/*"
-      ],
-      "@core/store/*": [
-        "src/store/core/*"
-      ]
-    },
+    // Bundler mode
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true
-  },
-  "include": [
-    "custom.d.ts",
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src",
-    "styled-system",
-    "postcss.config.cjs",
-    "src/types/**/*.*",
-    "src/**/*.*",
-    "tests/**/*.ts"
-  ],
-  "exclude": [
-    "build",
-    "dist",
-    "ptau",
-    "contracts"
-  ]
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "@privacy-pool-v1/circuits/*": [
+        "./circuits/*"
+      ],
+      "@privacy-pool-v1/contracts/*": [
+        "./contracts/*"
+      ],
+      "@privacy-pool-v1/core-ts/*": [
+        "./core/ts/*"
+      ]
+    }
+  }
 }
