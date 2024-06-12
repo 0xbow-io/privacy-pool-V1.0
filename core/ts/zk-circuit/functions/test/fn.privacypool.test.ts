@@ -2,7 +2,7 @@ import type { TCommitment, Commitment, PrivacyKey} from '@privacy-pool-v1/core-t
 import {CreateCommitment, CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account';
 import {FnPrivacyPool} from '@privacy-pool-v1/core-ts/zk-circuit';
 
-import { expect, test, describe, beforeEach, afterAll } from "@jest/globals";
+import { expect, test, describe, beforeEach } from "@jest/globals";
 import { LeanIMT } from '@zk-kit/lean-imt';
 import { hashLeftRight } from 'maci-crypto';
 
@@ -11,6 +11,8 @@ import {
     LOCAL_ZKEY_PATH, 
     LOCAL_VKEY_PATH, 
 } from '@privacy-pool-v1/core-ts/zk-circuit';
+import fs from 'fs';
+
 
 
 function getTestDummyCommimtment(pK: PrivacyKey): Commitment {
@@ -113,6 +115,9 @@ describe('Test Functions', () => {
         const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n];
         let commitments: Commitment[];
 
+        const verifierKey = JSON.parse(fs.readFileSync(LOCAL_VKEY_PATH, 'utf-8'));
+
+
         beforeEach(async () => {
             mt = new LeanIMT(hashLeftRight);
             pK = CreatePrivacyKey();
@@ -134,10 +139,11 @@ describe('Test Functions', () => {
         
             const circuit_inputs = FnPrivacyPool.GetInputsFn(mt, inputs, outputs, 100n)
             const out = await FnPrivacyPool.ProveFn(circuit_inputs, LOCAL_WASM_PATH, LOCAL_ZKEY_PATH);
+            const ok = await FnPrivacyPool.VerifyFn(verifierKey, out.publicSignals, out.proof);
+            expect(ok).toEqual(true);
 
-            expect(BigInt(out.publicSignals[0])).toEqual(mt.root);
-
-            console.log(out);
+            const parsed_proof = FnPrivacyPool.ParseFn(out.proof, out.publicSignals);
+            expect(parsed_proof.publicSignals[0]).toEqual(mt.root);            
         });
     });
 });

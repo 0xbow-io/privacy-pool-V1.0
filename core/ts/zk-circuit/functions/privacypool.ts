@@ -87,21 +87,12 @@ export namespace FnPrivacyPool {
   }
 
   export async function VerifyFn(
-    vkPath: string,
+    vKJSON: any,
     publicSignals: snarkjs.PublicSignals,
     proof: snarkjs.Groth16Proof,
   ): Promise<boolean> {
-    const vK = await Bun.file(vkPath)
-      .json()
-      .then((output) => {
-        return output;
-      })
-      .catch((e) => {
-        throw new Error('unable to read vk file', { cause: e });
-      });
-
     const out = await snarkjs.groth16
-      .verify(vK, publicSignals, proof)
+      .verify(vKJSON, publicSignals, proof)
       .then((output) => {
         return output;
       })
