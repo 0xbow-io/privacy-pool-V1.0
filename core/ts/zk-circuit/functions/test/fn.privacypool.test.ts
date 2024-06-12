@@ -145,5 +145,7 @@ describe('Test Functions', () => {
             const parsed_proof = FnPrivacyPool.ParseFn(out.proof, out.publicSignals);
             expect(parsed_proof.publicSignals[0]).toEqual(mt.root);            
         });
+
+        //TO-DO: Add Negative Tests
     });
 });

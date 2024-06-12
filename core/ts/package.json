@@ -28,7 +28,8 @@
     "access": "public"
   },
   "scripts": {
-    "test:zk-circuit:functions": "bunx jest .--findRelatedTests fn.privacypool.test.ts"
+    "test:zk-circuit:functions": "bunx jest .--findRelatedTests fn.privacypool.test.ts",
+    "test:zk-circuit:classes": "bunx jest .--findRelatedTests c.privacypool.test.ts"
   },
   "module": "index.ts"
 }

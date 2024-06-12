@@ -3,7 +3,8 @@ import { type TPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit/types';
 export namespace ICircuit {
   export interface CircuitI<InT = TPrivacyPool.InT, OuT = TPrivacyPool.OutputT> {
     output: OuT | undefined;
-    prove(input: InT): Promise<void>;
+    inputs: InT | undefined;
+    compute(): Promise<void>;
     verify(output: OuT): Promise<boolean>;
   }
 }
