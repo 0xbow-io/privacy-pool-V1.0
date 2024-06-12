@@ -101,82 +101,235 @@ contract TestPrivacyPool is Test {
         bytes expectedErrorMsg;
     }
 
-    TestCase[2] tcs = [
-        // Test Case 1
-        // Deposit of 50 units
-        // No Fees
-        // Empty Tree
-        TestCase({
-            signal: IPrivacyPool.signal({
-                units: 50,
-                fee: 0,
-                account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
-            }),
-            MerkleRoot: 0, // if 0 --> will get latestRoot instead
-            InputNullifiers: [
-                0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
-                0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
-            ],
-            OutputCommitments: [
-                0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
-                0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
-            ],
-            verifierShallPass: true,
-            expectedErrorMsg: ""
-        }),
-        // Test Case 2
-        // Deposit made on the same nullifiers
-        // Should not pass
-        TestCase({
-            signal: IPrivacyPool.signal({
-                units: 50,
-                fee: 0,
-                account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
-            }),
-            MerkleRoot: 0, // if 0 --> will get latestRoot instead
-            InputNullifiers: [
-                0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
-                0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
-            ],
-            OutputCommitments: [
-                0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
-                0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
-            ],
-            verifierShallPass: true,
-            expectedErrorMsg: abi.encodeWithSelector(
-                IPrivacyPool.NullifierIsKnown.selector, 0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
-            )
-        }),
-        // Test Case 3
-        // Deposit of 100 units
-        // No Fees
-        // Non-Empty Tree
-        TestCase({
-            signal: IPrivacyPool.signal({
-                units: 50,
-                fee: 0,
-                account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
-            }),
-            MerkleRoot: 0, // if 0 --> will get latestRoot instead
-            InputNullifiers: [
-                0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
-                0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
-            ],
-            OutputCommitments: [
-                0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
-                0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
-            ],
-            verifierShallPass: true,
-            expectedErrorMsg: ""
-        })
-    ];
-
     function testProcess() public {
         vm.deal(address(0x1), 1000000 ether);
         vm.startPrank(address(0x1));
+
+        TestCase[10] memory tcs = [
+            // Test Case 1 (Positive Test Case)
+            // Std Commit of 50 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 50,
+                    fee: 0,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: ""
+            }),
+            // Test Case 2 (Negative Test Case)
+            // Commit made on the same nullifiers
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 50,
+                    fee: 0,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702dac8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bd6837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x079779fda6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(
+                    IPrivacyPool.NullifierIsKnown.selector, 0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
+                )
+            }),
+            // Test Case 3 (Negative Test Case)
+            // Commit of 100 units
+            // Unknown Root specified
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 100,
+                    fee: 0,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(
+                    IPrivacyPool.InvalidMerkleRoot.selector, 0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
+                )
+            }),
+            // Test Case 4 (Negative Test Case)
+            // Commit of 100 units
+            // Fees of 100 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 100,
+                    fee: 100,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 100, 100)
+            }),
+            // Test Case 5 (Negative Test Case)
+            // Commit of 100 units
+            // Fees of 200 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 100,
+                    fee: 200,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 200, 100)
+            }),
+            // Test Case 6 (Negative Test Case)
+            // Release of 50 units
+            // Fees of 200 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: -50,
+                    fee: 200,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 200, 50)
+            }),
+            // Test Case 7 (Negative Test Case)
+            // 0 units
+            // Fees of 200 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 0,
+                    fee: 200,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidUnits.selector, 0, 1)
+            }),
+            // Test Case 8 (Negative Test Case)
+            // Commit 100 units
+            // Fees of 0 units
+            // Verification Failed
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 100,
+                    fee: 0,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: false,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.ProofVerificationFailed.selector)
+            }),
+            // Test Case 9 (Positive Test Case)
+            // Std Commit of 100 units
+            // Fee of 50 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 100,
+                    fee: 50,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70c8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd837b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: ""
+            }),
+            // Test Case 10 (Positive Test Case)
+            // Std Release of 50 units
+            // Fee of 10 units
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: 50,
+                    fee: 10,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8f33f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70d8c702daf8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd8a7b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb13ec,
+                    0x0797749da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: ""
+            })
+        ];
 
         for (uint256 i = 0; i < tcs.length; i++) {
             uint256 rootToUse = pool.latestRoot();

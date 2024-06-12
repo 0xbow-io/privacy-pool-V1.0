@@ -130,11 +130,11 @@ contract PrivacyPool is IPrivacyPool {
         // M-01
         // Zk-Kit Binary merkle Root circuit will verify merkle root = 0 for depth > MAX_DEPTH
         // Hence need to make sure to enforce `depth <= MAX_DEPTH` outside the circuit.
-        // Depth is a public signal at _pubSignals[3]
+        // Depth is a public signal at _pubSignals[1]
         // MAX_DEPTH is MaxMerkleTreeDepth
 
         if (_pubSignals[1] > MaxMerkleTreeDepth) {
-            revert InvalidMerkleDepth(_pubSignals[3], MaxMerkleTreeDepth);
+            revert InvalidMerkleDepth(_pubSignals[1], MaxMerkleTreeDepth);
         }
 
         // check nullifiers against known nullifiers
