@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@privacy-pool-v1/circuits/*": [
+        "../circuits/*"
+      ],
+      "@privacy-pool-v1/contracts/*": [
+        "../contracts/*"
+      ],
+      "@privacy-pool-v1/core-ts/*": [
+        "../core/ts/*"
+      ]
+    }
+  }
+}

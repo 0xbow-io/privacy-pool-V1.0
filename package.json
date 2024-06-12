@@ -14,5 +14,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "hardhat": "^2.22.5"
   }
 }

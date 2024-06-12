@@ -2,7 +2,6 @@ import type { TCommitment, Commitment, PrivacyKey} from '@privacy-pool-v1/core-t
 import { type PrivacyPoolCircuit } from '@privacy-pool-v1/core-ts/zk-circuit';
 import { FnPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
 
-
 import {CreateCommitment, CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account';
 import { 
     LOCAL_WASM_PATH, 
