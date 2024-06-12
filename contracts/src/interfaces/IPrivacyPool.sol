@@ -9,6 +9,7 @@ interface IPrivacyPool {
 
     error InvalidFeeCollector(); // M-02
     error InvalidFee(uint256 got, uint256 expected);
+    error InvalidFeeAndUnits(uint256 fee, int256 units);
     error InvalidUnits(uint256 got, uint256 expected);
 
     error FeeFailed();
@@ -68,7 +69,7 @@ interface IPrivacyPool {
         uint256[2] memory _pA,
         uint256[2][2] memory _pB,
         uint256[2] memory _pC,
-        uint256[8] memory _pubSignals
+        uint256[6] memory _pubSignals
     ) external payable;
 
     function calcSignalHash(int256 units, uint256 fee, address account, address feeCollector)

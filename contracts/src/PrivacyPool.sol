@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/SignedMath.sol";
 /// @title PrivacyPool pools contract.
 contract PrivacyPool is IPrivacyPool {
     using InternalLeanIMT for LeanIMTData;
-    using SignedMath for int256;
+    using SignedMath for int256; //W-08
 
     /// @dev merkleTree that stores the commitments
     /// The tree is an Incremental Merkle Tree
@@ -113,27 +113,13 @@ contract PrivacyPool is IPrivacyPool {
         uint256[2] calldata _pA,
         uint256[2][2] calldata _pB,
         uint256[2] calldata _pC,
-        uint256[8] memory _pubSignals
+        // [merkleRoot, merkleProofLength, inputNullifier1, inputNullifier2, outCommitment1, outCommitment2]
+        uint256[6] calldata _pubSignals
     ) public payable {
-        // check nullifiers against known nullifiers
-        for (uint256 i = 0; i < nIns; i++) {
-            // check if nullifier is known
-            // revert if known
-            if (knownNullifiers[_pubSignals[4 + i]]) {
-                revert NullifierIsKnown(_pubSignals[4 + i]);
-            }
-            knownNullifiers[_pubSignals[4 + i]] = true; //C-02
-            emit NewNullifier(_pubSignals[4 + i]);
-        }
-
-        // M-01
-        // Zk-Kit Binary merkle Root circuit will verify merkle root = 0 for depth > MAX_DEPTH
-        // Hence need to make sure to enfoce `depth <= MAX_DEPTH` outside the circuit.
-        // Depth is a public signal at _pubSignals[3]
-        // MAX_DEPTH is MaxMerkleTreeDepth
-
-        if (_pubSignals[3] > MaxMerkleTreeDepth) {
-            revert InvalidMerkleDepth(_pubSignals[3], MaxMerkleTreeDepth);
+        // checking fee and units before proceeding with anything else..
+        // ensures that fees < units and units != 0
+        if (!_verifyFeeAndUnits(s)) {
+            revert InvalidFeeAndUnits(s.fee, s.units);
         }
 
         // check merkle root against history
@@ -141,11 +127,48 @@ contract PrivacyPool is IPrivacyPool {
             revert InvalidMerkleRoot(_pubSignals[0]);
         }
 
-        _pubSignals[1] = calcPublicVal(s.units, s.fee);
-        _pubSignals[2] = calcSignalHash(s.units, s.fee, s.account, s.feeCollector);
+        // M-01
+        // Zk-Kit Binary merkle Root circuit will verify merkle root = 0 for depth > MAX_DEPTH
+        // Hence need to make sure to enforce `depth <= MAX_DEPTH` outside the circuit.
+        // Depth is a public signal at _pubSignals[3]
+        // MAX_DEPTH is MaxMerkleTreeDepth
+
+        if (_pubSignals[1] > MaxMerkleTreeDepth) {
+            revert InvalidMerkleDepth(_pubSignals[3], MaxMerkleTreeDepth);
+        }
+
+        // check nullifiers against known nullifiers
+        for (uint256 i = 0; i < nIns; i++) {
+            // check if nullifier is known
+            // revert if known
+            if (knownNullifiers[_pubSignals[2 + i]]) {
+                revert NullifierIsKnown(_pubSignals[2 + i]);
+            }
+            knownNullifiers[_pubSignals[2 + i]] = true; //C-02
+            emit NewNullifier(_pubSignals[2 + i]);
+        }
+
+        uint256 publicVal = calcPublicVal(s.units, s.fee);
+        uint256 signalHash = calcSignalHash(s.units, s.fee, s.account, s.feeCollector);
 
         // verify proof
-        if (!verifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
+        if (
+            !verifier.verifyProof(
+                _pA,
+                _pB,
+                _pC,
+                [
+                    _pubSignals[0],
+                    publicVal,
+                    signalHash,
+                    _pubSignals[1],
+                    _pubSignals[2],
+                    _pubSignals[3],
+                    _pubSignals[4],
+                    _pubSignals[5]
+                ]
+            )
+        ) {
             revert ProofVerificationFailed();
         }
 
@@ -154,9 +177,9 @@ contract PrivacyPool is IPrivacyPool {
         // commit output commitments to commitmentTree
         for (uint256 i = 0; i < nOuts; i++) {
             // insert commitment
-            newRoot = commitmentTree._insert(_pubSignals[4 + nIns + i]);
+            newRoot = commitmentTree._insert(_pubSignals[2 + nIns + i]);
             // emit commitment
-            emit NewCommitment(_pubSignals[4 + nIns + i], commitmentTree.size - 1, sp.ciphertexts[i]);
+            emit NewCommitment(_pubSignals[2 + nIns + i], commitmentTree.size - 1, sp.ciphertexts[i]);
         }
 
         // update known roots
@@ -166,10 +189,10 @@ contract PrivacyPool is IPrivacyPool {
         _commit(s.account, s.units, s.fee, s.feeCollector);
 
         // finalize any releases
-        _release(s.account, s.units, s.fee, s.feeCollector, sp.associationProofURI, _pubSignals[4], _pubSignals[5]);
+        _release(s.account, s.units, s.fee, s.feeCollector, sp.associationProofURI, _pubSignals[2], _pubSignals[3]);
 
         emit NewTxRecord(
-            _pubSignals[4], _pubSignals[5], _pubSignals[6], _pubSignals[7], _pubSignals[1], commitmentTree.size - 2
+            _pubSignals[2], _pubSignals[3], _pubSignals[4], _pubSignals[5], publicVal, commitmentTree.size - 2
         );
     }
 
@@ -191,16 +214,23 @@ contract PrivacyPool is IPrivacyPool {
         return uint256(keccak256(abi.encode(address(this), units, fee, account, feeCollector))) % SNARK_SCALAR_FIELD;
     }
 
-    function _verifyFeeAndUnits(uint256 absUnits, uint256 fee, address feeCollector) internal view returns (bool) {
+    function _verifyFeeAndUnits(signal calldata s) internal view returns (bool) {
+        uint256 absUnits = s.units.abs();
+
+        // reject 0 units
+        if (absUnits == 0) {
+            revert InvalidUnits(absUnits, 1);
+        }
+
         // M-02
-        if (feeCollector == address(0) && fee > 0) {
+        if (s.feeCollector == address(0) && s.fee > 0) {
             revert InvalidFeeCollector();
         }
 
         // C-05
         // fee must be always lower than the units value
-        if (absUnits <= fee) {
-            revert InvalidFee(fee, absUnits);
+        if (absUnits <= s.fee) {
+            revert InvalidFee(s.fee, absUnits);
         }
         // check units value against maximum commitment allowed (- if release, + if commit)
         if (absUnits > maxCommitVal) {
@@ -210,12 +240,10 @@ contract PrivacyPool is IPrivacyPool {
     }
 
     function _commit(address account, int256 units, uint256 fee, address feeCollector) internal {
-        uint256 absUnits = units.abs(); //W-08
-
         // commit when units is +ve
-        if (units > 0 && _verifyFeeAndUnits(absUnits, fee, feeCollector)) {
+        if (units > 0) {
+            uint256 absUnits = units.abs();
             uint256 unitsCommitted = 0;
-
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
                 if (msg.value > 0) {
                     revert NoETHAllowed();
@@ -259,10 +287,9 @@ contract PrivacyPool is IPrivacyPool {
         uint256 inputNullifier1,
         uint256 inputNullifier2
     ) internal {
-        uint256 absUnits = units.abs(); //W-08
-
         // commit when units is -ve
-        if (units < 0 && _verifyFeeAndUnits(absUnits, fee, feeCollector)) {
+        if (units < 0) {
+            uint256 absUnits = units.abs();
             // release units back to account
             if (valueUnitRepresentative != NATIVE_REPRESENTATION) {
                 releaseToViaRepresentative(account, absUnits);
