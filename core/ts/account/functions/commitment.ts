@@ -1,8 +1,7 @@
 import { type TCommitment, type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
 import { PubKey } from 'maci-domainobjs';
 import { type Signature } from 'maci-crypto';
-import { FIELD_SIZE } from '@privacy-pool-v1/core-ts/pool/constants';
-import { hash2, hash3, hash4 } from 'maci-crypto';
+import { hash2, hash3, hash4 , genRandomBabyJubValue} from 'maci-crypto';
 import {type Ciphertext} from 'maci-crypto';
 
 export namespace FnCommitment {
@@ -32,6 +31,6 @@ export namespace FnCommitment {
   }
 
   export function BlinderFn(): bigint {
-    return BigInt(Math.floor(Math.random() * (Number(FIELD_SIZE) - 1)));
+    return genRandomBabyJubValue()
   }
 }

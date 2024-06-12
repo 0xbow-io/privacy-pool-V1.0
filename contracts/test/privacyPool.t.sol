@@ -7,11 +7,14 @@ import "../src/PrivacyPool.sol";
 import "../src/Groth16Verifier.sol";
 import "../src/TreeHasher.sol";
 import "../src/interfaces/IPrivacyPool.sol";
+import "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 contract TestPrivacyPool is Test {
     Groth16Verifier internal verifier;
     TreeHasher internal hasher;
     IPrivacyPool internal pool;
+
+    using SignedMath for int256; //W-08
 
     function setUp() public {
         verifier = new Groth16Verifier();
@@ -99,6 +102,60 @@ contract TestPrivacyPool is Test {
         uint256[2] OutputCommitments;
         bool verifierShallPass;
         bytes expectedErrorMsg;
+    }
+
+    function execProcessOnTestCase(TestCase memory tc) public {
+        uint256 valueToSend = tc.signal.units > 0 ? uint256(tc.signal.units) : 0;
+
+        // capture previous states
+        uint256[5] memory prev_state_values = [
+            pool.latestRoot(),
+            pool.size(),
+            address(pool).balance,
+            address(tc.signal.account).balance,
+            address(tc.signal.feeCollector).balance
+        ];
+
+        // if expecting an error Msg, then assert it
+        if (tc.expectedErrorMsg.length > 0) {
+            vm.expectRevert(tc.expectedErrorMsg);
+        }
+        pool.process{value: valueToSend}(
+            tc.signal,
+            dummy_supplement,
+            dummy_pa,
+            dummy_pb,
+            dummy_pc,
+            [
+                tc.MerkleRoot,
+                32,
+                tc.InputNullifiers[0],
+                tc.InputNullifiers[1],
+                tc.OutputCommitments[0],
+                tc.OutputCommitments[1]
+            ]
+        );
+
+        console.log("valueToSend: ", valueToSend);
+        console.log("fee: ", tc.signal.fee);
+        console.log("poolBalance: ", address(pool).balance);
+        console.log("accountBalance: ", address(tc.signal.account).balance);
+
+        // if no error Msg, then assert the states
+        if (tc.expectedErrorMsg.length == 0) {
+            // assert the states
+            assertNotEq(pool.latestRoot(), prev_state_values[0]);
+            assertEq(pool.size(), prev_state_values[1] + 2);
+            assertEq(
+                address(pool).balance,
+                tc.signal.units > 0
+                    ? prev_state_values[2] + (tc.signal.units.abs() - tc.signal.fee)
+                    : prev_state_values[2] - (tc.signal.units.abs() + tc.signal.fee)
+            );
+
+            // assertEq(address(tc.signal.account).balance, prevAccountBalance - valueToSend - tc.signal.fee);
+            //assertEq(address(tc.signal.feeCollector).balance, prev_state_values[3] + tc.signal.fee);
+        }
     }
 
     function testProcess() public {
@@ -312,7 +369,7 @@ contract TestPrivacyPool is Test {
             // Fee of 10 units
             TestCase({
                 signal: IPrivacyPool.signal({
-                    units: 50,
+                    units: -50,
                     fee: 10,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
                     feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
@@ -332,37 +389,17 @@ contract TestPrivacyPool is Test {
         ];
 
         for (uint256 i = 0; i < tcs.length; i++) {
-            uint256 rootToUse = pool.latestRoot();
-            if (tcs[i].MerkleRoot != 0) {
-                rootToUse = tcs[i].MerkleRoot;
-            }
+            tcs[i].MerkleRoot == 0 ? pool.latestRoot() : tcs[i].MerkleRoot;
+
             // Mock the verifier response so that we can test the process function easily
             MockVerifier(
-                tcs[i].signal, rootToUse, tcs[i].InputNullifiers, tcs[i].OutputCommitments, tcs[i].verifierShallPass
-            );
-            uint256 valueToSend = 0;
-            if (tcs[i].signal.units > 0) {
-                valueToSend = uint256(tcs[i].signal.units);
-            }
-            // if expecting an error Msg, then assert it
-            if (tcs[i].expectedErrorMsg.length > 0) {
-                vm.expectRevert(tcs[i].expectedErrorMsg);
-            }
-            pool.process{value: valueToSend}(
                 tcs[i].signal,
-                dummy_supplement,
-                dummy_pa,
-                dummy_pb,
-                dummy_pc,
-                [
-                    rootToUse,
-                    32,
-                    tcs[i].InputNullifiers[0],
-                    tcs[i].InputNullifiers[1],
-                    tcs[i].OutputCommitments[0],
-                    tcs[i].OutputCommitments[1]
-                ]
+                tcs[i].MerkleRoot,
+                tcs[i].InputNullifiers,
+                tcs[i].OutputCommitments,
+                tcs[i].verifierShallPass
             );
+            execProcessOnTestCase(tcs[i]);
         }
         vm.stopPrank();
     }
