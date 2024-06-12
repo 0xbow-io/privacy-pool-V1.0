@@ -136,11 +136,6 @@ contract TestPrivacyPool is Test {
             ]
         );
 
-        console.log("valueToSend: ", valueToSend);
-        console.log("fee: ", tc.signal.fee);
-        console.log("poolBalance: ", address(pool).balance);
-        console.log("accountBalance: ", address(tc.signal.account).balance);
-
         // if no error Msg, then assert the states
         if (tc.expectedErrorMsg.length == 0) {
             // assert the states
@@ -153,8 +148,12 @@ contract TestPrivacyPool is Test {
                     : prev_state_values[2] - (tc.signal.units.abs() + tc.signal.fee)
             );
 
-            // assertEq(address(tc.signal.account).balance, prevAccountBalance - valueToSend - tc.signal.fee);
-            //assertEq(address(tc.signal.feeCollector).balance, prev_state_values[3] + tc.signal.fee);
+            assertEq(
+                address(tc.signal.account).balance,
+                tc.signal.units < 0 ? prev_state_values[3] + tc.signal.units.abs() : prev_state_values[3]
+            );
+
+            assertEq(address(tc.signal.feeCollector).balance, prev_state_values[4] + tc.signal.fee);
         }
     }
 
@@ -162,7 +161,7 @@ contract TestPrivacyPool is Test {
         vm.deal(address(0x1), 1000000 ether);
         vm.startPrank(address(0x1));
 
-        TestCase[10] memory tcs = [
+        TestCase[11] memory tcs = [
             // Test Case 1 (Positive Test Case)
             // Std Commit of 50 units
             TestCase({
@@ -385,6 +384,27 @@ contract TestPrivacyPool is Test {
                 ],
                 verifierShallPass: true,
                 expectedErrorMsg: ""
+            }),
+            // Test Case 11 (Negative Test Case)
+            // Trying to release more than available
+            TestCase({
+                signal: IPrivacyPool.signal({
+                    units: -500,
+                    fee: 0,
+                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
+                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
+                }),
+                MerkleRoot: 0, // if 0 --> will get latestRoot instead
+                InputNullifiers: [
+                    0x2ec3c8f33f3995bdb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
+                    0x01b11a70d8c702def8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
+                ],
+                OutputCommitments: [
+                    0x2bdd8a7b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb132c,
+                    0x0797749da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758180
+                ],
+                verifierShallPass: true,
+                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidUnits.selector, 500, 40)
             })
         ];
 

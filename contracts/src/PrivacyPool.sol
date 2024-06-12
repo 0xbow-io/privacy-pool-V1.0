@@ -196,11 +196,11 @@ contract PrivacyPool is IPrivacyPool {
         );
     }
 
-    // publicVal is the value that is publicly released
-    // it is used as a public input to the snark verifier
+    // publicVal should be the diff between the sum of output units & input units
+    // which is units - fee
     function calcPublicVal(int256 units, uint256 fee) public pure returns (uint256) {
         int256 publicVal = units - int256(fee);
-        return (publicVal >= 0) ? uint256(publicVal) : SNARK_SCALAR_FIELD - uint256(-publicVal);
+        return (publicVal >= 0) ? publicVal.abs() : SNARK_SCALAR_FIELD - publicVal.abs();
     }
 
     // signal hash is a keccak256 hash of the signal data (pool address, units, fee, account, feeCollector)
@@ -220,6 +220,13 @@ contract PrivacyPool is IPrivacyPool {
         // reject 0 units
         if (absUnits == 0) {
             revert InvalidUnits(absUnits, 1);
+        }
+
+        // check if a release is bigger than the pool's total value
+        uint256 totalValue =
+            valueUnitRepresentative != NATIVE_REPRESENTATION ? _sumViaRepresentative() : address(this).balance;
+        if (absUnits > totalValue && s.units < 0) {
+            revert InvalidUnits(absUnits, totalValue);
         }
 
         // M-02
