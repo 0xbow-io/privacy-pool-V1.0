@@ -18,5 +18,6 @@ export namespace IPrivacyKey {
     signer: TPrivacyKey.SignerT<MsgT, SigT>;
     encryptor: TPrivacyKey.EncryptorT<SecretT, CipherT>;
     decryptor: TPrivacyKey.DecryptorT<CipherT, SecretT>;
+    ToJSON(): string;
   }
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { jetBrainMono, inter } from './fonts';
 import Head from 'next/head'
+import { KeyStoreProvider } from '@/providers/key-store-provider'
 
 import "./globals.css";
 
@@ -21,7 +22,9 @@ export default function RootLayout({
      <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-        <body className={`${jetBrainMono.className}`}>{children}</body>
+        <body className={`${jetBrainMono.className}`}>     
+        <KeyStoreProvider>{children}</KeyStoreProvider>
+        </body>
     </html>
   );
 }

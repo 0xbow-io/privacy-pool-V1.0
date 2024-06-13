@@ -65,5 +65,15 @@ export namespace CPrivacyKey {
         throw new Error('Error decrypting message');
       }
     }
+
+    ToJSON(): string{
+      return JSON.stringify({
+        privateKey: this._key.privateKey,
+        pubAddr: this.publicAddress,
+        keypair: this._key.keypair.toJSON(),
+        ek_x: '0x' + this._key.eK === undefined ? '' : this._key.eK![0].toString(16),
+        ek_y: '0x' + this._key.eK === undefined ? '' : this._key.eK![1].toString(16),
+      });
+    }
   }
 }
