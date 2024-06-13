@@ -4,7 +4,6 @@ import Head from 'next/head'
 
 import "./globals.css";
 
-import WelcomeSection from '@sections/welcome';
 
 
 export const metadata : Metadata = {
