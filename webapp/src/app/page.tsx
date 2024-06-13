@@ -275,8 +275,8 @@ export default function Home() {
           <CardDescription className="font-bold text-blackmail">
             <p>
               Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you are computing two <span className='text-toxic-orange'> new commitments </span> from two commitments that you own.
-              A commitment is an encrypted value represented by an entry (commitment hash) in the Pool's Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool's Merkle Tree. 
-              It is used as a placeholder for when you don't want to use an existing commitment. <br/><br/>
+              A commitment is an encrypted value represented by an entry (commitment hash) in the Pool`&apos;`s Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool`&apos;`s Merkle Tree. 
+              It is used as a placeholder for when you don`&apos;`t want to use an existing commitment. <br/><br/>
               Total sum  of the output commitment values need to match the sum of the input commitment values + public value.  
             </p>
           </CardDescription>
