@@ -47,6 +47,7 @@ const config = {
         'blue-dim': '#4F6D7A',
         'light-blue-dim': '#C0D6DF',
         'white-dim': '#EAEAEA',
+        'toxic-orange': '#FF6037',
 
         'dominant-blue': '#0d1695',
         'bright-grey': '#EBECF0',

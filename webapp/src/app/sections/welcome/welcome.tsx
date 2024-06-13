@@ -11,10 +11,12 @@ export function WelcomeSection() {
 
 // on file drop to load local account
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    //const acc = new account();
+    /*
+    const acc = new account();
     if (acc === null) {
       throw new Error('Failed to create account');
-    }
+    } 
+    */
 
     const fileReader = new FileReader();
 
@@ -48,10 +50,15 @@ export function WelcomeSection() {
                         <h2 className="text-9xl font-bold "> Pool </h2>
                     </div>
                 </div>           
-                <div className="z-10 flex w-full flex-col rounded-bl-xl border-t-2 border-t-blackmail bg-royal-nightfall   ">
+                <div className="z-10 flex w-full flex-row rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall   ">
+                    <div className="relative flex flex-row">
+                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
+                            <UserRoundPlus className="mx-4 size-6" /> New Account
+                        </Button>
+                    </div>
                     <div
                         {...getRootProps()}
-                        className="rounded-3x relative flex h-full place-self-end"
+                        className="relative flex flex-row"
                     >
                         <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0 text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white ">
                             <Upload className="mx-4 size-6" /> Load Account 
@@ -74,17 +81,13 @@ export function WelcomeSection() {
                                 allowing users to publicly publish an additional ZKP to prove that the funds they
                                 commit to the protocol are not associated with illicit funds from other users,
                                 helping to isolate illicit funds.
+                                <br />
+                                <br />
+                                Click on the <span className='text-toxic-orange'> "Load Account" </span> button above to load an existing account or create a new one via <span className='text-toxic-orange'> "New Account" </span> 
                             </p>
                         </div>
                     </div>
-                </div>     
-                <div className="z-10 flex w-full flex-col rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall">
-                    <div className="relative flex h-full place-self-start">
-                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
-                            <UserRoundPlus className="mx-4 size-6" /> New Account
-                        </Button>
-                    </div>
-                </div>      
+                </div>       
             </div>
             <DotPattern className="absolute left-0 top-0 opacity-75" />
         </div>       
