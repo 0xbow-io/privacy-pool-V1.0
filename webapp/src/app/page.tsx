@@ -11,23 +11,44 @@ import React, { useState, useCallback } from 'react';
 import { Upload, UserRoundPlus } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
+
 import { useKeyStore } from '@/providers/key-store-provider'
 
 
 export default function Home() {
 
-  const { keys, generate, importFromJSON, exportToJSON  } = useKeyStore(
+  const { keys, notEmpty, generate, importFromJSON, exportToJSON  } = useKeyStore(
     (state) => state,
   )
 
   // on file drop to load local account
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    /*
-    const acc = new account();
-    if (acc === null) {
-      throw new Error('Failed to create account');
-    } 
-    */
 
     const fileReader = new FileReader();
 
@@ -39,7 +60,7 @@ export default function Home() {
         }
         if (d.target.result) {
           const content = d.target.result;
-          //handleCreateAccount(content.toString());
+          importFromJSON(content.toString());
         } else {
           throw new Error('Failed to read file');
         }
@@ -50,7 +71,7 @@ export default function Home() {
   const { getRootProps } = useDropzone({ onDrop });
 
 
-  function banner() {
+  const Render_Header = (className: string) => {
     return (
       <div className="flex flex-col ">
         <div className="grid grid-rows-2 gap-5 p-8 bg-blackmail shadow-md shadow-blackmail text-ghost-white">
@@ -76,17 +97,143 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        <DotPattern className="absolute left-0 top-0"/>
       </div>
     )
   }
+
+  const Render_WelcomeSection = (className: string) => {
+    return  <WelcomeSection className={className}/>;
+  };
+
+
+  const Render_AccountCard = (className: string) => {
+    return(
+      <Card className={cn("", className)}>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+          <CardDescription>
+            Always keep your privacy keys safe
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-2">
+
+          <Accordion type="single" collapsible>
+          {keys.map((key) => {
+            const jsonKey = key.asJSON;
+            return(
+              <AccordionItem key={jsonKey.pubAddr} value={jsonKey.pubAddr} className=" ">
+                <AccordionTrigger className=" border-b border-blackmail px-2 text-blackmail hover:bg-toxic-orange">
+                  Address: {jsonKey.pubAddr}
+                </AccordionTrigger>
+                <AccordionContent>
+
+                <div className="relative grid grid-cols-1  items-start justify-start gap-y-4 text-wrap px-4 pt-10">
+                  <div className="group flex flex-col gap-y-4 border-b border-blackmail">
+                    <div className="text-sm font-bold text-blackmail">
+                      <h2> privateKey: </h2>
+                    </div>
+                    <div>
+                      <h2 className="text-sm  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
+                        {jsonKey.privateKey}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="group flex flex-col gap-y-4 border-b border-blackmail">
+                    <div className="text-sm font-bold text-blackmail">
+                      <h2> keypair: </h2>
+                    </div>
+                    <div>
+                      <h2 className="text-sm  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
+                        {jsonKey.keypair.privKey}
+                      </h2>
+                    </div>
+                    <div>
+                      <h2 className="text-sm  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
+                        {jsonKey.keypair.pubKey}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="group flex flex-col gap-y-4 border-b border-blackmail">
+                    <div className="text-sm font-bold text-blackmail">
+                      <h2> encryption keys: </h2>
+                    </div>
+                    <div>
+                      <h2 className="text-sm  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
+                        {jsonKey.ek_x}
+                      </h2>
+                    </div>
+                    <div>
+                      <h2 className="text-sm  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
+                        {jsonKey.ek_y}
+                      </h2> 
+                    </div>
+                  </div>
+                </div>
+                </AccordionContent>
+              </AccordionItem>
+            )
+          })}
+          </Accordion>
+        </CardContent>
+
+        <CardFooter>
+            <div
+            className={cn(
+              'relative flex w-full flex-row items-center justify-end gap-x-4 text-blackmail duration-300 ease-in',
+              className,
+            )}
+          >
+            <div className="flex flex-row  border-b-2 border-b-blackmail">
+              <Button
+                onClick={generate}
+                className="w-full rounded-none border-0 bg-doctor text-lg  font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+              >
+                Add Key
+              </Button>
+            </div>
+            <div className="flex flex-row  border-b-2 border-b-blackmail">
+              <Button
+                onClick={() => exportToJSON(true)}
+                className="w-full  rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+              >
+                Export Keys
+              </Button>
+            </div>
+          </div>
+        </CardFooter>
+    </Card>
+    )
+  };
+
+  const Render_AppTabs = (className: string) => {
+    return (
+      <Tabs defaultValue="account" className={cn("flex flex-col z-10", className)}>
+
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="account">Account</TabsTrigger>
+        <TabsTrigger value="Transact">Transact</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="account">
+        {Render_AccountCard('bg-doctor')}
+      </TabsContent>
+      </Tabs>
+    )
+  };
+
   return (
     <div className="h-screen w-screen bg-page-background">
       <div className="flex flex-col"> 
         <div className="grid grid-cols-4 m-4 gap-4 justify-items-center">
           <div className="relative col-span-2 col-start-2"> 
             <div className="relative flex flex-col gap-y-5 ">
-              {banner()}
-              <WelcomeSection />
+              {Render_Header('')}
+              {Render_WelcomeSection(notEmpty() ? 'hidden' : 'visible')}
+              {Render_AppTabs(notEmpty() ? 'visible' : 'hidden')}
             </div>
           </div>
         </div>

@@ -1,7 +1,12 @@
 
-export default function WelcomeSection() {
+import { cn } from '@/lib/utils';
+
+interface props {
+    className: string;
+}
+export default function WelcomeSection({className}: props) {
     return (
-        <div className="flex flex-col ">
+        <div className={cn("flex flex-col", className)}>
             <div className="z-20 relative grid  grid-cols-2 items-center justify-center bg-blackmail px-8 py-8 shadow-md shadow-blackmail">
                 <div className="relative col-span-2 row-span-3 row-start-3 flex flex-col items-start justify-start border-l-2 border-ghost-white px-10 text-ghost-white  ">
                     <div className="relative flex ">

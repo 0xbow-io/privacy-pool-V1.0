@@ -26,7 +26,6 @@ export const KeyStoreProvider = ({
   if (!storeRef.current) {
     storeRef.current = createKeyStore(initKeyStore())
   }
-
   return (
     <KeyStoreContext.Provider value={storeRef.current}>
       {children}
@@ -38,10 +37,8 @@ export const useKeyStore = <T,>(
   selector: (store: KeyStore) => T,
 ): T => {
   const keyStoreContext = useContext(KeyStoreContext)
-
   if (!keyStoreContext) {
     throw new Error(`useCounterStore must be used within CounterStoreProvider`)
   }
-
   return useStore(keyStoreContext, selector)
 }
