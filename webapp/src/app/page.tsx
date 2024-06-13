@@ -271,19 +271,34 @@ export default function Home() {
     return(
       <Card className={cn("", className)}>
         <CardHeader className="">
-          <CardTitle className="mb-4 py-6 border-t-4 border-r-4 border-blackmail">Computing Commitments & Releases</CardTitle>
+          <CardTitle className=" py-6 border-t-4 border-r-4 border-blackmail">Computing Commitments & Releases</CardTitle>
           <CardDescription className="font-bold text-blackmail">
-            <p>
-              Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you are computing two <span className='text-toxic-orange'> new commitments </span> from two commitments that you own.
-              A commitment is an encrypted value represented by an entry (commitment hash) in the Pool`&apos;`s Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool`&apos;`s Merkle Tree. 
-              It is used as a placeholder for when you don`&apos;`t want to use an existing commitment. <br/><br/>
-              Total sum  of the output commitment values need to match the sum of the input commitment values + public value.  
-            </p>
+
+            <Accordion type="single" collapsible>
+                <AccordionItem key='how_it_works' value='how_it_works' className=" ">
+                  <AccordionTrigger className=" border-b border-blackmail px-2 text-blackmail hover:bg-toxic-orange">
+                    How does it work?
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className='flex flex-row relative p-6'> 
+                      <div className='flex-auto'>
+                        <p>
+                          Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you are computing two <span className='text-toxic-orange'> new commitments </span> from two commitments that you own.
+                          A commitment is an encrypted value represented by an entry (commitment hash) in the Pool`&apos;`s Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool`&apos;`s Merkle Tree. 
+                          It is used as a placeholder for when you don`&apos;`t want to use an existing commitment. <br/><br/>
+                          Total sum  of the output commitment values need to match the sum of the input commitment values + public value.  
+                        </p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+          
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-2">
-
+ 
             <div className="flex flex-col relative">
               
               <div className ="flex  flex-row relative">
