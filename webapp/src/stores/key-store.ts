@@ -115,6 +115,6 @@ return createStore<KeyStore>()((set, get) => ({
                 state.inCommits[index] = value;
                 return state;
             })
-        }
+        }, 
     }))
 }

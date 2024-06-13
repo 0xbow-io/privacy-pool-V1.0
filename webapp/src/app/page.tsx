@@ -133,10 +133,10 @@ export default function Home() {
                   {
                     availChains.map((chain) => {
                       return (
-                        <SelectGroup>
+                        <SelectGroup key={chain.name}>
                           <SelectLabel>{chain.name}</SelectLabel>
                           {avilPools.get(chain)!.map((pool) => {
-                            return <SelectItem value={ pool.chain.name + ':' + pool.id}>{pool.id}</SelectItem>;
+                            return <SelectItem key={ pool.chain.name + ':' + pool.id} value={ pool.chain.name + ':' + pool.id}>{pool.id}</SelectItem>;
                           })}
                           <SelectSeparator />
                         </SelectGroup>
