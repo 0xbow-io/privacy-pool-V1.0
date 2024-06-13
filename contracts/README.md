@@ -2,21 +2,21 @@
 
 ## 1. Install Bun
 To install Bun, run the following commands:
-```bash
+```
 $ curl -fsSL https://bun.sh/install | bash 
 ```
-```bash
+```
 $ export BUN_INSTALL="$HOME/.bun" 
 ```
-```bash
+```
 $ export PATH="$BUN_INSTALL/bin:$PATH"
 ```
 ## 2. Install Foundry
 To install Foundry, run the following commands:
-```bash
+```
 $ curl -L https://foundry.paradigm.xyz | bash
 ```
-```bash
+```
 $ foundryup
 ```
 ## 3. Fill in the .env file with your own values
