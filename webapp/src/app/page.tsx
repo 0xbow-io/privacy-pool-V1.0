@@ -283,53 +283,77 @@ export default function Home() {
         </CardHeader>
 
         <CardContent className="space-y-2">
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="input_commitment_1">(1) Input Commitment</Label>
-                <Select
-                   value={inCommits[0]}
-                   onValueChange={(value) => updateInValue(0, value)}
-                >
-                  <SelectTrigger id="input_commitment_1">
-                    <SelectValue placeholder="Select">
-                      {inCommits[0]}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                  {avilCommits.map((commit) => {
-                    return (
-                      <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                       0x{commit.hash.toString(16)}
-                      </SelectItem>
-                    )
-                  })}
-                  </SelectContent>
-                </Select>
+
+            <div className="flex flex-col relative">
+              
+              <div className ="flex  flex-row relative">
+
+                <div className="flex-auto flex-col space-y-1.5">
+                  <Label htmlFor="input_commitment_1">(1) Input Commitment</Label>
+                  <Select
+                    value={inCommits[0]}
+                    onValueChange={(value) => updateInValue(0, value)}
+                  >
+                    <SelectTrigger id="input_commitment_1">
+                      <SelectValue placeholder="Select">
+                        {inCommits[0]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                    {avilCommits.map((commit) => {
+                      return (
+                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
+                        0x{commit.hash.toString(16)}
+                        </SelectItem>
+                      )
+                    })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex-auto flex-col space-y-1.5">
+                  <Label htmlFor="input_commitment_2">(2) Input Commitment</Label>
+                  <Select
+                    value={inCommits[1]}
+                    onValueChange={(value) => updateInValue(1, value)}
+                  >
+                    <SelectTrigger id="input_commitment_2">
+                      <SelectValue placeholder="Select">
+                        {inCommits[1]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                    {avilCommits.map((commit) => {
+                      return (
+                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
+                        0x{commit.hash.toString(16)}
+                        </SelectItem>
+                      )
+                    })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="input_commitment_2">(2) Input Commitment</Label>
-                <Select
-                   value={inCommits[1]}
-                   onValueChange={(value) => updateInValue(1, value)}
-                >
-                  <SelectTrigger id="input_commitment_2">
-                    <SelectValue placeholder="Select">
-                      {inCommits[1]}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent position="popper">
-                  {avilCommits.map((commit) => {
-                    return (
-                      <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                       0x{commit.hash.toString(16)}
-                      </SelectItem>
-                    )
-                  })}
-                  </SelectContent>
-                </Select>
+
+              <div className ="grid grid-cols-2 relative items-start">
+                <div className="flex-auto pl-8 pt-8">
+                  <ul className="list-decimal">
+                    <li>Choose Input Commitments. </li>
+                    <li>Set Public Value to reach desired total output amount. </li>
+                    <li>Adjust output amounts as desired. </li>
+                    <li>Click on Compute to generate & verify zk-proof & execute commitment on-chain.</li>
+                  </ul>
+                </div>
+                <div className="flex-auto">
+                  {PublicValContainer('')}
+                </div>
               </div>
+
+
             </div>
-            {PublicValContainer('')}
+
+
         </CardContent>
         <CardFooter>
             <div
