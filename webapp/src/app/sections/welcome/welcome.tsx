@@ -50,8 +50,8 @@ export function WelcomeSection() {
                         <h2 className="text-9xl font-bold "> Pool </h2>
                     </div>
                 </div>           
-                <div className="z-10 flex w-full flex-row rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall   ">
-                    <div className="relative flex flex-row">
+                <div className="z-10 flex w-full flex-row rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall  justify-end">
+                    <div className="relative flex flex-row ">
                         <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
                             <UserRoundPlus className="mx-4 size-6" /> New Account
                         </Button>
