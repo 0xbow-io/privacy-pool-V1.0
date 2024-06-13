@@ -1,16 +1,27 @@
 import { createStore } from 'zustand/vanilla'
 import { downloadJSON } from '@/utils/files';
+import { Chain, sepolia, gnosis } from 'viem/chains';
 
 
 import type { PrivacyKey, Commitment } from '@privacy-pool-v1/core-ts/account/';
 import { CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account/';
 
+import type {UnitRepresentativeMeta, PrivacyPoolMeta} from '@/network/pools'
+import {PrivacyPools, SupportedUnitRepresentatives} from '@/network/pools'
+
 
 export type AccountState = {
     keys: PrivacyKey[]
-    currPoolID: string
-    currUnitRepresentative: string
+    availChains: Chain[]
+    avilPools:  Map<Chain, PrivacyPoolMeta[]>
+    supportedUnitRepresentatives: Map<Chain, UnitRepresentativeMeta[]>
+
+    currChain: Chain,
+    currPool: PrivacyPoolMeta
+    currUnitRepresentative: UnitRepresentativeMeta
+
     avilCommits: Commitment[]
+
     inCommits: string[]
     inValues: bigint[]
     outValues: bigint[]
@@ -27,13 +38,34 @@ export interface AccountActions {
 export type KeyStore = AccountState & AccountActions
 
 export const initKeyStore = (): AccountState => {
-    return { keys: [], currPoolID: '', currUnitRepresentative: 'ETH', inCommits: ['dummy', 'dummy'], inValues: [0n, 0n],  outValues: [0n, 0n],avilCommits: []}
+    return { 
+        keys: [], 
+
+        availChains: [sepolia, gnosis],
+        avilPools: PrivacyPools,
+        supportedUnitRepresentatives: SupportedUnitRepresentatives,
+
+        currChain: sepolia,
+        currPool: PrivacyPools.get(sepolia)![0], 
+        currUnitRepresentative: SupportedUnitRepresentatives.get(sepolia)![0], 
+
+        inCommits: ['dummy', 'dummy'], 
+        inValues: [0n, 0n],  
+        outValues: [0n, 0n],
+        avilCommits: []}
 }
 
 export const defaultInitState: AccountState = {
     keys: [],
-    currPoolID: '',
-    currUnitRepresentative: 'ETH',
+
+    availChains: [sepolia, gnosis],
+    avilPools: PrivacyPools,
+    supportedUnitRepresentatives: SupportedUnitRepresentatives,
+
+    currChain: sepolia,
+    currPool: PrivacyPools.get(sepolia)![0], 
+    currUnitRepresentative: SupportedUnitRepresentatives.get(sepolia)![0], 
+
     avilCommits: [],
     inCommits: ['dummy', 'dummy'],
     inValues: [0n, 0n],

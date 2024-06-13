@@ -39,10 +39,13 @@ import {
 
 import {
   Select,
+  SelectGroup,
+  SelectLabel,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectSeparator
 } from "@/components/ui/select"
 
 
@@ -55,8 +58,15 @@ export default function Home() {
       keys, 
       notEmpty, 
       generate, 
-      currPoolID,
+
+      availChains,
+      avilPools,
+      supportedUnitRepresentatives,
+      currChain,
+      currPool,
       currUnitRepresentative,
+
+
       importFromJSON, 
       exportToJSON, 
       avilCommits, 
@@ -102,17 +112,51 @@ export default function Home() {
             <h2 className="text-9xl font-bold "> Pool </h2>
             </div>
           </div>           
-        <div className="z-10 flex w-full flex-row rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall  justify-end">
+        <div className="z-10 w-full flex flex-row rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall justify-end">
+          <div className = "flex flex-row items-center gap-x-4 ">
+              <div className="flex-auto"> 
+                <Label className='text-ghost-white'>Choose Pool: </Label>
+              </div>
+              <div className="flex-auto flex-col space-y-1.">
+                <Select
+                  value={currPool.id}
+                  onValueChange={(value) => updateInValue(0, value)}
+                >
+                  <SelectTrigger id="input_commitment_1" className="bg-royal-nightfall text-ghost-white border-0  underline decoration-1 underline-offset-4">
+
+                    <SelectValue placeholder="Select">
+                      {currPool.id}
+                    </SelectValue>
+                  </SelectTrigger>
+
+                  <SelectContent position="popper" className="bg-royal-nightfall text-ghost-white ">
+                  {
+                    availChains.map((chain) => {
+                      return (
+                        <SelectGroup>
+                          <SelectLabel>{chain.name}</SelectLabel>
+                          {avilPools.get(chain)!.map((pool) => {
+                            return <SelectItem value={ pool.chain.name + ':' + pool.id}>{pool.id}</SelectItem>;
+                          })}
+                          <SelectSeparator />
+                        </SelectGroup>
+                      );
+                    })
+                  }
+                  </SelectContent>
+                </Select>
+              </div>
+          </div>
           <div className="relative flex flex-row ">
-            <Button onClick={() => void generate()} className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
+            <Button onClick={() => void generate()} className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
               <UserRoundPlus className="mx-4 size-6" /> New Account
             </Button>
           </div>
           <div
             {...getRootProps()}
-            className="relative flex flex-row"
+            className="relative flex flex-row "
           >
-            <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0 text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white ">
+            <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0 font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white ">
               <Upload className="mx-4 size-6" /> Load Account 
             </Button>
           </div>
@@ -242,16 +286,15 @@ export default function Home() {
           <label className="text-xl font-semibold"></label>
         </div>
         <div className="place-self-end ">
-          <h2 className="text-xl font-semibold"> {inValues[0].toString()} {currUnitRepresentative} </h2>
+          <h2 className="text-xl font-semibold"> {inValues[0].toString()} {currUnitRepresentative.ticker} </h2>
         </div>
         <div className="place-self-end ">
-          <h2 className="text-xl font-semibold"> {inValues[1].toString()}   {currUnitRepresentative} </h2>
+          <h2 className="text-xl font-semibold"> {inValues[1].toString()}   {currUnitRepresentative.ticker} </h2>
         </div>
         <div className=" place-self-end border-b-2 border-doctor">
           <div className="flex flex-row items-center justify-center">
-            
             <div>
-              <Input
+              <input
                 type="number"
                 placeholder="Enter Public Value"
                 className="rounded-none  border-0 border-b-2	border-blackmail bg-doctor px-0  text-end text-xl font-semibold text-blackmail  placeholder:text-blackmail"
