@@ -48,13 +48,13 @@ export function WelcomeSection() {
                         <h2 className="text-9xl font-bold "> Pool </h2>
                     </div>
                 </div>           
-                <div className="z-10 flex w-full flex-col rounded-bl-xl border-t-2 border-t-blackmail bg-royal-nightfall ">
+                <div className="z-10 flex w-full flex-col rounded-bl-xl border-t-2 border-t-blackmail bg-royal-nightfall   ">
                     <div
                         {...getRootProps()}
                         className="rounded-3x relative flex h-full place-self-end"
                     >
-                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  pr-10 text-lg font-semibold text-ghost-white bg-royal-nightfall">
-                            <Upload className="mx-4 size-6" /> Click To Load Account 
+                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0 text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white ">
+                            <Upload className="mx-4 size-6" /> Load Account 
                         </Button>
                     </div>
                 </div>
@@ -78,10 +78,10 @@ export function WelcomeSection() {
                         </div>
                     </div>
                 </div>     
-                <div className="z-10 flex w-full flex-col rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall ">
+                <div className="z-10 flex w-full flex-col rounded-br-xl border-t-2 border-t-blackmail bg-royal-nightfall">
                     <div className="relative flex h-full place-self-start">
-                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  pr-10 text-lg font-semibold text-ghost-white bg-royal-nightfall">
-                            <UserRoundPlus className="mx-4 size-6" />  Create New Account
+                        <Button className="items-left p h-full w-full justify-start rounded-none border-0 pl-0  text-lg font-semibold text-ghost-white bg-royal-nightfall hover:text-royal-nightfall hover:bg-ghost-white">
+                            <UserRoundPlus className="mx-4 size-6" /> New Account
                         </Button>
                     </div>
                 </div>      
