@@ -209,18 +209,56 @@ export default function Home() {
     )
   };
 
+
+  const Render_TransactCard = (className: string) => {
+    return(
+      <Card className={cn("", className)}>
+        <CardHeader>
+          <CardTitle>Compute</CardTitle>
+          <CardDescription>
+            Compute a Commitment or Release and execute on-onchain.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-2"></CardContent>
+        <CardFooter>
+            <div
+            className={cn(
+              'relative flex w-full flex-row items-center justify-end gap-x-4 text-blackmail duration-300 ease-in',
+              className,
+            )}
+          >
+            <div className="flex flex-row  border-b-2 border-b-blackmail">
+              <Button
+                onClick={generate}
+                className="w-full rounded-none border-0 bg-doctor text-lg  font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+              >
+                Compute
+              </Button>
+            </div>
+          </div>
+        </CardFooter>
+      </Card>
+    )
+  }
+
   const Render_AppTabs = (className: string) => {
     return (
       <Tabs defaultValue="account" className={cn("flex flex-col z-10", className)}>
 
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-2 bg-blackmail text-white-dim font-bold">
         <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="Transact">Transact</TabsTrigger>
+        <TabsTrigger value="compute">Compute</TabsTrigger>
       </TabsList>
 
       <TabsContent value="account">
         {Render_AccountCard('bg-doctor')}
       </TabsContent>
+
+      <TabsContent value="compute">
+      {Render_TransactCard('bg-doctor')}
+      </TabsContent>
+
       </Tabs>
     )
   };
