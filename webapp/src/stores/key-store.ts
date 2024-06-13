@@ -1,12 +1,19 @@
 import { createStore } from 'zustand/vanilla'
-import { type PrivacyKey } from '@privacy-pool-v1/core-ts/account/classes';
-import { CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account/classes';
 import { downloadJSON } from '@/utils/files';
 
+
+import type { PrivacyKey, Commitment } from '@privacy-pool-v1/core-ts/account/';
+import { CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account/';
 
 
 export type AccountState = {
     keys: PrivacyKey[]
+    currPoolID: string
+    currUnitRepresentative: string
+    avilCommits: Commitment[]
+    inCommits: string[]
+    inValues: bigint[]
+    outValues: bigint[]
 }
 
 export interface AccountActions {
@@ -14,16 +21,23 @@ export interface AccountActions {
     notEmpty: () => boolean
     importFromJSON: (data: string) => void
     exportToJSON: (download: boolean) => string
+    updateInValue: (index: number, value: string) => void
 }
   
 export type KeyStore = AccountState & AccountActions
 
 export const initKeyStore = (): AccountState => {
-    return { keys: []}
+    return { keys: [], currPoolID: '', currUnitRepresentative: 'ETH', inCommits: ['dummy', 'dummy'], inValues: [0n, 0n],  outValues: [0n, 0n],avilCommits: []}
 }
 
 export const defaultInitState: AccountState = {
     keys: [],
+    currPoolID: '',
+    currUnitRepresentative: 'ETH',
+    avilCommits: [],
+    inCommits: ['dummy', 'dummy'],
+    inValues: [0n, 0n],
+    outValues: [0n, 0n],
 }
 
 export const createKeyStore = (
@@ -64,5 +78,11 @@ return createStore<KeyStore>()((set, get) => ({
             }
             return keysJSON;
         },
+        updateInValue: (index: number, value: string) => {
+            set((state) => {
+                state.inCommits[index] = value;
+                return state;
+            })
+        }
     }))
 }

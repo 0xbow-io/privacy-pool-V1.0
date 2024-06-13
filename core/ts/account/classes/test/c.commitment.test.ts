@@ -1,11 +1,8 @@
-import { type Commitment,  type PrivacyKey  } from '@privacy-pool-v1/core-ts/account/classes';
-import { type TCommitment } from '@privacy-pool-v1/core-ts/account/types';
-import { type Ciphertext, type Plaintext } from 'maci-crypto';
-import {  CreateCommitment, CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account/classes';
-import { FnCommitment } from '@privacy-pool-v1/core-ts/account/functions';
+import type { Commitment, PrivacyKey, TCommitment  } from '@privacy-pool-v1/core-ts/account';
+import { CreateCommitment, CreatePrivacyKey, FnCommitment } from '@privacy-pool-v1/core-ts/account';
 import { expect, test, describe, beforeEach } from "bun:test";
 
-
+import { type Ciphertext, type Plaintext } from 'maci-crypto';
 describe('Creating Commitments with Signature & Nullifier', () => {
   let pK: PrivacyKey;
   beforeEach(() => {
