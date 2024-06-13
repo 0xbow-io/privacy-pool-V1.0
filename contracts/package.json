@@ -11,5 +11,9 @@
     "@nomicfoundation/hardhat-foundry": "^1.1.2",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.22.5"
+  },
+  "scripts": {
+    "forge:test": "forge test -vvvv",
+    "deploy": "source .env && forge script --chain $CHAIN script/DeploymentScript.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
   }
 }
