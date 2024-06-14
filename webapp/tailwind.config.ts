@@ -15,7 +15,12 @@ const config = {
       padding: '2rem',
       screens: {
         '2xl': '1400px',
-      },
+      }
+    },
+    screens: {
+      'phone':  '375px',
+      'tablet': '640px',
+      'laptop': '1980px',
     },
     extend: {
       colors: {

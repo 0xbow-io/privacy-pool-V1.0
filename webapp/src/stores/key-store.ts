@@ -3,6 +3,7 @@ import { downloadJSON } from '@/utils/files';
 import { Chain, sepolia, gnosis } from 'viem/chains';
 
 
+
 import type { PrivacyKey, Commitment } from '@privacy-pool-v1/core-ts/account/';
 import { CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account/';
 
@@ -23,9 +24,11 @@ export type AccountState = {
     avilCommits: Commitment[]
 
     inCommits: string[]
-    inValues: bigint[]
-    outValues: bigint[]
-    publicValue: bigint
+    inValues: number[]
+    outValues: number[]
+    outSplits: number[]
+    outPrivacyKeys: PrivacyKey[]
+    publicValue: number
 }
 
 export interface AccountActions {
@@ -33,12 +36,19 @@ export interface AccountActions {
     notEmpty: () => boolean
     importFromJSON: (data: string) => void
     exportToJSON: (download: boolean) => string
-    updateInValue: (index: number, value: string) => void
     updateTargetPoolChain: (value: string) => void
     getCurrentPool: () => PrivacyPoolMeta
 
-    udpatePublicValue: (value: bigint) => void
-    getTotalOutputValue: () => bigint
+    updateInValue: (index: number, value: string) => void
+    udpatePublicValue: (value: number) => void
+    udpateOutputSplit: (index: number, value: number) => void
+    udpateOutputValue: (index: number, value: number) => void
+    updateOutputPrivacyKey: (index: number, pubKeyHash: string) => void
+
+    getTotalOutputValue: () => number
+    getOutputValue: (index: number) => number
+    getOutputSplit: (index: number) => number
+    getOutputPubKeyHash: (index: number) => string 
 }
   
 export type KeyStore = AccountState & AccountActions
@@ -56,10 +66,13 @@ export const initKeyStore = (): AccountState => {
         currUnitRepresentative: SupportedUnitRepresentatives.get(sepolia)![0], 
 
         inCommits: ['dummy', 'dummy'], 
-        inValues: [0n, 0n],  
-        outValues: [0n, 0n],
-        publicValue: 0n,
-        avilCommits: []}
+        inValues: [0.0, 0.0],  
+        outValues: [0.0, 0.0],
+        outPrivacyKeys: [],
+        outSplits: [100, 0],
+        publicValue: 0.0,
+        avilCommits: []
+    }
 }
 
 export const defaultInitState: AccountState = {
@@ -75,9 +88,11 @@ export const defaultInitState: AccountState = {
 
     avilCommits: [],
     inCommits: ['dummy', 'dummy'],
-    inValues: [0n, 0n],
-    publicValue: 0n,
-    outValues: [0n, 0n],
+    inValues: [0.0, 0.0],  
+    publicValue: 0,
+    outValues: [0.0, 0.0],  
+    outSplits: [100, 0],
+    outPrivacyKeys: [],
 }
 
 export const createKeyStore = (
@@ -157,14 +172,57 @@ return createStore<KeyStore>()((set, get) => ({
                 inCommits: curr_inCommits
             }));
         }, 
-        udpatePublicValue: (value: bigint): void => {
+        udpatePublicValue: (value: number): void => {
             set((state) => ({
                 publicValue: value
             }));
         },
-        getTotalOutputValue: (): bigint => {
-            // Sum of all input values + public value
-            return get().inValues.reduce((acc, val) => acc + val, 0n) + get().publicValue;
+        udpateOutputSplit: (index: number, value: number): void => {
+            const curr_outSplits = get().outSplits;
+            curr_outSplits[index] = value;
+            set((state) => ({
+                outSplits: curr_outSplits
+            }));
         },
+        udpateOutputValue: (index: number, value: number): void => {
+            const curr_outValues = get().outValues;
+            curr_outValues[index] = value;
+            set((state) => ({
+                outValues: curr_outValues
+            }));
+        },
+        updateOutputPrivacyKey: (index: number, pubKeyHash: string): void => {
+            // iterate through keys and find the one with matching pubKeyHash
+            const key = get().keys.find((k) => '0x'+k.pubKeyHash.toString(16) === pubKeyHash);
+            if (key === undefined) {
+                throw new Error('No key found with pubKeyHash: ' + pubKeyHash);
+            }
+            const curr_outPrivacyKeys = get().outPrivacyKeys;
+            curr_outPrivacyKeys[index] = key;
+            set((state) => ({
+                outPrivacyKeys: curr_outPrivacyKeys
+            }));
+        },
+        getOutputPubKeyHash: (index: number): string => {
+            const pK = get().outPrivacyKeys[index];
+            if (pK === undefined) {
+                return "0x"
+            }
+            return '0x'+pK.pubKeyHash.toString(16).substring(0,10)+'...';
+        },
+        getTotalOutputValue: (): number => {
+            // Sum of all input values + public value
+            return get().inValues.reduce((acc, val) => acc + val, 0) + get().publicValue;
+        },
+        getOutputValue: (index: number): number => {
+        const _total_output = get().getTotalOutputValue();
+        const _output_split = get().outSplits[index];
+           return _total_output / 100 * _output_split;
+        },
+        getOutputSplit: (index: number): number => {
+            const _total_output = get().getTotalOutputValue();
+            const _output_value = get().outValues[index];
+            return _output_value / _total_output * 100;
+        }
     }))
 }
