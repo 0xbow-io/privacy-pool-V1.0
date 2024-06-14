@@ -8,6 +8,7 @@ export type PrivacyPoolMeta = {
     genesis: bigint,    // when pool was deployed
     id: string,         // reference id
     unitRepresentative: string, // what representation of value is used
+    minmaxCommitValue: bigint[], // minimum value to commit
 }
 
 
@@ -47,6 +48,13 @@ export const SupportedUnitRepresentatives : Map<Chain, UnitRepresentativeMeta[]>
 )
 
 
+export const ChainNameToChain: Map<string, Chain> = new Map<string, Chain>(
+    [
+        ['Sepolia', sepolia],
+        ['Gnosis', gnosis]
+    ]
+)
+
 
 
 export const PrivacyPools : Map<Chain, PrivacyPoolMeta[]> = new Map<Chain, PrivacyPoolMeta[]>(
@@ -55,10 +63,11 @@ export const PrivacyPools : Map<Chain, PrivacyPoolMeta[]> = new Map<Chain, Priva
             sepolia, [
                         {
                             chain: sepolia, 
-                            id: 'Eth Pool 1', 
+                            id: 'Sepolia Eth Pool 1', 
                             address: '0x8e3E4702B4ec7400ef15fba30B3e4bfdc72aBC3B', 
                             genesis: 5471254n,
-                            unitRepresentative: 'ETH' // reference by ticker
+                            unitRepresentative: 'ETH', // reference by ticker
+                            minmaxCommitValue: [0n, 1000000000000000000n]
                         }
                     ]
         ],
@@ -67,10 +76,11 @@ export const PrivacyPools : Map<Chain, PrivacyPoolMeta[]> = new Map<Chain, Priva
             gnosis, [
                 {
                     chain: gnosis, 
-                    id: 'xDAI Pool 1', 
+                    id: 'Gnosis xDAI Pool 1', 
                     address: '0x18AE7dbb48cF6b00D1AC7bb758eD28c5FCcafA4c', 
-                    genesis: 5471254n,
-                    unitRepresentative: 'xDAI' // reference by ticker
+                    genesis: 34448288n,
+                    unitRepresentative: 'xDAI', // reference by ticker
+                    minmaxCommitValue: [0n, 1000000000000000000n]
                 }
             ]
         ]

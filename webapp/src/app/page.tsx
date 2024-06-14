@@ -62,9 +62,11 @@ export default function Home() {
       availChains,
       avilPools,
       supportedUnitRepresentatives,
+      getCurrentPool,
       currChain,
-      currPool,
       currUnitRepresentative,
+
+      updateTargetPoolChain,
 
 
       importFromJSON, 
@@ -73,7 +75,12 @@ export default function Home() {
       inCommits,
       inValues, 
       outValues,
-      updateInValue } = useKeyStore(
+
+      updateInValue,
+      udpatePublicValue,
+      getTotalOutputValue
+
+    } = useKeyStore(
     (state) => state,
   )
 
@@ -119,13 +126,12 @@ export default function Home() {
               </div>
               <div className="flex-auto flex-col space-y-1.">
                 <Select
-                  value={currPool.id}
-                  onValueChange={(value) => updateInValue(0, value)}
+                  value={getCurrentPool().id}
+                  onValueChange={(value) => updateTargetPoolChain(value)}
                 >
                   <SelectTrigger id="input_commitment_1" className="bg-royal-nightfall text-ghost-white border-0  underline decoration-1 underline-offset-4">
-
                     <SelectValue placeholder="Select">
-                      {currPool.id}
+                      {getCurrentPool().id}
                     </SelectValue>
                   </SelectTrigger>
 
@@ -278,33 +284,110 @@ export default function Home() {
       <div
         id={'extValContainer'}
         className={cn(
-          'relative grid h-full w-full grid-cols-1 grid-rows-4 items-center justify-between gap-y-2 duration-300 ease-in',
+          'relative grid grid-rows-4 grid-cols-6 ',
           className,
         )}
       >
-        <div className="border-b-2 border-blackmail pb-2">
-          <label className="text-xl font-semibold"></label>
-        </div>
-        <div className="place-self-end ">
-          <h2 className="text-xl font-semibold"> {inValues[0].toString()} {currUnitRepresentative.ticker} </h2>
-        </div>
-        <div className="place-self-end ">
-          <h2 className="text-xl font-semibold"> {inValues[1].toString()}   {currUnitRepresentative.ticker} </h2>
-        </div>
-        <div className=" place-self-end border-b-2 border-doctor">
-          <div className="flex flex-row items-center justify-center">
-            <div>
-              <input
-                type="number"
-                placeholder="Enter Public Value"
-                className="rounded-none  border-0 border-b-2	border-blackmail bg-doctor px-0  text-end text-xl font-semibold text-blackmail  placeholder:text-blackmail"
-              />
-            </div>
-            <div>
-              <Plus className="size-6 stroke-blackmail" />
+        <div className="grid grid-rows-subgrid row-span-4 col-span-3 gap-2 items-center"> 
+          <div className="row-start-1"> 
+            <h2 className="font-semibold"> Inputs </h2>
+          </div>
+          <div className="row-start-2">
+            <div className=" flex flex-row space-x-1.5 items-center ">
+              <div> 
+                <h2 className="font-semibold">Input Commitment (1): </h2>
+              </div>
+              <div className="flex-auto">
+                <Select
+                    value={inCommits[0]}
+                    onValueChange={(value) => updateInValue(0, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select">
+                        {inCommits[0]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                    {avilCommits.map((commit) => {
+                      return (
+                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
+                        0x{commit.hash.toString(16)}
+                        </SelectItem>
+                      )
+                    })}
+                    </SelectContent>
+                  </Select>
+              </div>
             </div>
           </div>
+          <div className="row-start-3">
+            <div className=" flex flex-row space-x-1.5 items-center ">
+              <div> 
+                <h2 className="font-semibold">Input Commitment (2): </h2>
+              </div>
+              <div className="flex-auto">
+                <Select
+                    value={inCommits[0]}
+                    onValueChange={(value) => updateInValue(1, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select">
+                        {inCommits[1]}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                    {avilCommits.map((commit) => {
+                      return (
+                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
+                        0x{commit.hash.toString(16)}
+                        </SelectItem>
+                      )
+                    })}
+                    </SelectContent>
+                  </Select>
+              </div>
+            </div>
+          </div>
+          <div className="row-start-4"> 
+            <h2 className="font-semibold">Public Value: </h2>
+          </div>
         </div>
+
+        <div className="grid grid-rows-subgrid row-span-4 justify-end col-span-2 items-center"> 
+          <div className="row-start-1 text-end pr-4" > 
+              <h2 className="font-semibold">Amnt</h2>
+          </div>
+          <div className="row-start-2 text-end pr-4"> 
+            <h2 className="font-semibold">{inValues[0].toString()}</h2>
+          </div>
+          <div className="row-start-3 text-end pr-4"> 
+            <h2 className="font-semibold">{inValues[1].toString()}</h2>
+          </div>
+          <div className="row-start-4 text-end">
+            <input
+              type="number"
+              placeholder="Enter Public Value"
+              onChange={(e) => udpatePublicValue(BigInt(e.target.value))}
+              className="rounded-none  border-0 border-b-2	border-blackmail bg-doctor text-end  font-bold text-blackmail placeholder:text-blackmail"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-rows-subgrid row-span-4 col-span-1 items-center"> 
+          <div className="row-start-1 pr-4" > 
+                <h2 className="font-semibold"></h2>
+            </div>
+          <div className="row-start-2 pr-4"> 
+            <h2 className="font-semibold">{currUnitRepresentative.ticker}</h2>
+          </div>
+          <div className="row-start-3 pr-4"> 
+            <h2 className="font-semibold">{currUnitRepresentative.ticker}</h2>
+          </div>
+          <div className="row-start-4 pr-4"> 
+            <h2 className="font-semibold">{currUnitRepresentative.ticker}</h2>
+          </div>
+        </div>
+
       </div>
     );
   };
@@ -342,73 +425,11 @@ export default function Home() {
 
         <CardContent className="space-y-2">
  
-            <div className="flex flex-col relative">
-              
-              <div className ="flex  flex-row relative">
+            <div className="flex flex-col relative gap-y-4">
 
-                <div className="flex-auto flex-col space-y-1.5">
-                  <Label htmlFor="input_commitment_1">(1) Input Commitment</Label>
-                  <Select
-                    value={inCommits[0]}
-                    onValueChange={(value) => updateInValue(0, value)}
-                  >
-                    <SelectTrigger id="input_commitment_1">
-                      <SelectValue placeholder="Select">
-                        {inCommits[0]}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                    {avilCommits.map((commit) => {
-                      return (
-                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                        0x{commit.hash.toString(16)}
-                        </SelectItem>
-                      )
-                    })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex-auto flex-col space-y-1.5">
-                  <Label htmlFor="input_commitment_2">(2) Input Commitment</Label>
-                  <Select
-                    value={inCommits[1]}
-                    onValueChange={(value) => updateInValue(1, value)}
-                  >
-                    <SelectTrigger id="input_commitment_2">
-                      <SelectValue placeholder="Select">
-                        {inCommits[1]}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                    {avilCommits.map((commit) => {
-                      return (
-                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                        0x{commit.hash.toString(16)}
-                        </SelectItem>
-                      )
-                    })}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-              </div>
-
-              <div className ="grid grid-cols-2 relative items-start">
-                <div className="flex-auto pl-8 pt-8">
-                  <ul className="list-decimal">
-                    <li>Choose Input Commitments. </li>
-                    <li>Set Public Value to reach desired total output amount. </li>
-                    <li>Adjust output amounts as desired. </li>
-                    <li>Click on Compute to generate & verify zk-proof & execute commitment on-chain.</li>
-                  </ul>
-                </div>
-                <div className="flex-auto">
+              <div className="flex-auto">
                   {PublicValContainer('')}
-                </div>
-              </div>
-
-
+              </div>           
             </div>
 
 
