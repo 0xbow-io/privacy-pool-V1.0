@@ -4,11 +4,10 @@ import WelcomeSection from '@sections/welcome/welcome';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import DotPattern from '@/components/magicui/dot-pattern';
 
 
 import React, { useState, useCallback } from 'react';
-import { Upload, UserRoundPlus, Plus } from 'lucide-react';
+import { Upload, UserRoundPlus, Plus, ChevronsUpDown, ChevronRightSquareIcon, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 
 import { Input } from "@/components/ui/input"
@@ -50,6 +49,7 @@ import {
 
 
 import { useMediaQuery } from "@/hooks/use-media-query"
+
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+
 import {
   Drawer,
   DrawerClose,
@@ -69,6 +70,24 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+
+
 
 import { useKeyStore } from '@/providers/key-store-provider'
 
@@ -76,6 +95,11 @@ import { useKeyStore } from '@/providers/key-store-provider'
 export default function Home() {
 
   const [open, setOpen] = React.useState(false)
+  
+  const [inputsIsOpen, setInputIsOpen] = React.useState(false)
+  const [inputSheetIsOpen, setInputSheetOpen] = React.useState(false)
+  const [ouptutsIsOpen, setOutputsIsOpen] = React.useState(false)
+
   const [tabsValue, setTabsValue] = React.useState('account')
   const isNotMobile = useMediaQuery("(min-width: 768px)")
 
@@ -94,9 +118,12 @@ export default function Home() {
 
       importFromJSON, 
       exportToJSON, 
+
       avilCommits, 
       inCommits,
+
       inValues, 
+      outValues,
  
 
       updateInValue,
@@ -198,16 +225,10 @@ export default function Home() {
 
   const Render_Header = (className: string) => {
     return (
-      <div className="flex flex-row ">
-        <div className="grid grid-rows-2  grid-cols-2 gap-5 p-8 bg-blackmail shadow-md shadow-blackmail text-ghost-white">
-          <div className="row-start-1 z-10 col-start-1 ">
-            <h2 className="text-6xl font-bold tablet:text-9xl air:text-9xl ">Privacy</h2>
-          </div>
-          <div className="row-start-2 z-10  col-start-1">
-            <h2 className="text-6xl font-bold tablet:text-9xl air:text-9xl "> Pool </h2>
-            </div>
+      <div className="relative flex flex-row border-2 rounded-3xl bg-blackmail text-ghost-white py-3 pl-4">
+          <div className="">
+            <h2 className="text-2xl font-bold tablet:text-2xl air:text-2xl ">Privacy Pool</h2>
           </div>    
-        <DotPattern className="absolute left-0 top-0"/>
       </div>
     )
   }
@@ -319,293 +340,182 @@ export default function Home() {
     )
   };
 
-  const InputsContainer = (className?: string) => {
-    return (
-      <div
-        id={'extValContainer'}
-        className={cn(
-          'relative grid grid-flow-col gap-y-4',
-          className,
-        )}
-      >
-        <div className="grid grid-rows-subgrid row-span-5 items-center"> 
-          <div className="row-start-1 border-b-2 border-blackmail"> 
-            <h2 className="font-semibold text-sm"> Inputs </h2>
-          </div>
-          <div className="row-start-2">
-            <div className=" flex flex-row space-x-1.5 items-center ">
-              <div> 
-                <h2 className="font-semibold text-sm">(1) Input Commitment  </h2>
-              </div>
-              <div className="flex-auto">
-                <Select
-                    value={inCommits[0]}
-                    onValueChange={(value) => updateInValue(0, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select">
-                        {inCommits[0]}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                    {avilCommits.map((commit) => {
-                      return (
-                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                        0x{commit.hash.toString(16)}
-                        </SelectItem>
-                      )
-                    })}
-                    </SelectContent>
-                  </Select>
-              </div>
-            </div>
-          </div>
-          <div className="row-start-3">
-            <div className=" flex flex-row space-x-1.5 items-center ">
-              <div> 
-                <h2 className="font-semibold text-sm">(2) Input Commitment</h2>
-              </div>
-              <div className="flex-auto">
-                <Select
-                    value={inCommits[0]}
-                    onValueChange={(value) => updateInValue(1, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select">
-                        {inCommits[1]}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                    {avilCommits.map((commit) => {
-                      return (
-                        <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                        0x{commit.hash.toString(16)}
-                        </SelectItem>
-                      )
-                    })}
-                    </SelectContent>
-                  </Select>
-              </div>
-            </div>
-          </div>
-          <div className="row-start-4"> 
-            <h2 className="font-semibold text-sm">Extra Value: </h2>
-          </div>
-        </div>
+  const Inputs_Dialog = (className: string) => {
+    return(
+      <Dialog open={inputSheetIsOpen} onOpenChange={setInputSheetOpen}>
+        <DialogContent className="">
+          <DialogHeader>
+            <DialogTitle>Choose an Input Commitment</DialogTitle>
+            <DialogDescription>
+              Select an existing unused commitment or a dummy commitmnet. 
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid grid-rows-subgrid row-span-5 col-span-1 items-center "> 
-          <div className="row-start-1 text-end pl-4 border-b-2 border-blackmail" > 
-                <h2 className="font-semibold text-sm"> Owner</h2>
-            </div>
-          <div className="row-start-2 text-end  pl-4"> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-          <div className="row-start-3 text-end  pl-4"> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-        </div>
-
-        <div className="grid grid-rows-subgrid row-span-5 col-span-2 items-center"> 
-          <div className="row-start-1 text-end pr-4 border-b-2 border-blackmail" > 
-              <h2 className="font-semibold text-sm">Amnt</h2>
-          </div>
-          <div className="row-start-2 text-end pr-4"> 
-            <h2 className="font-semibold text-sm">{inValues[0].toString()}</h2>
-          </div>
-          <div className="row-start-3 text-end pr-4"> 
-            <h2 className="font-semibold text-sm">{inValues[1].toString()}</h2>
-          </div>
-          <div className="row-start-4 flex flex-row justify-end ">
-            <div>
-              <Plus className="size-4 stroke-blackmail" />
-            </div>
-            <input
-              type="number"
-              placeholder="Enter Amount"
-              onChange={(e) => udpatePublicValue(Number(e.target.value))}
-              className="rounded-none border-b-2 border-blackmail bg-doctor text-end  text-sm text-blackmail placeholder:text-blackmail pl-10"
-            />
-          </div>
-          <div className="row-start-5 text-end pr-4">
-            <h2 className="font-semibold  text-sm">{getTotalOutputValue().toString()} </h2>
-          </div>
-        </div>
-
-        <div className="grid grid-rows-subgrid row-span-5 col-span-1 items-center justify-items-start border-r-2 border-blackmail "> 
-          <div className="row-start-1 pl-4" > 
-                <h2 className="font-semibold"></h2>
-            </div>
-          <div className="row-start-2 pl-4 "> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-          <div className="row-start-3 pl-4"> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-          <div className="row-start-4 pl-4"> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-          <div className="row-start-5 pl-4"> 
-            <h2 className="font-semibold text-sm">{currUnitRepresentative.ticker}</h2>
-          </div>
-        </div>
-
-      </div>
-    );
-  };
-
-
-  const OutputsContainer = (className?: string) => {
-    return (
-      <div
-        id={'extValContainer'}
-        className={cn(
-          'relative grid grid-flow-col  gap-y-4',
-          className,
-        )}
-      >
-        <div className="grid grid-rows-subgrid row-span-5 col-span-1 items-center"> 
-          <div className="row-start-1 border-b-2 border-blackmail"> 
-            <h2 className="font-semibold text-sm"> Outputs </h2>
-          </div>
-          <div className="row-start-2">
-            <div className=" flex flex-row space-x-1.5 items-center ">
-              <div> 
-                <h2 className="font-semibold text-sm">(1) Output Commitment</h2>
-              </div>
-            </div>
-          </div>
-          <div className="row-start-3">
-            <div className=" flex flex-row space-x-1.5 items-center ">
-              <div> 
-                <h2 className="font-semibold text-sm">(2) Output Commitment</h2>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-rows-subgrid row-span-5 col-span-2 items-center"> 
-          <div className="row-start-1 border-b-2 border-blackmail" > 
-              <h2 className="font-semibold text-sm">Encrypt with:</h2>
-          </div>
-          <div className="row-start-2 "> 
+          <div className="flex-auto">
             <Select
-              value={getOutputPubKeyHash(0)}
-              onValueChange={(value) => updateOutputPrivacyKey(0, value)}
+                value={inCommits[0]}
+                onValueChange={(value) => updateInValue(0, value)}
               >
-              <SelectTrigger>
+                <SelectTrigger>
                   <SelectValue placeholder="Select">
-                  {getOutputPubKeyHash(0)}
+                    {inCommits[0]}
                   </SelectValue>
-              </SelectTrigger>
-              <SelectContent position="popper">
-              {keys.map((key) => {
+                </SelectTrigger>
+                <SelectContent position="popper">
+                {avilCommits.map((commit) => {
                   return (
-                    <SelectItem key={key.pubKeyHash} value={'0x'+key.pubKeyHash.toString(16)}>
-                    0x{key.pubKeyHash.toString(16)}
-                  </SelectItem>
+                    <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
+                    0x{commit.hash.toString(16)}
+                    </SelectItem>
                   )
-              })}
-              </SelectContent>
-            </Select>
+                })}
+                </SelectContent>
+              </Select>
           </div>
-          <div className="row-start-3 "> 
-            <Select
-              value={getOutputPubKeyHash(1)}
-              onValueChange={(value) => updateOutputPrivacyKey(1, value)}
-              >
-              <SelectTrigger>
-                  <SelectValue placeholder="Select">
-                  {getOutputPubKeyHash(1)}
-                  </SelectValue>
-              </SelectTrigger>
-              <SelectContent position="popper">
-              {keys.map((key) => {
+          
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  const Iputs_Collapsible = (className: string) => {
+    return(
+        <Collapsible
+          open={inputsIsOpen}
+          onOpenChange={setInputIsOpen}
+          className={cn("space-y-2", className)}
+        >
+          <div className="flex items-center justify-between space-x-4">
+            <h2 className="text-sm font-semibold">
+              Input Commitments:
+            </h2>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-9 p-0">
+                <ChevronsUpDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+          <div className="rounded-md border px-4 py-3 text-sm">
+            <h2 className="font-semibold  text-sm">Total: {getTotalOutputValue().toString()} {currUnitRepresentative.ticker} </h2>
+          </div>
+          <CollapsibleContent className="space-y-2">
+            {
+              inValues.map(
+                (value, index) => {
                   return (
-                  <SelectItem key={key.pubKeyHash} value={'0x'+key.pubKeyHash.toString(16)}>
-                  0x{key.pubKeyHash.toString(16)}
-                  </SelectItem>
+                    <div key={"invalue:"+index} className="rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full">
+                      <h2 className="font-semibold">Input ({index}): {value.toString()} {currUnitRepresentative.ticker}</h2>
+                        <Button onClick={() => void setInputSheetOpen(true)} variant="ghost" size="sm" className="w-9 p-0">
+                          <ChevronRightSquareIcon className="size-6" />
+                        </Button>
+                    </div>
                   )
-              })}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+                }
+              )
+            }
+          </CollapsibleContent>
+        </Collapsible>
+    )
+  }
 
-        <div className="grid grid-rows-subgrid row-span-5 items-center"> 
-          <div className="row-start-1 pr-4 border-b-2 border-blackmail" > 
-              <h2 className="font-semibold text-end text-sm">Split %</h2>
-          </div>
-          <div className="row-start-2 text-end pr-4"> 
-            <h2 className="font-semibold text-sm">{getOutputSplit(0).toString()}</h2>
-          </div>
-          <div className="row-start-3 text-end pr-4"> 
-            <h2 className="font-semibold text-sm">{getOutputSplit(1).toString()}</h2>
-          </div>
-        </div>
 
-        <div className="grid grid-rows-subgrid row-span-5 items-center "> 
-          <div className="row-start-1 text-end border-b-2 border-blackmail" > 
-              <h2 className="font-semibold text-sm ">Amnt</h2>
+  const Outputs_Collapsible = (className: string) => {
+    return(
+        <Collapsible
+          open={ouptutsIsOpen}
+          onOpenChange={setOutputsIsOpen}
+          className={cn("space-y-2", className)}
+        >
+          <div className="flex items-center justify-between space-x-4">
+            <h2 className="text-sm font-semibold">
+              Output Commitments:
+            </h2>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-9 p-0">
+                <ChevronsUpDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
           </div>
-          <div className="row-start-2 text-end "> 
-            <input
-                type="number"
-                placeholder={getOutputValue(0).toString()}
-                onChange={(e) => udpateOutputValue(0, Number(e.target.value))}
-                className="rounded-none border-b-2 border-blackmail bg-doctor text-end text-sm   text-blackmail placeholder:text-blackmail"
-              />
+          <div className="rounded-md border px-4 py-3 text-sm">
+            <h2 className="font-semibold  text-sm">Total: {getTotalOutputValue().toString()} {currUnitRepresentative.ticker} </h2>
           </div>
-          <div className="row-start-3 text-end"> 
-          <input
-              type="number"
-              placeholder={getOutputValue(1).toString()}
-              onChange={(e) => udpateOutputValue(1, Number(e.target.value))}
-              className="rounded-none border-b-2 border-blackmail bg-doctor text-end text-sm  text-blackmail placeholder:text-blackmail"
-            />         
-          </div>
-        </div>
-
-        <div className="grid grid-rows-subgrid row-span-5 col-span-1 items-center justify-items-start border-r-2 border-blackmail"> 
-          <div className="row-start-1 pl-4" > 
-                <h2 className="font-semibold text-sm "></h2>
-            </div>
-          <div className="row-start-2 pl-4"> 
-            <h2 className="font-semibold text-sm ">{currUnitRepresentative.ticker}</h2>
-          </div>
-          <div className="row-start-3 pl-4"> 
-            <h2 className="font-semibold text-sm ">{currUnitRepresentative.ticker}</h2>
-          </div>
-        </div>
-
-      </div>
-    );
-  };
+          <CollapsibleContent className="space-y-2">
+            {
+              outValues.map(
+                (value, index) => {
+                  return (
+                    <div key={"outValue:"+index} className="rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full">
+                      <h2 className="font-semibold">Output ({index}): {value.toString()} {currUnitRepresentative.ticker}</h2>
+                        <Button onClick={() => void setInputSheetOpen(true)} variant="ghost" size="sm" className="w-9 p-0">
+                          <ChevronRightSquareIcon className="size-6" />
+                        </Button>
+                    </div>
+                  )
+                }
+              )
+            }
+          </CollapsibleContent>
+        </Collapsible>
+    )
+  }
 
 
   const Render_TransactCard = (className: string) => {
     return(
       <Card className={cn("", className)}>
-        <CardHeader className="">
-          <CardTitle className=" py-4 pr-4 border-t-4 border-l-4 text-end border-blackmail text-xl font-bold">Computing Commitments & Releases</CardTitle>
-          <CardDescription className="font-bold text-blackmail">
 
+        <CardHeader className="">
+          <CardTitle className="pt-6 border-t-2  border-blackmail text-xl font-bold">Compute Commitments & Releases</CardTitle>
+          <CardDescription className="font-bold text-blackmail"> 
+
+            <div className="flex-auto">
+              <Accordion type="single" collapsible>
+                <AccordionItem key='how_it_works' value='how_it_works' className=" ">
+                  <AccordionTrigger className="mt-4 border border-blackmail px-2  hover:bg-toxic-orange">
+                    <h2 className="text-blackmail "> How does it work? </h2>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className='flex flex-row relative p-6'> 
+                      <div className='flex-auto'>
+                        <p>
+                          Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you are computing two <span className='text-toxic-orange'> new commitments </span> from two commitments that you own.
+                          A commitment is an encrypted value represented by an entry (commitment hash) in the Pool&apos;s Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool&apos;s Merkle Tree. 
+                          It is used as a placeholder for when you don&apos;t want to use an existing commitment. <br/><br/>
+                          Total sum  of the output commitment values need to match the sum of the input commitment values + public value.  
+                        </p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div> 
           
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-2">
- 
-            <div className="flex flex-col relative gap-y-10">
 
-              <div className="flex-auto">
-                  {InputsContainer('')}
-              </div>   
-              <div className="flex-auto">
-                  {OutputsContainer('')}
-              </div>     
-
-              
+          <div className='flex flex-col gap-y-4'>
+            <div className='flex-auto'>
+              {Iputs_Collapsible('')}
             </div>
+            <div className="flex-auto flex flex-col gap-y-4 ">
+              <div>
+                <h2 className="text-sm font-semibold">
+                  Extra Amount:
+                </h2>              
+              </div>
+              <input
+                type="number"
+                placeholder="Enter Amount"
+                onChange={(e) => udpatePublicValue(Number(e.target.value))}
+                className="px-4 py-3 text-sm"
+              />
+            </div>
+            <div className='flex-auto'>
+              {Outputs_Collapsible('')}
+            </div>
+          </div>
 
         </CardContent>
         <CardFooter className="mt-4">
@@ -624,29 +534,10 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className="flex-auto">
-              <Accordion type="single" collapsible>
-                <AccordionItem key='how_it_works' value='how_it_works' className=" ">
-                  <AccordionTrigger className=" border-b border-blackmail px-2 text-blackmail hover:bg-toxic-orange">
-                    How does it work?
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className='flex flex-row relative p-6'> 
-                      <div className='flex-auto'>
-                        <p>
-                          Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you are computing two <span className='text-toxic-orange'> new commitments </span> from two commitments that you own.
-                          A commitment is an encrypted value represented by an entry (commitment hash) in the Pool&apos;s Merkle Tree. <span className='text-toxic-orange'> Dummy input commitments </span>  has 0 value and does not exists in the Pool&apos;s Merkle Tree. 
-                          It is used as a placeholder for when you don&apos;t want to use an existing commitment. <br/><br/>
-                          Total sum  of the output commitment values need to match the sum of the input commitment values + public value.  
-                        </p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-            </div>   
+            
           </div>
         </CardFooter>
+
       </Card>
     )
   }
@@ -692,30 +583,37 @@ export default function Home() {
 
   const Render_AppTabs = (className: string) => {
     return (
-        <Tabs value={tabsValue} className={cn("flex flex-col z-10", className)}>
-          <TabsList className="flex flex-row items-center justify-around text-ghost-white bg-blackmail ">
-            <TabsTrigger onClick={() => setTabsValue('account')} value="account" className='text-xs'>Account</TabsTrigger>
-            <TabsTrigger onClick={() => setTabsValue('compute')} value="compute" className='text-xs'>Compute</TabsTrigger>
-            <TabsTrigger onClick={() => setTabsValue('asp')} value="asp" className='text-xs'>ASP</TabsTrigger>
-            <TabsTrigger onClick={() => setTabsValue('records')} value="records" className='text-xs'>Records</TabsTrigger>
-            <TabsTrigger onClick={() => setOpen(true)} value="settings" className='text-xs'>Settings</TabsTrigger>
-          </TabsList>
-          <TabsContent value="account">
-            { notEmpty() ?   Render_AccountCard('bg-doctor') : Render_WelcomeSection('') }
-          </TabsContent>
-          <TabsContent value="compute">
-            {Render_TransactCard('bg-doctor')}
-          </TabsContent>
-        </Tabs>
+      <div className={cn("relative", className)}>
+          <Tabs value={tabsValue}>
+            <div className="flex flex-row gap-x-1 items-start max-phone:flex-col max-phone:gap-y-4">
+              <TabsList className="relative flex flex-col items-start w-fit text-blackmail bg-doctor h-fit mt-2 p-4 max-phone:flex-row max-phone:p-2 max-phone:mt-0 max-phone:w-full max-phone:justify-around  " >
+                <TabsTrigger onClick={() => setTabsValue('account')} value="account" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Account</TabsTrigger>
+                <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('compute')} value="compute" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Compute</TabsTrigger>
+                <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('asp')} value="asp" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>ASP</TabsTrigger>
+                <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('records')} value="records" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Records</TabsTrigger>
+                <TabsTrigger  onClick={() => setOpen(true)} value="settings" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Settings</TabsTrigger>
+              </TabsList>
+              <div>
+                <TabsContent value="account">
+                  { notEmpty() ?   Render_AccountCard('bg-doctor') : Render_WelcomeSection('') }
+                </TabsContent>
+                <TabsContent value="compute">
+                  {Render_TransactCard('bg-doctor')}
+                </TabsContent>
+              </div>
+            </div>
+          </Tabs>
+          {Inputs_Dialog('absolute')}
+      </div>
     )
   };
 
   return (
-    <div className="bg-page-background min-w-screen w-fit min-h-screen h-fit">
+    <div className="bg-page-background min-w-screen w-full min-h-screen h-full">
       <div className="grid grid-cols-2 items-center justify-center p-6 tablet:grid-cols-6 laptop:grid-cols-12">
         <div className="flex flex-col gap-y-5 col-span-2  tablet:col-start-2 tablet:col-span-4 laptop:col-span-6 laptop:col-start-4">
-            {Render_Header('')}
-            {Render_AppTabs('')}
+            {Render_Header('flex-auto ')}
+            {Render_AppTabs('flex-auto z-10')}
             {isNotMobile ? Render_DialogDrawer('') : Render_SettingsDrawer('')}
         </div>
       </div>
