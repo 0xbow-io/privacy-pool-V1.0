@@ -2,7 +2,6 @@ import { type ICommitment } from '@privacy-pool-v1/core-ts/account/interfaces';
 import { type TCommitment } from '@privacy-pool-v1/core-ts/account/types';
 import { type IPrivacyKey } from '@privacy-pool-v1/core-ts/account/interfaces';
 import { type Signature, type Ciphertext } from 'maci-crypto';
-
 import { FnCommitment } from '@privacy-pool-v1/core-ts/account/functions';
 import { PubKey } from 'maci-domainobjs';
 

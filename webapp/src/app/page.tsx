@@ -97,8 +97,13 @@ export default function Home() {
   const [open, setOpen] = React.useState(false)
   
   const [inputsIsOpen, setInputIsOpen] = React.useState(false)
+  const [targetInputIndex, setTargetInputIndex] = React.useState(0)
   const [inputSheetIsOpen, setInputSheetOpen] = React.useState(false)
+
   const [ouptutsIsOpen, setOutputsIsOpen] = React.useState(false)
+  const [targetOutputIndex, setTargetOutputIndex] = React.useState(0)
+  const [outputSheetIsOpen, setOutputSheetOpen] = React.useState(false)
+
 
   const [tabsValue, setTabsValue] = React.useState('account')
   const isNotMobile = useMediaQuery("(min-width: 768px)")
@@ -115,27 +120,34 @@ export default function Home() {
 
       updateTargetPoolChain,
 
-
       importFromJSON, 
       exportToJSON, 
 
-      avilCommits, 
+      getAvailableInputOptions, 
       inCommits,
 
-      inValues, 
-      outValues,
- 
+      publicValue,
 
-      updateInValue,
-      udpatePublicValue,
-      udpateOutputSplit,
-      udpateOutputValue,
+      outValues,
+      outTotalValue,
+
+      extraAmountIsValid,
+      extraAmountReason,
+      outputAmountIsValid,
+      outputAmountReasons,
+
+      getOutputPubKeyHash,
       updateOutputPrivacyKey,
 
-      getOutputValue,
-      getTotalOutputValue,
-      getOutputSplit,
-      getOutputPubKeyHash,
+      getInTotalValueFormatted,
+ 
+      updateInCommit,
+      udpatePublicValue,
+      udpateOutputValue,
+
+      isInputValid,
+      isOutputValid,
+
 
     } = useKeyStore(
     (state) => state,
@@ -341,31 +353,33 @@ export default function Home() {
   };
 
   const Inputs_Dialog = (className: string) => {
+    const currInCommit: string = inCommits[targetInputIndex] === '' ? "0x" : "0x"+ inCommits[targetInputIndex].substring(0, 14) + '....' + inCommits[targetInputIndex].substring(54)
     return(
       <Dialog open={inputSheetIsOpen} onOpenChange={setInputSheetOpen}>
         <DialogContent className="">
           <DialogHeader>
             <DialogTitle>Choose an Input Commitment</DialogTitle>
             <DialogDescription>
-              Select an existing unused commitment or a dummy commitmnet. 
+              Select an existing unused commitment.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-auto">
             <Select
-                value={inCommits[0]}
-                onValueChange={(value) => updateInValue(0, value)}
+                value= {currInCommit}                
+                onValueChange={(value) => updateInCommit(targetInputIndex, value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select">
-                    {inCommits[0]}
+                  {currInCommit}          
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent position="popper">
-                {avilCommits.map((commit) => {
+                {getAvailableInputOptions(targetInputIndex).map((hash) => {
+                  const _hash_ = "0x"+hash.substring(0, 14) + '....' + hash.substring(54);
                   return (
-                    <SelectItem key={commit.hash} value={'0x'+commit.hash.toString(16)}>
-                    0x{commit.hash.toString(16)}
+                    <SelectItem key={hash} value={hash}>
+                    {_hash_}
                     </SelectItem>
                   )
                 })}
@@ -379,14 +393,16 @@ export default function Home() {
   }
 
   const Iputs_Collapsible = (className: string) => {
+    const {ok, reason} = isInputValid();
+
     return(
         <Collapsible
           open={inputsIsOpen}
           onOpenChange={setInputIsOpen}
-          className={cn("space-y-2", className)}
+          className={cn("space-y-2 border-2 p-2", className, ok ? 'border-tropical-forest' : 'border-rust-effect')}
         >
           <div className="flex items-center justify-between space-x-4">
-            <h2 className="text-sm font-semibold">
+            <h2 className="text-sm font-semibold text-blackmail ">
               Input Commitments:
             </h2>
             <CollapsibleTrigger asChild>
@@ -396,16 +412,20 @@ export default function Home() {
             </CollapsibleTrigger>
           </div>
           <div className="rounded-md border px-4 py-3 text-sm">
-            <h2 className="font-semibold  text-sm">Total: {getTotalOutputValue().toString()} {currUnitRepresentative.ticker} </h2>
+            <h2 className="font-semibold text-blackmail text-sm">Total: {getInTotalValueFormatted().toString()} {currUnitRepresentative.ticker} </h2>
+            <h2 className="font-semibold text-rust-effect text-sm">{reason}</h2>
           </div>
           <CollapsibleContent className="space-y-2">
             {
-              inValues.map(
-                (value, index) => {
+              inCommits.map(
+                (c, index) => {
+
+                  const commitVal: string = c === '' ? "0x" : "0x"+ c.substring(0, 14) + '....' + c.substring(54)
+
                   return (
                     <div key={"invalue:"+index} className="rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full">
-                      <h2 className="font-semibold">Input ({index}): {value.toString()} {currUnitRepresentative.ticker}</h2>
-                        <Button onClick={() => void setInputSheetOpen(true)} variant="ghost" size="sm" className="w-9 p-0">
+                      <h2 className="font-semibold text-blackmail ">Input ({index}): {commitVal}</h2>
+                        <Button onClick={() => {setTargetInputIndex(index); setInputSheetOpen(true)}} variant="ghost" size="sm" className="w-9 p-0">
                           <ChevronRightSquareIcon className="size-6" />
                         </Button>
                     </div>
@@ -418,13 +438,86 @@ export default function Home() {
     )
   }
 
+  const Outputs_Dialog = (className: string) => {
+    return(
+      <Dialog open={outputSheetIsOpen} onOpenChange={setOutputSheetOpen}>
+        <DialogContent className="">
+          <DialogHeader>
+            <DialogTitle>Ouptut Commitment:</DialogTitle>
+            <DialogDescription>
+              Adjust the value of the Commitment & specify which keypair owns it.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-auto space-y-6">
+            <div className="flex-auto flex flex-col gap-y-2 tablet:pt-6">
+                <label htmlFor="output-amount" className=
+                    {
+                      cn(
+                        'block mb-2 text-sm font-semibold text-blackmail ',
+                        outputAmountIsValid[targetOutputIndex] ? 'text-blackmail' : 'text-rust-effect'
+                      )
+                  }>Output Amount:</label>
+                <input
+                  id="output-amount"
+                  type="number"
+                  placeholder={outValues[targetOutputIndex].toString()}
+                  onChange={(e) => udpateOutputValue(targetOutputIndex, Number(e.target.value))}
+                  className= {
+                    cn(
+                      'px-4 py-3 text-sm font-semibold text-blackmail ',
+                      outputAmountIsValid[targetOutputIndex] ? 'text-blackmail' : 'text-rust-effect'
+                    )
+                  }
+                />
+                <h2 className="mt-2 text-sm font-semibold text-rust-effect">{outputAmountReasons[targetOutputIndex]}</h2>
+            </div>
+          
+            <div className="flex-auto flex flex-col gap-y-2 tablet:pt-6">
+                <label htmlFor="output-amount" className=
+                      {
+                        cn(
+                          'block mb-2 text-sm font-semibold text-blackmail ',
+                        )
+                }>Owned by:</label>
+                <Select
+                value={ getOutputPubKeyHash(targetOutputIndex).substring(0, 24)+'....'+ getOutputPubKeyHash(targetOutputIndex).substring(60)}
+                onValueChange={(value) => updateOutputPrivacyKey(targetOutputIndex, value)}
+                >
+                <SelectTrigger>
+                    <SelectValue placeholder="Select">
+                    { getOutputPubKeyHash(targetOutputIndex).substring(0, 24)+'....'+ getOutputPubKeyHash(targetOutputIndex).substring(60)}
+                    </SelectValue>
+                </SelectTrigger>
+                <SelectContent position="popper" id="putput-key-dropdown">
+                {keys.map((key) => {
+                    const pk = key.pubKey.serialize();
+                    return (
+                    <SelectItem key={key.pubKeyHash} value={pk}>
+                      {pk.substring(0, 24)+'....'+ pk.substring(60)}
+                    </SelectItem>
+                    )
+                })}
+                </SelectContent>
+              </Select>
+              </div>
+          </div>
+          
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
 
   const Outputs_Collapsible = (className: string) => {
+
+    const {ok, reason} = isOutputValid();
+
     return(
         <Collapsible
           open={ouptutsIsOpen}
           onOpenChange={setOutputsIsOpen}
-          className={cn("space-y-2", className)}
+          className={cn("space-y-2 border-2 p-2", className, ok ? 'border-tropical-forest' : 'border-rust-effect')}
         >
           <div className="flex items-center justify-between space-x-4">
             <h2 className="text-sm font-semibold">
@@ -436,17 +529,19 @@ export default function Home() {
               </Button>
             </CollapsibleTrigger>
           </div>
-          <div className="rounded-md border px-4 py-3 text-sm">
-            <h2 className="font-semibold  text-sm">Total: {getTotalOutputValue().toString()} {currUnitRepresentative.ticker} </h2>
+          <div className="rounded-md border px-4 py-3 text-sm space-y-2">
+            <h2 className="font-semibold  text-sm">Expected Total: {outTotalValue.toString()} {currUnitRepresentative.ticker} </h2>
+            <h2 className="font-semibold text-sm text-rust-effect">{reason}</h2>
           </div>
           <CollapsibleContent className="space-y-2">
             {
               outValues.map(
                 (value, index) => {
                   return (
-                    <div key={"outValue:"+index} className="rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full">
+                    <div key={"outValue:"+index} 
+                    className={cn("rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full", outputAmountIsValid[targetOutputIndex] ? 'bg-tropical-forest text-ghost-white' : 'bg-rust-effect text-ghost-white')}>
                       <h2 className="font-semibold">Output ({index}): {value.toString()} {currUnitRepresentative.ticker}</h2>
-                        <Button onClick={() => void setInputSheetOpen(true)} variant="ghost" size="sm" className="w-9 p-0">
+                        <Button onClick={() => {setTargetOutputIndex(index); setOutputSheetOpen(true)}} variant="ghost" size="sm" className="w-9 p-0">
                           <ChevronRightSquareIcon className="size-6" />
                         </Button>
                     </div>
@@ -495,25 +590,36 @@ export default function Home() {
 
         <CardContent className="space-y-2">
 
-          <div className='flex flex-col gap-y-4'>
+          <div className='flex flex-col gap-y-4 tablet:flex-row tablet:items-center tablet:gap-4'>
             <div className='flex-auto'>
               {Iputs_Collapsible('')}
             </div>
-            <div className="flex-auto flex flex-col gap-y-4 ">
-              <div>
-                <h2 className="text-sm font-semibold">
-                  Extra Amount:
-                </h2>              
-              </div>
+            <div className="flex-auto flex flex-col gap-y-2 tablet:pt-6">
+              <label htmlFor="extra-amount" className=
+                  {
+                    cn(
+                      'block mb-2 text-sm font-semibold text-blackmail ',
+                      extraAmountIsValid ? 'text-blackmail' : 'text-rust-effect'
+                    )
+                }>Extra Amount:</label>
               <input
+                id="extra-amount"
                 type="number"
-                placeholder="Enter Amount"
+                placeholder={publicValue.toString()}
                 onChange={(e) => udpatePublicValue(Number(e.target.value))}
-                className="px-4 py-3 text-sm"
+                className= {
+                  cn(
+                    'px-4 py-3 text-sm font-semibold text-blackmail ',
+                    extraAmountIsValid ? 'text-blackmail' : 'text-rust-effect'
+                  )
+                }
               />
+              <h2 className="mt-2 text-sm font-semibold text-rust-effect">{extraAmountReason}</h2>
             </div>
             <div className='flex-auto'>
-              {Outputs_Collapsible('')}
+              {
+                  Outputs_Collapsible('border-2')
+              } 
             </div>
           </div>
 
@@ -591,7 +697,7 @@ export default function Home() {
                 <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('compute')} value="compute" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Compute</TabsTrigger>
                 <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('asp')} value="asp" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>ASP</TabsTrigger>
                 <TabsTrigger disabled={!notEmpty()} onClick={() => setTabsValue('records')} value="records" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Records</TabsTrigger>
-                <TabsTrigger  onClick={() => setOpen(true)} value="settings" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Settings</TabsTrigger>
+                <TabsTrigger  onClick={() => void setOpen(true)} value="settings" className='text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white'>Settings</TabsTrigger>
               </TabsList>
               <div>
                 <TabsContent value="account">
@@ -604,6 +710,7 @@ export default function Home() {
             </div>
           </Tabs>
           {Inputs_Dialog('absolute')}
+          {Outputs_Dialog('absolute')}
       </div>
     )
   };

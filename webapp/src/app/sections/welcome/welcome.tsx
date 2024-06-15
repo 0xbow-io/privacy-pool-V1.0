@@ -16,12 +16,9 @@ export default function WelcomeSection({className}: props) {
                     </div>
                     <div className="flex py-6">
                         <p className=" z-10 text-pretty text-justify leading-relaxed text-ghost-white text-xs tablet:text-base laptop:text-lg ">
-                            Privacy pools extends previous zero-knowledge proofs (ZKPs) privacy tools by
-                            allowing users to publicly publish an additional ZKP to prove that the funds they
-                            commit to the protocol are not associated with illicit funds from other users,
-                            helping to isolate illicit funds.
-                            <br />
-                            <br />
+                            Privacy pools extends previous zero-knowledge proofs (ZKPs) privacy tools by allowing users to publicly publish an additional ZKP to prove that the funds they commit to the protocol are not associated with illicit funds from other users, helping to isolate illicit funds.
+                            <br/>
+                            <br/>
                             Access the settings tab & click <span className='text-toxic-orange'> Load Account </span> button to load an existing account or create a new one via <span className='text-toxic-orange'> New Account </span> 
                         </p>
                     </div>
