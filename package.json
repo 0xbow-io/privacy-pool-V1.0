@@ -37,6 +37,7 @@
     "test:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/testCircuit.sh",
     "gen:verifier:testdata": "bun run ./zero-knowledge/scripts/privacy-pool/genTestVerifierData.sh",
     "hardhat:compile": "cd ./contracts && bun run compile",
-    "hardhat:test": "cd ./contracts && bun run hardhat:test"
+    "hardhat:test": "cd ./contracts && bun run hardhat:test",
+    "webapp:dev": "cd ./webapp && bun run dev"
   }
 }
