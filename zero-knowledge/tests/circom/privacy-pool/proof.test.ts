@@ -9,7 +9,7 @@ import { test, describe, afterEach, expect } from "@jest/globals"
 
 
 describe("Test Generating Proofs", () => {
-  const verifierKey = JSON.parse(fs.readFileSync(PrivacyPool.circomArtifacts.LOCAL_VKEY_PATH, "utf-8"))
+  const verifierKey = JSON.parse(fs.readFileSync(PrivacyPool.circomArtifacts.VKEY_PATH, "utf-8"))
 
   const testData: Array<string> = Array.from({ length: PrivacyPool.test_data_size }, (_, i) =>
     path.resolve(PrivacyPool.circomkitConf.dirInputs, "testcase_" + i.toString() + ".json")
@@ -22,7 +22,7 @@ describe("Test Generating Proofs", () => {
   test.each(testData)("should be able to generate proof with snarkJS for %s", async (inputs) => {
     const circuitInputs = JSON.parse(fs.readFileSync(inputs, "utf-8"))
 
-    const out =  await FnPrivacyPool.ProveFn(circuitInputs.inputs, PrivacyPool.circomArtifacts.LOCAL_WASM_PATH, PrivacyPool.circomArtifacts.LOCAL_ZKEY_PATH)
+    const out =  await FnPrivacyPool.ProveFn(circuitInputs.inputs, PrivacyPool.circomArtifacts.WASM_PATH, PrivacyPool.circomArtifacts.ZKEY_PATH)
 
     const ok = await FnPrivacyPool.VerifyFn(
         verifierKey,

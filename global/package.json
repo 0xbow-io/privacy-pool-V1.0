@@ -7,5 +7,10 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "download:privacypool:zkey": "bun run ./scripts/privacy-pool/downloadZkey.ts",
+    "download:privacypool:vkey": "bun run ./scripts/privacy-pool/downloadVKey.ts",
+    "download:privacypool:wasm": "bun run ./scripts/privacy-pool/downloadWasm.ts"
   }
 }

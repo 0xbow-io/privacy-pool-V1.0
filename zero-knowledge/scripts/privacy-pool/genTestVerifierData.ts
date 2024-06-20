@@ -9,7 +9,7 @@ import { stringifyBigInts } from "maci-crypto"
 import { cleanThreads } from "@privacy-pool-v1/global"
 
 
-const verifierKey = JSON.parse(fs.readFileSync(PrivacyPool.circomArtifacts.LOCAL_VKEY_PATH, "utf-8"))
+const verifierKey = JSON.parse(fs.readFileSync(PrivacyPool.circomArtifacts.VKEY_PATH, "utf-8"))
 
 const testInputPath: Array<string> = Array.from({ length: PrivacyPool.test_data_size }, (_, i) =>
     path.resolve(PrivacyPool.circomkitConf.dirInputs, "testcase_" + i.toString() + ".json")
@@ -32,7 +32,7 @@ function exportToJSON(data: any, filePath: string): void {
 
 async function exportProof(inputPath: string, outputPath: string): Promise<void>{
     const circuitInputs = JSON.parse(fs.readFileSync(inputPath, "utf-8"))
-    const out =  await FnPrivacyPool.ProveFn(circuitInputs.inputs, PrivacyPool.circomArtifacts.LOCAL_WASM_PATH, PrivacyPool.circomArtifacts.LOCAL_ZKEY_PATH)
+    const out =  await FnPrivacyPool.ProveFn(circuitInputs.inputs, PrivacyPool.circomArtifacts.WASM_PATH, PrivacyPool.circomArtifacts.ZKEY_PATH)
     const ok = await FnPrivacyPool.VerifyFn(
         verifierKey,
         out.publicSignals,

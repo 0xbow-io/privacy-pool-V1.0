@@ -14,16 +14,19 @@ export type GlobalConfig = ProjectPaths & {
   GLOBAL_TEST_DATA_DIR: string
 }
 
+export type circomArtifactPaths = {
+  // Local paths for when the artifacts are hosted locally
+  WASM_PATH: string
+  ZKEY_PATH: string
+  VKEY_PATH: string
+}
+
 export type ZKConfig = GlobalConfig & {
   circom: {
     circuitID: string
     circomkit: CircomkitConfig
   }
-  paths: {
-    LOCAL_WASM_PATH: string
-    LOCAL_ZKEY_PATH: string
-    LOCAL_VKEY_PATH: string
-  }
+  artifacts: circomArtifactPaths
 }
 
 export type ContractConfig = GlobalConfig & {

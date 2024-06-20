@@ -1,3 +1,5 @@
+import path from "path"
+
 export const generic_configs = "configs"
 export const generic_src = "src"
 export const generic_artifacts = "artifacts"
@@ -16,3 +18,8 @@ export const project_contracts = "contracts"
 export const project_privacy_pool = "privacy-pool"
 export const project_poa = "proof-of-assocation"
 
+export const project_org = "0xbow-io"
+export const project_repo = "privacy-pools-v1"
+
+export const project_root_path = path.resolve(__dirname, "../../")
+export const project_base_url = `https://raw.githubusercontent.com/${project_org}/${project_repo}/main`

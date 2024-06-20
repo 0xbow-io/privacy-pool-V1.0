@@ -14,9 +14,9 @@ import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 
 import {
-  LOCAL_WASM_PATH,
-  LOCAL_ZKEY_PATH,
-  LOCAL_VKEY_PATH
+  WASM_PATH,
+  ZKEY_PATH,
+  VKEY_PATH
 } from "@privacy-pool-v1/core-ts/zk-circuit"
 import fs from "fs"
 
@@ -139,7 +139,7 @@ describe("Test Functions", () => {
     const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
 
-    const verifierKey = JSON.parse(fs.readFileSync(LOCAL_VKEY_PATH, "utf-8"))
+    const verifierKey = JSON.parse(fs.readFileSync(VKEY_PATH, "utf-8"))
 
     beforeEach(async () => {
       mt = new LeanIMT(hashLeftRight)
@@ -174,8 +174,8 @@ describe("Test Functions", () => {
       )
       const out = await FnPrivacyPool.ProveFn(
         circuit_inputs,
-        LOCAL_WASM_PATH,
-        LOCAL_ZKEY_PATH
+        WASM_PATH,
+        ZKEY_PATH
       )
       const ok = await FnPrivacyPool.VerifyFn(
         verifierKey,

@@ -1,5 +1,5 @@
 
-import { globalConf, getPath, circomArtifactPaths} from "@privacy-pool-v1/global"
+import { globalConf, getPath, getCircomArtifactPaths} from "@privacy-pool-v1/global"
 import {generic_circom, project_privacy_pool, generic_ptau} from "@privacy-pool-v1/global"
 import type { CircomkitConfig, CircuitConfig } from "circomkit"
 import { contractConf} from "@privacy-pool-v1/contracts"
@@ -60,7 +60,7 @@ export namespace PrivacyPool {
       getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "utils"])
   ]
 
-  export const circomArtifacts = circomArtifactPaths(globalConf, project_privacy_pool, id)
+  export const circomArtifacts = getCircomArtifactPaths(globalConf, project_privacy_pool, id)
 
   export const circomkitConf: CircomkitConfig = {
     protocol: protocol,

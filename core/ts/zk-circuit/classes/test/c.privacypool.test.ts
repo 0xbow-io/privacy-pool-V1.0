@@ -4,9 +4,9 @@ import { FnPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
 
 import {CreateCommitment, CreatePrivacyKey } from '@privacy-pool-v1/core-ts/account';
 import { 
-    LOCAL_WASM_PATH, 
-    LOCAL_ZKEY_PATH, 
-    LOCAL_VKEY_PATH, 
+    WASM_PATH, 
+    ZKEY_PATH, 
+    VKEY_PATH, 
     NewPrivacyPoolCircuit
 } from '@privacy-pool-v1/core-ts/zk-circuit';
 
@@ -36,7 +36,7 @@ describe('Test Classes', () => {
         const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n];
         let commitments: Commitment[];
 
-        const verifierKey = JSON.parse(fs.readFileSync(LOCAL_VKEY_PATH, 'utf-8'));
+        const verifierKey = JSON.parse(fs.readFileSync(VKEY_PATH, 'utf-8'));
 
         let privacyPool: PrivacyPoolCircuit
 
@@ -47,8 +47,8 @@ describe('Test Classes', () => {
 
             privacyPool = NewPrivacyPoolCircuit({
                 vKey: verifierKey,
-                zKeyPath: LOCAL_ZKEY_PATH,
-                wasmPath: LOCAL_WASM_PATH,
+                zKeyPath: ZKEY_PATH,
+                wasmPath: WASM_PATH,
             })
 
             // generate commitments for non zero amounts
