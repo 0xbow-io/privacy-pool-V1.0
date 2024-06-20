@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../src/PrivacyPool.sol";
-import "../src/Groth16Verifier.sol";
+import "../src/groth16_verifier";
 import "../src/TreeHasher.sol";
 import "../src/interfaces/IPrivacyPool.sol";
 import "@openzeppelin/contracts/utils/math/SignedMath.sol";

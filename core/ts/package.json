@@ -1,7 +1,7 @@
 {
   "name": "@privacy-pool-v1/core-ts",
   "version": "1.0.0",
-  "description": "Core typescript packages for Privacy Poool",
+  "description": "Core typescript packages for Privacy Pool",
   "license": "MIT",
   "type": "module",
   "devDependencies": {

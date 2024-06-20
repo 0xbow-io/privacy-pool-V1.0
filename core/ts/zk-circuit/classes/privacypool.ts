@@ -1,10 +1,8 @@
 import type { ICircuit, TPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
-import { type TCommitment } from '@privacy-pool-v1/core-ts/account';
 import { FnPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
 
 
 import { stringifyBigInts } from 'maci-crypto';
-import {LeanIMT}   from '@zk-kit/lean-imt';
 // Handy Aliases
 export type PrivacyPoolCircuit = ICircuit.CircuitI;
 export function NewPrivacyPoolCircuit(paths: {

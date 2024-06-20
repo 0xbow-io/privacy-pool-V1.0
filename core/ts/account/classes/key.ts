@@ -1,68 +1,86 @@
-import { type Hex, type Address } from 'viem';
-import { type Ciphertext, type Signature, type Plaintext } from 'maci-crypto';
-import { type IPrivacyKey } from '@privacy-pool-v1/core-ts/account/interfaces';
-import { type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
-import { FnPrivacyKey } from '@privacy-pool-v1/core-ts/account/functions';
-import { PubKey } from 'maci-domainobjs';
+import { type Hex, type Address } from "viem"
+import { type Ciphertext, type Signature, type Plaintext } from "maci-crypto"
+import { type IPrivacyKey } from "@privacy-pool-v1/core-ts/account/interfaces"
+import { type TPrivacyKey } from "@privacy-pool-v1/core-ts/account/types"
+import { FnPrivacyKey } from "@privacy-pool-v1/core-ts/account/functions"
+import { PubKey } from "maci-domainobjs"
 
 // Useful aliases
-export type PrivacyKey = IPrivacyKey.KeyI;
+export type PrivacyKey = IPrivacyKey.KeyI
 export function CreatePrivacyKey(privateKey?: Hex): IPrivacyKey.KeyI {
-  return CPrivacyKey.PrivacyKeyC.create(privateKey);
+  return CPrivacyKey.PrivacyKeyC.create(privateKey)
 }
 
 export namespace CPrivacyKey {
   export class PrivacyKeyC implements IPrivacyKey.KeyI {
-    readonly signer: TPrivacyKey.SignerT = this.sign.bind(this);
-    readonly encryptor: TPrivacyKey.EncryptorT = this.encrypt.bind(this);
-    readonly decryptor: TPrivacyKey.DecryptorT = this.decrypt.bind(this);
-
-    private constructor(private _key: TPrivacyKey.KeyT) { }
+    private constructor(private _key: TPrivacyKey.KeyT) {}
 
     static create(privateKey?: Hex): IPrivacyKey.KeyI {
-      return new PrivacyKeyC(FnPrivacyKey.GenPrivacyKeyFn(privateKey));
+      return new PrivacyKeyC(FnPrivacyKey.GenPrivacyKeyFn(privateKey))
     }
 
     get pubKey(): PubKey {
       if (this._key === undefined || this._key!.keypair == undefined) {
-        throw new Error('No keypair found');
+        throw new Error("No keypair found")
       }
-      return this._key.keypair.pubKey;
+      return this._key.keypair.pubKey
     }
 
     get pubKeyHash(): bigint {
       if (this._key === undefined || this._key!.keypair == undefined) {
-        throw new Error('No keypair found');
+        throw new Error("No keypair found")
       }
-      return FnPrivacyKey.HashhPubKeyFn(this._key.keypair.pubKey);
+      return FnPrivacyKey.HashhPubKeyFn(this._key.keypair.pubKey)
     }
 
     get publicAddress(): Address {
       if (this._key === undefined) {
-        throw new Error('No keypair found');
+        throw new Error("No keypair found")
       }
-      return this._key.account.address;
+      return this._key.account.address
     }
 
-    private sign(msg: bigint): Signature {
+    sign(msg: bigint): Signature {
       if (this._key === undefined || this._key!.keypair === undefined) {
-        throw new Error('No keypair found');
+        throw new Error("No keypair found")
       }
-      return FnPrivacyKey.SignMsgFn(msg, this._key.keypair.privKey.rawPrivKey.toString());
+      return FnPrivacyKey.SignMsgFn(
+        msg,
+        this._key.keypair.privKey.rawPrivKey.toString()
+      )
     }
-    private encrypt(secret: Plaintext, nonce: bigint): Ciphertext {
+    encrypt(secret: Plaintext, nonce: bigint): Ciphertext {
       if (this._key === undefined || this._key!.eK === undefined) {
-        throw new Error('kehpair or eK not found');
+        throw new Error("kehpair or eK not found")
       }
-      return FnPrivacyKey.EncryptFn(secret, nonce, this._key.eK);
+      return FnPrivacyKey.EncryptFn(secret, nonce, this._key.eK)
     }
-    private decrypt(cipher: Ciphertext, nonce: bigint, secretLen: number): Plaintext {
+    decrypt(cipher: Ciphertext, nonce: bigint, secretLen: number): Plaintext {
       try {
-        const plaintext = FnPrivacyKey.DecryptFn(cipher, nonce, secretLen, this._key!.eK!);
-        return plaintext;
+        const plaintext = FnPrivacyKey.DecryptFn(
+          cipher,
+          nonce,
+          secretLen,
+          this._key!.eK!
+        )
+        return plaintext
       } catch (e) {
-        console.log('Error decrypting message', e);
-        throw new Error('Error decrypting message');
+        console.log("Error decrypting message", e)
+        throw new Error("Error decrypting message")
+      }
+    }
+
+    get asJSON() {
+      return {
+        privateKey: this._key.privateKey,
+        pubAddr: this.publicAddress,
+        keypair: this._key.keypair.toJSON(),
+        ek_x:
+          "0x" + this._key.eK === undefined
+            ? ""
+            : this._key.eK![0].toString(16),
+        ek_y:
+          "0x" + this._key.eK === undefined ? "" : this._key.eK![1].toString(16)
       }
     }
   }

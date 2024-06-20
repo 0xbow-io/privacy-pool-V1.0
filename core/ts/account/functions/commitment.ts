@@ -1,33 +1,69 @@
-import { type TCommitment, type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
-import { PubKey } from 'maci-domainobjs';
-import { type Signature } from 'maci-crypto';
-import { hash2, hash3, hash4 , genRandomBabyJubValue} from 'maci-crypto';
-import {type Ciphertext} from 'maci-crypto';
+import {
+  type TCommitment,
+  type TPrivacyKey
+} from "@privacy-pool-v1/core-ts/account/types"
+import { PubKey } from "maci-domainobjs"
+import { type Signature } from "maci-crypto"
+import {
+  hash2,
+  hash5,
+  hash4,
+  genRandomBabyJubValue,
+  verifySignature
+} from "maci-crypto"
+import { type Ciphertext } from "maci-crypto"
 
 export namespace FnCommitment {
-  export function HashFn(secrets: TCommitment.SecretsT, pubKey: PubKey): bigint {
+  export function HashFn(
+    secrets: TCommitment.SecretsT,
+    pubKey: PubKey
+  ): bigint {
     return hash4([
       secrets.amount ?? 0n,
       pubKey.rawPubKey[0],
       pubKey.rawPubKey[1],
-      secrets.blinding ?? 0n,
-    ]);
+      secrets.blinding ?? 0n
+    ])
   }
 
-  export function SignatureFn(signer: TPrivacyKey.SignerT, hash: bigint, index: bigint): Signature {
-    return signer(hash2([hash, index]));
+  // EdDSA signature of Poseidon(2)([hash, index])
+  export function SignatureFn(
+    signer: TPrivacyKey.SignerT,
+    inputs: bigint[]
+  ): Signature {
+    return signer(hash4(inputs))
   }
 
+  export function VerifySignatureFn(
+    signature: Signature,
+    pubKey: bigint[],
+    inputs: bigint[]
+  ): boolean {
+    try {
+      return verifySignature(hash4(inputs), signature, [pubKey[0], pubKey[1]])
+    } catch (e) {
+      console.log(" caught error, ", e)
+      return false
+    }
+  }
+
+  // circom: PoseidonHasher(5)([commitment, leafIndex, signature_R8[0], signature_R8[1], signature_S]);
   export function NullifierFn(sig: Signature, hash: bigint, index: bigint) {
-    return hash3([hash, index, sig.S as bigint]);
+    return hash5([
+      hash,
+      index,
+      BigInt(sig.R8[0]),
+      BigInt(sig.R8[1]),
+      BigInt(sig.S)
+    ])
   }
 
   export function EncryptFn(
     encryptor: TPrivacyKey.EncryptorT,
     secrets: TCommitment.SecretsT,
-    nonce: bigint,
+    nonce: bigint
   ): Ciphertext {
-    return encryptor([secrets.amount || 0n, secrets.blinding || 0n], nonce);
+    return encryptor([secrets.amount || 0n, secrets.blinding || 0n], nonce)
   }
 
   export function BlinderFn(): bigint {

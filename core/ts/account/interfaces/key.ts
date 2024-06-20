@@ -1,8 +1,7 @@
-import { PubKey } from 'maci-domainobjs';
+import { PubKey } from "maci-domainobjs"
 
-import { type Ciphertext, type Signature, type Plaintext } from 'maci-crypto';
-import { type Address } from 'viem';
-import { type TPrivacyKey } from '@privacy-pool-v1/core-ts/account/types';
+import { type Ciphertext, type Signature, type Plaintext } from "maci-crypto"
+import { type Address } from "viem"
 
 export namespace IPrivacyKey {
   export interface KeyI<
@@ -10,13 +9,14 @@ export namespace IPrivacyKey {
     SigT = Signature,
     MsgT = bigint,
     CipherT = Ciphertext,
-    SecretT = Plaintext,
+    SecretT = Plaintext
   > {
-    pubKey: PkT;
-    publicAddress: Address;
-    pubKeyHash: bigint;
-    signer: TPrivacyKey.SignerT<MsgT, SigT>;
-    encryptor: TPrivacyKey.EncryptorT<SecretT, CipherT>;
-    decryptor: TPrivacyKey.DecryptorT<CipherT, SecretT>;
+    pubKey: PkT
+    publicAddress: Address
+    pubKeyHash: bigint
+    sign(msg: MsgT): SigT
+    encrypt(secret: SecretT, nonce: bigint): CipherT
+    decrypt(cipher: CipherT, nonce: bigint, secretLen: number): Plaintext
+    asJSON: any
   }
 }

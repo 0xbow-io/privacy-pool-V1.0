@@ -1,0 +1,14 @@
+{
+  "PrivacyPool_V1": {
+    "file": "./privacy-pool/privacyPool",
+    "template": "PrivacyPool",
+    "pubs": [
+      "publicVal",
+      "signalHash",
+      "actualMerkleTreeDepth",
+      "inputNullifier",
+      "outCommitment"
+    ],
+    "params": [32, 2, 2]
+  }
+}

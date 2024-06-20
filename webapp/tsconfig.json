@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ESNext",
+      "ES2020"
+    ],
+    "target": "ESNext",
+    "module": "ESNext",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "allowImportingTsExtensions": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": [
+      "bun-types", // add Bun global
+      "node"
+    ],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/providers/*": ["./src/providers/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@sections/*": [
+        "./src/app/sections/*"
+      ],
+      "@privacy-pool-v1/circuits/*": [
+        "../circuits/*"
+      ],
+      "@privacy-pool-v1/contracts/*": [
+        "../contracts/*"
+      ],
+      "@privacy-pool-v1/core-ts/*": [
+        "../core/ts/*"
+      ]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
