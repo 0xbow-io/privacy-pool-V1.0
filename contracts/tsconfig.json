@@ -1,22 +1,18 @@
+
 {
   "compilerOptions": {
-    "target": "es2020",
+    "lib": ["ESNext", "DOM"],
+    "target": "es2020",   
     "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
     "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
     "paths": {
-      "@privacy-pool-v1/circuits/*": [
-        "../circuits/*"
-      ],
-      "@privacy-pool-v1/contracts/*": [
-        "../contracts/*"
-      ],
-      "@privacy-pool-v1/core-ts/*": [
-        "../core/ts/*"
-      ]
+      "@privacy-pool-v1/global/*": ["./global/*"],
+      "@privacy-pool-v1/zero-knowledge/*": ["./zero-knowledge/*"],
+      "@privacy-pool-v1/contracts/*": ["./contracts/*"],
+      "@privacy-pool-v1/core-ts/*": ["./core/ts/*"]
     }
   }
 }

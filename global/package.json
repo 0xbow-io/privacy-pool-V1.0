@@ -1,0 +1,11 @@
+{
+  "name": "@privacy-pool-v1/global",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

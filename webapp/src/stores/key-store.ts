@@ -4,6 +4,7 @@ import { Chain, sepolia, gnosis } from 'viem/chains';
 import {formatUnits} from 'viem'
 
 
+import { type PrivacyPoolCircuit } from '@privacy-pool-v1/core-ts/zk-circuit';
 
 import type { PrivacyKey, Commitment } from '@privacy-pool-v1/core-ts/account/';
 import { CreatePrivacyKey, CreateCommitment } from '@privacy-pool-v1/core-ts/account/';
@@ -41,6 +42,10 @@ export type AccountState = {
 
     outputAmountIsValid: boolean[]
     outputAmountReasons: string[]
+
+    // TEMP Implementation 
+    verifierKey: any
+    circuit: PrivacyPoolCircuit
 
 }
 
@@ -245,7 +250,7 @@ return createStore<KeyStore>()((set, get) => ({
         refreshInTotalValue: () => {
             const _total_input: number = get().inCommits.reduce((acc, val) => {
                 const commit = get().avilCommits.find((c) => c.hash.toString(16) === val);
-                // only add the value if the commit is available
+GetInputsFn                // only add the value if the commit is available
                 if (commit !== undefined) {
                     acc += Number(commit.raw.Units);
                 }

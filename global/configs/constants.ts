@@ -1,0 +1,18 @@
+export const generic_configs = "configs"
+export const generic_src = "src"
+export const generic_artifacts = "artifacts"
+export const generic_test = "test"
+export const generic_test_data = "test-data"
+export const generic_srcipts = "scripts"
+export const generic_circom = "circom"
+export const generic_ptau = "ptau"
+export const generic_typescript = "ts"
+
+export const project_global = "global"
+export const project_zero_knowledge = "zero-knowledge"
+export const project_webapp = "webapp"
+export const project_core = "core"
+export const project_contracts = "contracts"
+export const project_privacy_pool = "privacy-pool"
+export const project_poa = "proof-of-assocation"
+

@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "index.ts",
+    "circom/ts/*.ts",
+    "scripts/*",
+    "scripts/privacy-pool/*",
+    "ts/privacy-pool/buildCircuit.ts"  ]
+}
