@@ -177,3 +177,5 @@ dist
 
 ## Local notes
 notes.txt
+/contracts/cache_forge
+/contracts/cache
