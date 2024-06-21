@@ -6,6 +6,22 @@ To install dependencies:
 bun install
 ```
 
+Install Rust
+
+```bash
+curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
+```
+
+Circom dependencies
+
+```bash
+git clone https://github.com/iden3/circom.git
+cd circom
+git checkout v2.1.9
+cargo build --release
+cargo install --path circom
+```
+
 To generate Privacy Pool circom artifacts:
 
 ```bash

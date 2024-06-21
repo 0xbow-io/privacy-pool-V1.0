@@ -181,3 +181,4 @@ notes.txt
 /contracts/cache
 /zero-knowledge/scripts/privacy-pool/buildCircuit.js
 /zero-knowledge/scripts/privacy-pool/genTestVerifierData.js
+/global/artifacts
