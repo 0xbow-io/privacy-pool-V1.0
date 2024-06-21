@@ -184,4 +184,6 @@ export namespace FnPrivacyPool {
         outputs.publicSignals[6],
         outputs.publicSignals[7],
       ]
+    ]
   }
+}
