@@ -249,8 +249,7 @@ return createStore<KeyStore>()((set, get) => ({
 
         refreshInTotalValue: () => {
             const _total_input: number = get().inCommits.reduce((acc, val) => {
-                const commit = get().avilCommits.find((c) => c.hash.toString(16) === val);
-GetInputsFn                // only add the value if the commit is available
+                const commit = get().avilCommits.find((c) => c.hash.toString(16) === val);                // only add the value if the commit is available
                 if (commit !== undefined) {
                     acc += Number(commit.raw.Units);
                 }
