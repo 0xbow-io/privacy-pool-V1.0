@@ -177,3 +177,7 @@ dist
 
 ## Local notes
 notes.txt
+/contracts/cache_forge
+/contracts/cache
+/zero-knowledge/scripts/privacy-pool/buildCircuit.js
+/zero-knowledge/scripts/privacy-pool/genTestVerifierData.js
