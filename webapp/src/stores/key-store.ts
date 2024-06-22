@@ -202,9 +202,20 @@ export const createKeyStore = (initState: AccountState = defaultInitState) => {
       const chainName = value.split(":")[0]
       const poolID = value.split(":")[1]
 
+<<<<<<< HEAD
       if (!ChainNameToChain.has(chainName)) {
         throw new Error("Invalid chain name: " + chainName)
       }
+=======
+        refreshInTotalValue: () => {
+            const _total_input: number = get().inCommits.reduce((acc, val) => {
+                const commit = get().avilCommits.find((c) => c.hash.toString(16) === val);                // only add the value if the commit is available
+                if (commit !== undefined) {
+                    acc += Number(commit.raw.Units);
+                }
+                return acc;
+           }, 0);
+>>>>>>> main
 
       const chain = ChainNameToChain.get(chainName)!
 

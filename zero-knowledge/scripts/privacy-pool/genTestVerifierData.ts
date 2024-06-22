@@ -52,7 +52,7 @@ async function exportProof(inputPath: string, outputPath: string): Promise<void>
   }
 
 testInputPath.forEach(async (inputPath, i) => {
-  await exportProof(inputPath, path.join(contractConf.COPNTRACT_TEST_DATA_PATH || "", "testcase_" + `${i++}.json`))
+  await exportProof(inputPath, path.join(contractConf.CONTRACT_TEST_DATA_PATH || "", "testcase_" + `${i++}.json`))
 })
 
 await cleanThreads()

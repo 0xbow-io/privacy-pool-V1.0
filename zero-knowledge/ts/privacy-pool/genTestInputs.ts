@@ -1,4 +1,3 @@
-
 import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 import {
   CreateCommitment,
@@ -38,22 +37,20 @@ function generateTestAmounts(
   })
 }
 
-export function genTestCircuitInputsFn(
-  numberOfTests: number,
-) {
+export function genTestCircuitInputsFn(numberOfTests: number) {
   let mt = new LeanIMT(hashLeftRight)
-  
+
   // generate random set of keys
   let keys = Array.from({ length: numberOfTests }, () => CreatePrivacyKey())
   return generateTestAmounts(numberOfTests, 0n, 500n).map((values) => {
     // create input commitments
     // with randomly selected keys
-    const input_commitments = [0,1].map((i) => {
+    const input_commitments = [0, 1].map((i) => {
       const commitment = CreateCommitment(
         keys[Math.floor(Math.random() * keys.length)],
         {
           amount: values[i]
-        },
+        }
       )
       // only inert into the tree if it's not a dummy commitment
       if (!commitment.isDummy) {
@@ -63,8 +60,6 @@ export function genTestCircuitInputsFn(
       }
       return commitment
     })
-    
-
 
     // create output commitments
     // with randomly selected keys
@@ -79,25 +74,19 @@ export function genTestCircuitInputsFn(
 
     const circuitInputs = FnPrivacyPool.GetInputsFn(
       mt,
+      32,
       input_commitments,
       output_comitments,
       100n // doesn't matter for now
     )
 
     return {
-        inputs: circuitInputs,
-        commitments: {
-          inCommitments: input_commitments,
-          outCommitments: output_comitments,
-        },
-        ouptuts: [mt.root]
-      }
+      inputs: circuitInputs,
+      commitments: {
+        inCommitments: input_commitments,
+        outCommitments: output_comitments
+      },
+      ouptuts: [mt.root]
+    }
   })
 }
-
-
-
-
-
-
-

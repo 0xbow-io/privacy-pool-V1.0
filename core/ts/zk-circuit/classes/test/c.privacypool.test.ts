@@ -32,11 +32,14 @@ describe("Testing CPrivacyPool", () => {
       // File Paths
       const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
       verifierKey = await FnPrivacyPool.LoadVkeyFn(paths.VKEY_PATH)
+
       expect(verifierKey).toBeDefined()
       wasm = await FnPrivacyPool.loadBytesFn(paths.WASM_PATH)
+
       expect(wasm).toBeDefined()
       zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
       expect(zkey).toBeDefined()
+
       privacyPool = NewPrivacyPoolCircuit(wasm, zkey, verifierKey)
     })
 
