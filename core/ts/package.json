@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Core typescript packages for Privacy Pool",
   "license": "MIT",
+  "module": "index.ts",
   "type": "module",
   "devDependencies": {
     "@types/bun": "^1.1.3"
@@ -30,6 +31,5 @@
   "scripts": {
     "test:zk-circuit:functions": "bunx jest .--findRelatedTests fn.privacypool.test.ts",
     "test:zk-circuit:classes": "bunx jest .--findRelatedTests c.privacypool.test.ts"
-  },
-  "module": "index.ts"
+  }
 }

@@ -1,5 +1,6 @@
 
-import { globalConf, getPath, getCircomArtifactPaths} from "@privacy-pool-v1/global"
+import { globalConf, getPath, getCircomArtifactPaths, DeriveURLPath } from "@privacy-pool-v1/global"
+import type {circomArtifactPaths} from "@privacy-pool-v1/global"
 import {generic_circom, project_privacy_pool, generic_ptau} from "@privacy-pool-v1/global"
 import type { CircomkitConfig, CircuitConfig } from "circomkit"
 import { contractConf} from "@privacy-pool-v1/contracts"
@@ -59,8 +60,15 @@ export namespace PrivacyPool {
       ]),
       getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "utils"])
   ]
+  // for local refereces through file paths
+  export const circomArtifacts: circomArtifactPaths = getCircomArtifactPaths(globalConf, project_privacy_pool, id)
 
-  export const circomArtifacts = getCircomArtifactPaths(globalConf, project_privacy_pool, id)
+  // for web references through URLs
+  export const circomArtifacts_remnote: circomArtifactPaths = {
+    WASM_PATH: DeriveURLPath(circomArtifacts.WASM_PATH),
+    ZKEY_PATH: DeriveURLPath(circomArtifacts.ZKEY_PATH),
+    VKEY_PATH: DeriveURLPath(circomArtifacts.VKEY_PATH),
+  }
 
   export const circomkitConf: CircomkitConfig = {
     protocol: protocol,

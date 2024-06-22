@@ -1,28 +1,38 @@
 import * as snarkjs from "snarkjs"
-import {
-  type TPrivacyPool,
-  type MerkleProofT
+import fs from "fs"
+
+import type {
+  MerkleProofT,
+  Groth16_VKeyJSONT,
+  TPrivacyPool
 } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { type Commitment } from "@privacy-pool-v1/core-ts/account"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account"
-import {
-  MERKLE_TREE_MAX_DEPTH,
-  DummyMerkleProof
-} from "@privacy-pool-v1/core-ts/zk-circuit"
+import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { LeanIMT, type LeanIMTMerkleProof } from "@zk-kit/lean-imt"
 
+import {
+  isUrlOrFilePath,
+  fetchJsonWithRetry,
+  loadBytesFromUrl
+} from "@privacy-pool-v1/global"
+
 export namespace FnPrivacyPool {
-  export function MerkleProofFn(index: bigint, mt: LeanIMT): MerkleProofT {
+  export function MerkleProofFn(
+    index: bigint,
+    mt: LeanIMT,
+    maxDepth: number
+  ): MerkleProofT {
     let proof: LeanIMTMerkleProof
     try {
       proof = mt.generateProof(Number(index))
     } catch (e) {
-      throw new Error("MerkleProofFn failed", { cause: e })
+      throw new Error("MerkleProofn failed", { cause: e })
     }
 
     const depth = proof.siblings.length
 
-    for (let i = 0; i < MERKLE_TREE_MAX_DEPTH; i += 1) {
+    for (let i = 0; i < maxDepth; i += 1) {
       if (proof.siblings[i] === undefined) {
         proof.siblings[i] = BigInt(0)
       }
@@ -53,12 +63,15 @@ export namespace FnPrivacyPool {
 
   export function GetInputsFn(
     mt: LeanIMT,
+    maxDepth: number,
     inputs: Commitment[],
     outputs: Commitment[],
     signalHash: bigint
   ): TPrivacyPool.InT {
-    const proofs = inputs.map((input) =>
-      input.isDummy ? DummyMerkleProof : MerkleProofFn(input.index, mt)
+    const merkleProofs = inputs.map((input) =>
+      input.isDummy
+        ? DummyMerkleProof
+        : MerkleProofFn(input.index, mt, maxDepth)
     )
 
     // check that signatures are valid
@@ -73,6 +86,7 @@ export namespace FnPrivacyPool {
         throw Error(`Invalid signatur found in input for ${input.hash}`)
       }
     })
+
     return {
       publicVal: CalcPublicValFn(inputs, outputs),
       signalHash: signalHash,
@@ -91,46 +105,80 @@ export namespace FnPrivacyPool {
       outBlinding: outputs.map((output) => output.blinding),
 
       actualMerkleTreeDepth:
-        proofs[0].Root > 0n ? proofs[0].Depth : proofs[1].Depth,
-      inLeafIndices: proofs.map((proof) => proof.LeafIndex),
-      merkleProofSiblings: proofs.map((proof) => proof.Siblings)
+        merkleProofs[0].Root > 0n
+          ? merkleProofs[0].Depth
+          : merkleProofs[1].Depth,
+      inLeafIndices: merkleProofs.map((proof) => proof.LeafIndex),
+      merkleProofSiblings: merkleProofs.map((proof) => proof.Siblings)
     }
   }
 
-  export async function ProveFn(
+  export const LoadVkeyFn = async (
+    vKeyPath: string
+  ): Promise<Groth16_VKeyJSONT> => {
+    switch (isUrlOrFilePath(vKeyPath)) {
+      case "file":
+        return JSON.parse(fs.readFileSync(vKeyPath, "utf-8"))
+      case "url":
+        try {
+          const data = await fetchJsonWithRetry<Groth16_VKeyJSONT>(vKeyPath)
+          return data
+        } catch (e) {
+          throw new Error("Failed to load verifying key from URL", { cause: e })
+        }
+      default:
+        throw new Error("Invalid path")
+    }
+  }
+
+  export const loadBytesFn = async (
+    filepath: string
+  ): Promise<Uint8Array | string> => {
+    if (isUrlOrFilePath(filepath) == "url") {
+      const module = await loadBytesFromUrl(filepath)
+        .then((uint8arr) => {
+          return uint8arr
+        })
+        .catch((e) => {
+          throw new Error("Failed to load wasm module from URL", { cause: e })
+        })
+      return module
+    }
+    return filepath
+  }
+
+  export const ProveFn = async (
     inputs: snarkjs.CircuitSignals,
-    wasm_path: string,
-    zKey_path: string
+    wasm: string | Uint8Array,
+    zkey: string | Uint8Array
   ): Promise<{
     proof: snarkjs.Groth16Proof
     publicSignals: snarkjs.PublicSignals
-  }> {
-    try {
-      const wtns = { data: new Uint8Array(), type: "mem" }
-      await snarkjs.wtns.calculate(inputs, wasm_path, wtns)
-      const out = await snarkjs.groth16.prove(
-        zKey_path,
-        // @ts-ignore
-        wtns
-      )
-      return out
-    } catch (e) {
-      console.log(e)
-      throw new Error("snarkjs.groth16 fullProve failed ", { cause: e })
-    }
+  }> => {
+    const out = await snarkjs.groth16
+      .fullProve(inputs, wasm, zkey)
+      .then((output) => {
+        return output
+      })
+      .catch((e) => {
+        console.log(e)
+        throw new Error("snarkjs.groth16 fullProve failed ", { cause: e })
+      })
+    return out
   }
 
-  export async function VerifyFn(
-    vKJSON: any,
+  export const VerifyFn = async (
+    vKJSON: Groth16_VKeyJSONT,
     publicSignals: snarkjs.PublicSignals,
     proof: snarkjs.Groth16Proof
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     const out = await snarkjs.groth16
       .verify(vKJSON, publicSignals, proof)
       .then((output) => {
         return output
       })
       .catch((e) => {
+        console.log(e)
         throw new Error("snarkjs.groth16 verify failed ", { cause: e })
       })
     return out
@@ -152,28 +200,16 @@ export namespace FnPrivacyPool {
     }
   }
 
-  export async function AsGroth16CallData(
-    outputs: TPrivacyPool.OutputT 
-  ) {
+  export function packGroth16ProofFn(
+    outputs: TPrivacyPool.OutputT
+  ): TPrivacyPool.PackedGroth16ProofT<bigint> {
     return [
+      [outputs.proof.pi_a[0], outputs.proof.pi_a[1]],
       [
-        outputs.proof.pi_a[0],
-        outputs.proof.pi_a[1]
+        [outputs.proof.pi_b[0][1], outputs.proof.pi_b[0][0]],
+        [outputs.proof.pi_b[1][1], outputs.proof.pi_b[1][0]]
       ],
-      [
-          [
-            outputs.proof.pi_b[0][1],
-              outputs.proof.pi_b[0][0]
-          ],
-          [
-            outputs.proof.pi_b[1][1],
-            outputs.proof.pi_b[1][0],
-          ],
-      ],
-      [
-        outputs.proof.pi_c[0],
-          outputs.proof.pi_c[1]
-      ],
+      [outputs.proof.pi_c[0], outputs.proof.pi_c[1]],
       [
         outputs.publicSignals[0],
         outputs.publicSignals[1],
@@ -182,7 +218,7 @@ export namespace FnPrivacyPool {
         outputs.publicSignals[4],
         outputs.publicSignals[5],
         outputs.publicSignals[6],
-        outputs.publicSignals[7],
+        outputs.publicSignals[7]
       ]
     ]
   }
