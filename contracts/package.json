@@ -13,6 +13,7 @@
   "dependencies": {
     "@nomicfoundation/hardhat-foundry": "^1.1.2",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@zk-kit/lean-imt.sol": "^2.0.0",
     "hardhat": "^2.22.5"
   },
   "scripts": {
