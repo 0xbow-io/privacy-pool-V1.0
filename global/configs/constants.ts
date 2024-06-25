@@ -2,6 +2,7 @@ import path from "path"
 
 export const generic_configs = "configs"
 export const generic_src = "src"
+export const generic_out = "out"
 export const generic_artifacts = "artifacts"
 export const generic_test = "test"
 export const generic_test_data = "test-data"

@@ -3,11 +3,12 @@
     "file": "./privacy-pool/privacyPool",
     "template": "PrivacyPool",
     "pubs": [
+      "commitFlag",
       "publicVal",
-      "signalHash",
+      "scope",
       "actualMerkleTreeDepth",
       "inputNullifier",
-      "outCommitment"
+      "outputCommitment"
     ],
     "params": [32, 2, 2]
   }

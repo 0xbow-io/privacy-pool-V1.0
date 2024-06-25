@@ -10,19 +10,20 @@ import {
 } from "@privacy-pool-v1/core-ts/account"
 import { expect, test, describe, beforeEach } from "bun:test"
 
-import { type Ciphertext, type Plaintext } from "maci-crypto"
+import type { Ciphertext, Plaintext } from "maci-crypto"
 import { hash4 } from "maci-crypto"
+
 describe("Creating Commitments with Signature & Nullifier", () => {
   let pK: PrivacyKey
   beforeEach(() => {
     pK = CreatePrivacyKey()
   })
 
-  test("Creating with blinding & index specified", () => {
+  test("Creating with salt & index specified", () => {
     const test_index: bigint = 1n
     const test_secret: TCommitment.SecretsT = {
-      amount: 100n,
-      blinding: FnCommitment.BlinderFn()
+      value: 100n,
+      salt: FnCommitment.SaltFn()
     }
     const test_commitment_hash = FnCommitment.HashFn(test_secret, pK.pubKey)
     const sig_msg = hash4([
@@ -63,14 +64,14 @@ describe("Creating Commitments with Signature & Nullifier", () => {
       commitment.secret_len
     )
     expect(plaintext.length).toBe(2)
-    expect(plaintext[0]).toEqual(test_secret.amount!)
-    expect(plaintext[1]).toEqual(test_secret.blinding!)
+    expect(plaintext[0]).toEqual(test_secret.value)
+    expect(plaintext[1]).toEqual(test_secret.salt ?? 0n)
   })
 
-  test("Creating with blinding specified but no index ", () => {
+  test("Creating with salt specified but no index ", () => {
     const test_secret: TCommitment.SecretsT = {
-      amount: 100n,
-      blinding: FnCommitment.BlinderFn()
+      value: 100n,
+      salt: FnCommitment.SaltFn()
     }
     const test_commitment_hash = FnCommitment.HashFn(test_secret, pK.pubKey)
     const commitment: Commitment = CreateCommitment(pK, test_secret)
@@ -85,13 +86,13 @@ describe("Creating Commitments with Signature & Nullifier", () => {
       commitment.secret_len
     )
     expect(plaintext.length).toBe(2)
-    expect(plaintext[0]).toEqual(test_secret.amount!)
-    expect(plaintext[1]).toEqual(test_secret.blinding!)
+    expect(plaintext[0]).toEqual(test_secret.value)
+    expect(plaintext[1]).toEqual(test_secret.salt ?? 0n)
   })
 
   test("Creating with only amount specified ", () => {
     const test_secret: TCommitment.SecretsT = {
-      amount: 100n
+      value: 100n
     }
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()
@@ -104,12 +105,12 @@ describe("Creating Commitments with Signature & Nullifier", () => {
       commitment.secret_len
     )
     expect(plaintext.length).toBe(2)
-    expect(plaintext[0]).toEqual(test_secret.amount!)
+    expect(plaintext[0]).toEqual(test_secret.value)
   })
 
   test("Creating with 0 amount", () => {
     const test_secret: TCommitment.SecretsT = {
-      amount: 0n
+      value: 0n
     }
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()

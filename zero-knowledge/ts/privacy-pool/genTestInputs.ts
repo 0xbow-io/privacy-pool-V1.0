@@ -5,14 +5,16 @@ import {
 } from "@privacy-pool-v1/core-ts/account"
 
 import { LeanIMT } from "@zk-kit/lean-imt"
-import { hashLeftRight } from "maci-crypto"
+import { poseidon2 } from "poseidon-lite/poseidon2"
+
+//import { hashLeftRight } from "maci-crypto"
 
 // function will generate 2 input amounts & 2 output amounts
-function generateTestAmounts(
+export const generateTestAmounts = (
   numOfElements: number,
   minValue: bigint,
   maxValue: bigint
-): bigint[][] {
+): bigint[][] => {
   if (numOfElements < 0) {
     throw new Error("numOfElements must be a non-negative number")
   }
@@ -37,11 +39,11 @@ function generateTestAmounts(
   })
 }
 
-export function genTestCircuitInputsFn(numberOfTests: number) {
-  let mt = new LeanIMT(hashLeftRight)
+export const genTestCircuitInputsFn = (numberOfTests: number) => {
+  const mt = new LeanIMT((a, b) => poseidon2([a, b]))
 
   // generate random set of keys
-  let keys = Array.from({ length: numberOfTests }, () => CreatePrivacyKey())
+  const keys = Array.from({ length: numberOfTests }, () => CreatePrivacyKey())
   return generateTestAmounts(numberOfTests, 0n, 500n).map((values) => {
     // create input commitments
     // with randomly selected keys
@@ -49,7 +51,7 @@ export function genTestCircuitInputsFn(numberOfTests: number) {
       const commitment = CreateCommitment(
         keys[Math.floor(Math.random() * keys.length)],
         {
-          amount: values[i]
+          value: values[i]
         }
       )
       // only inert into the tree if it's not a dummy commitment
@@ -65,28 +67,25 @@ export function genTestCircuitInputsFn(numberOfTests: number) {
     // with randomly selected keys
     const output_comitments = [
       CreateCommitment(keys[Math.floor(Math.random() * keys.length)], {
-        amount: values[2]
+        value: values[2]
       }),
       CreateCommitment(keys[Math.floor(Math.random() * keys.length)], {
-        amount: values[3]
+        value: values[3]
       })
     ]
 
-    const circuitInputs = FnPrivacyPool.GetInputsFn(
-      mt,
-      32,
-      input_commitments,
-      output_comitments,
-      100n // doesn't matter for now
-    )
-
     return {
-      inputs: circuitInputs,
+      io: FnPrivacyPool.GetInputsFn(
+        mt,
+        32,
+        input_commitments,
+        output_comitments,
+        100n // doesn't matter for now
+      ),
       commitments: {
         inCommitments: input_commitments,
         outCommitments: output_comitments
-      },
-      ouptuts: [mt.root]
+      }
     }
   })
 }

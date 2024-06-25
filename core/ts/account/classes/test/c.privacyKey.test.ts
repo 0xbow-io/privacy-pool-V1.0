@@ -1,9 +1,7 @@
-import type { PrivacyKey, TPrivacyKey } from "@privacy-pool-v1/core-ts/account"
-import {
-  FnCommitment,
-  CreatePrivacyKey
-} from "@privacy-pool-v1/core-ts/account"
-import { type Ciphertext } from "maci-crypto"
+import type { PrivacyKey } from "@privacy-pool-v1/core-ts/account"
+import { CreatePrivacyKey } from "@privacy-pool-v1/core-ts/account"
+import { verifySignature } from "maci-crypto"
+import type { Ciphertext } from "maci-crypto"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 import { expect, test, describe, beforeEach } from "bun:test"
 
@@ -45,11 +43,7 @@ describe("Test PrivacyKey Functions", () => {
 
     // check that a valid signature is produce
     expect(
-      FnCommitment.VerifySignatureFn(
-        sign_via_sign,
-        pK.pubKey.rawPubKey,
-        message
-      )
+      verifySignature(message, sign_via_sign, pK.pubKey.rawPubKey)
     ).toBeTrue()
   })
 
@@ -62,13 +56,13 @@ describe("Test PrivacyKey Functions", () => {
     test("Encrypt & Decrypt successfully", () => {
       const cipher = pK.encrypt(secret, nonce)
       expect(cipher).toBeDefined()
-      cipher.forEach((c) => {
+      for (const c of cipher) {
         expect(c).not.toBe(0n)
-      })
+      }
 
       const plaintext = pK.decrypt(cipher, nonce, secret.length)
       expect(plaintext).toBeDefined()
-      plaintext!.forEach((p, i) => {
+      plaintext?.forEach((p, i) => {
         expect(p).toEqual(secret[i])
       })
     })

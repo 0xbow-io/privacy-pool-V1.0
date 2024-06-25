@@ -1,15 +1,15 @@
 import * as snarkjs from "snarkjs"
-import fs from "fs"
+import fs from "node:fs"
 
 import type {
   MerkleProofT,
   Groth16_VKeyJSONT,
   TPrivacyPool
 } from "@privacy-pool-v1/core-ts/zk-circuit"
-import { type Commitment } from "@privacy-pool-v1/core-ts/account"
+import type { Commitment } from "@privacy-pool-v1/core-ts/account"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account"
 import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
-import { LeanIMT, type LeanIMTMerkleProof } from "@zk-kit/lean-imt"
+import type { LeanIMT, LeanIMTMerkleProof } from "@zk-kit/lean-imt"
 
 import {
   isUrlOrFilePath,
@@ -46,19 +46,21 @@ export namespace FnPrivacyPool {
     }
   }
 
-  export function CalcPublicValFn(
+  export const CalcPublicValFn = (
     inputs: Commitment[],
     outputs: Commitment[]
-  ): bigint {
+  ): { publicVal: bigint; isCommit: boolean } => {
     const outputSum = outputs.reduce(
-      (acc, commitment) => acc + commitment.amount,
+      (acc, commitment) => acc + commitment.value,
       0n
     )
     const inputSum = inputs.reduce(
-      (acc, commitment) => acc + commitment.amount,
+      (acc, commitment) => acc + commitment.value,
       0n
     )
-    return (outputSum ?? 0n) - (inputSum ?? 0n)
+
+    const diff = outputSum - inputSum
+    return { publicVal: diff > 0n ? diff : -diff, isCommit: diff > 0n }
   }
 
   export function GetInputsFn(
@@ -66,50 +68,65 @@ export namespace FnPrivacyPool {
     maxDepth: number,
     inputs: Commitment[],
     outputs: Commitment[],
-    signalHash: bigint
-  ): TPrivacyPool.InT {
+    scope: bigint
+  ): {
+    inputs: TPrivacyPool.InT
+    ouptuts: bigint[]
+  } {
     const merkleProofs = inputs.map((input) =>
       input.isDummy
         ? DummyMerkleProof
         : MerkleProofFn(input.index, mt, maxDepth)
     )
 
-    // check that signatures are valid
-    inputs.forEach((input) => {
-      if (
-        !FnCommitment.VerifySignatureFn(
-          input.signature,
-          input.pubKey.rawPubKey,
-          input.asArray()
-        )
-      ) {
-        throw Error(`Invalid signatur found in input for ${input.hash}`)
+    for (let i = 0; i < inputs.length; i += 1) {
+      if (inputs[i].isDummy) {
+        continue
       }
-    })
+      if (
+        // check that signatures are valid
+        !FnCommitment.VerifySignatureFn(
+          inputs[i].signature,
+          inputs[i].pubKey.rawPubKey,
+          inputs[i].asArray()
+        )
+        // TO-DO check merkle proofs are valid
+      ) {
+        throw Error(`Invalid merkle proof for ${inputs[i].hash}`)
+      }
+    }
+
+    const { publicVal, isCommit } = CalcPublicValFn(inputs, outputs)
 
     return {
-      publicVal: CalcPublicValFn(inputs, outputs),
-      signalHash: signalHash,
-      inputNullifier: inputs.map((input) => input.nullifier),
-      inUnits: inputs.map((input) => input.amount),
-      inPk: inputs.map((input) => input.pubKey.asCircuitInputs()),
-      inBlinding: inputs.map((input) => input.blinding),
-      inSigR8: inputs.map((input) => [
-        input.signature.R8[0],
-        input.signature.R8[1]
-      ]),
-      inSigS: inputs.map((input) => input.signature.S),
-      outCommitment: outputs.map((output) => output.hash),
-      outUnits: outputs.map((output) => output.amount),
-      outPk: outputs.map((output) => output.pubKey.asCircuitInputs()),
-      outBlinding: outputs.map((output) => output.blinding),
+      inputs: {
+        commitFlag: isCommit ? 1n : 0n,
+        publicVal: publicVal,
+        scope: scope,
+        inputNullifier: inputs.map((input) => input.nullifier),
+        outputCommitment: outputs.map((output) => output.hash),
+        inputValue: inputs.map((input) => input.value),
+        inputPublicKey: inputs.map((input) => input.pubKey.asCircuitInputs()),
+        inputSalt: inputs.map((input) => input.salt),
+        inputSigR8: inputs.map((input) => [
+          input.signature.R8[0],
+          input.signature.R8[1]
+        ]),
+        inputSigS: inputs.map((input) => input.signature.S),
+        outputValue: outputs.map((output) => output.value),
+        outputPublicKey: outputs.map((output) =>
+          output.pubKey.asCircuitInputs()
+        ),
+        outputSalt: outputs.map((output) => output.salt),
 
-      actualMerkleTreeDepth:
-        merkleProofs[0].Root > 0n
-          ? merkleProofs[0].Depth
-          : merkleProofs[1].Depth,
-      inLeafIndices: merkleProofs.map((proof) => proof.LeafIndex),
-      merkleProofSiblings: merkleProofs.map((proof) => proof.Siblings)
+        actualMerkleTreeDepth:
+          merkleProofs[0].Root > 0n
+            ? merkleProofs[0].Depth
+            : merkleProofs[1].Depth,
+        inputLeafIndex: merkleProofs.map((proof) => proof.LeafIndex),
+        merkleProofSiblings: merkleProofs.map((proof) => proof.Siblings)
+      },
+      ouptuts: [merkleProofs[0].Root]
     }
   }
 
@@ -134,7 +151,7 @@ export namespace FnPrivacyPool {
   export const loadBytesFn = async (
     filepath: string
   ): Promise<Uint8Array | string> => {
-    if (isUrlOrFilePath(filepath) == "url") {
+    if (isUrlOrFilePath(filepath) === "url") {
       const module = await loadBytesFromUrl(filepath)
         .then((uint8arr) => {
           return uint8arr
@@ -218,7 +235,8 @@ export namespace FnPrivacyPool {
         outputs.publicSignals[4],
         outputs.publicSignals[5],
         outputs.publicSignals[6],
-        outputs.publicSignals[7]
+        outputs.publicSignals[7],
+        outputs.publicSignals[8]
       ]
     ]
   }

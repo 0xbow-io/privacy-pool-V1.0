@@ -1,41 +1,12 @@
-import fs from "fs"
-import path from "path"
+import fs from "node:fs"
+import path from "node:path"
 
-import {PrivacyPool} from "@privacy-pool-v1/zero-knowledge"
+import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import { genTestCircuitInputsFn } from "@privacy-pool-v1/zero-knowledge"
+import type { Commitment } from "@privacy-pool-v1/core-ts/account"
+import type { TPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 
-
-
-function exportToJSON(data: any, filePath: string): void {
-  try {
-    const jsonData = JSON.stringify(data, null, 2) // Convert the object to JSON with pretty formatting
-    fs.writeFileSync(filePath, jsonData) // Write the JSON data to the file
-    console.log(`Data exported successfully to ${filePath}`)
-  } catch (err) {
-    console.error("Error exporting data:", err)
-  }
-}
-
-
-/*
-   // export it as a json file
-    
-
-    // need to convert circuitInput values as string
-    const inputs = stringifyBigInts(circuitInputs)
-
-
-//   let i = 0
-//     
-// 
-
-//     console.log(`Generating test inputs for ${filePath}`)
-
-
-  
-
-*/
-
+import { stringifyBigInts } from "maci-crypto"
 function removeDirectoryContents(dirPath: string): void {
   if (!fs.existsSync(dirPath)) {
     console.error(`Directory ${dirPath} does not exist.`)
@@ -57,35 +28,54 @@ function removeDirectoryContents(dirPath: string): void {
   }
 }
 
-function dumpTestData(
-  testData: any,
-  outputDir?: string,
-  filePrefix: string = "testcase_") 
-{
-  exportToJSON(
-    {
-      inputs: inputs,
-      expectedValues: {
-        inCommitments: input_commitments.map((c) =>
-          stringifyBigInts(c.asStringValues())
-        ),
-        outCommitments: output_comitments.map((c) =>
-          stringifyBigInts(c.asStringValues())
-        ),
-        computedMerkleRoot: mt.root.toString()
-      },
-      ouptuts: [mt.root.toString()]
-    },
-    path.join(outputDir || "", filePrefix + `${i++}.json`)
-  )
-
+function exportToJSON(data: any, filePath: string): void {
+  try {
+    const jsonData = JSON.stringify(data, null, 2) // Convert the object to JSON with pretty formatting
+    fs.writeFileSync(filePath, jsonData) // Write the JSON data to the file
+    console.log(`Data exported successfully to ${filePath}`)
+  } catch (err) {
+    console.error("Error exporting data:", err)
+  }
 }
 
- // to remove previous test artifacts
+function dumpTestData(
+  testData: {
+    io: {
+      inputs: TPrivacyPool.InT
+      ouptuts: bigint[]
+    }
+    commitments: {
+      inCommitments: Commitment[]
+      outCommitments: Commitment[]
+    }
+  }[],
+  outputDir?: string,
+  filePrefix?: string
+) {
+  testData.forEach((data, i) => {
+    exportToJSON(
+      {
+        inputs: data.io.inputs,
+        commitments: {
+          inCommitments: data.commitments.inCommitments.map((c) =>
+            stringifyBigInts(c.asStringValues())
+          ),
+          outCommitments: data.commitments.outCommitments.map((c) =>
+            stringifyBigInts(c.asStringValues())
+          )
+        },
+        ouptuts: stringifyBigInts(data.io.ouptuts)
+      },
+      path.join(outputDir || "", `${filePrefix || "testcase_"}_${i}.json`)
+    )
+  })
+}
+
+// to remove previous test artifacts
 removeDirectoryContents(PrivacyPool.circomkitConf.dirInputs)
 
 // generate new test artifacts
 dumpTestData(
-    generateCircuitInputsFn(PrivacyPool.test_data_size), 
-    PrivacyPool.circomkitConf.dirInputs
-  )
+  genTestCircuitInputsFn(PrivacyPool.test_data_size),
+  PrivacyPool.circomkitConf.dirInputs
+)

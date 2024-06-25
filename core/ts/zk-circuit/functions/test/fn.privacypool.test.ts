@@ -14,15 +14,15 @@ import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 import { cleanThreads } from "@privacy-pool-v1/global"
 
 function getTestDummyCommimtment(pK: PrivacyKey): Commitment {
-  return CreateCommitment(pK, { amount: 0n })
+  return CreateCommitment(pK, { value: 0n })
 }
-function genTestCommitment(amount: bigint, pK: PrivacyKey): Commitment {
-  return CreateCommitment(pK, { amount: amount })
+function genTestCommitment(value: bigint, pK: PrivacyKey): Commitment {
+  return CreateCommitment(pK, { value: value })
 }
 function genTestCommitments(
-  specs: { amount: bigint; pK: PrivacyKey }[]
+  specs: { value: bigint; pK: PrivacyKey }[]
 ): Commitment[] {
-  return specs.map((spec) => genTestCommitment(spec.amount, spec.pK))
+  return specs.map((spec) => genTestCommitment(spec.value, spec.pK))
 }
 
 describe("Test Functions", () => {
@@ -62,12 +62,12 @@ describe("Test Functions", () => {
     test("Two dummy Inputs, 1 dummy Ouptut and 1 non-dummy Ouptut of size 100n", () => {
       const expected_public_val = 100n
       const inputs: Commitment[] = genTestCommitments([
-        { amount: 0n, pK: pK },
-        { amount: 0n, pK: pK }
+        { value: 0n, pK: pK },
+        { value: 0n, pK: pK }
       ]).map((c) => c)
       const outputs: Commitment[] = genTestCommitments([
-        { amount: 0n, pK: pK },
-        { amount: 100n, pK: pK }
+        { value: 0n, pK: pK },
+        { value: 100n, pK: pK }
       ]).map((c) => c)
 
       const public_val = FnPrivacyPool.CalcPublicValFn(inputs, outputs)
@@ -79,16 +79,16 @@ describe("Test Functions", () => {
     let mt: LeanIMT
     let pK: PrivacyKey
 
-    const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n]
+    const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
     beforeEach(() => {
       mt = new LeanIMT(hashLeftRight)
       pK = CreatePrivacyKey()
 
-      // generate commitments for non zero amounts
+      // generate commitments for non zero values
       // and insert into merkle tree
-      commitments = test_non_zero_amounts.map((amount) => {
-        const commitment = genTestCommitment(amount, pK)
+      commitments = test_non_zero_values.map((value) => {
+        const commitment = genTestCommitment(value, pK)
         mt.insert(commitment.hash)
         commitment.index = BigInt(mt.size - 1)
         return commitment
@@ -104,22 +104,28 @@ describe("Test Functions", () => {
         non_zero_output
       ]
 
-      const circuit_inputs = FnPrivacyPool.GetInputsFn(
+      const circuit_io = FnPrivacyPool.GetInputsFn(
         mt,
         32,
         inputs,
         outputs,
         100n
       )
-      expect(circuit_inputs.publicVal).toEqual(expected_public_val)
-      expect(circuit_inputs.signalHash).toEqual(100n)
-      expect(circuit_inputs.inUnits).toEqual([0n, 50n])
-      expect(circuit_inputs.inPk[1]).toEqual(pK.pubKey.asCircuitInputs())
-      expect(circuit_inputs.inputNullifier[1]).toEqual(commitments[0].nullifier)
-      expect(circuit_inputs.outUnits).toEqual([0n, 100n])
-      expect(circuit_inputs.outCommitment[1]).toEqual(non_zero_output.hash)
-      expect(circuit_inputs.actualMerkleTreeDepth).toEqual(3n)
-      expect(circuit_inputs.inLeafIndices).toEqual([0n, 0n])
+      expect(circuit_io.inputs.publicVal).toEqual(expected_public_val)
+      expect(circuit_io.inputs.scope).toEqual(100n)
+      expect(circuit_io.inputs.inputValue).toEqual([0n, 50n])
+      expect(circuit_io.inputs.inputPublicKey[1]).toEqual(
+        pK.pubKey.asCircuitInputs()
+      )
+      expect(circuit_io.inputs.inputNullifier[1]).toEqual(
+        commitments[0].nullifier
+      )
+      expect(circuit_io.inputs.outputValue).toEqual([0n, 100n])
+      expect(circuit_io.inputs.outputCommitment[1]).toEqual(
+        non_zero_output.hash
+      )
+      expect(circuit_io.inputs.actualMerkleTreeDepth).toEqual(3n)
+      expect(circuit_io.inputs.inputLeafIndex).toEqual([0n, 0n])
     })
   })
 
@@ -130,7 +136,7 @@ describe("Test Functions", () => {
     // File Paths
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
 
-    const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n]
+    const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
     let verifierKey: Groth16_VKeyJSONT
     let wasm: Uint8Array | string
@@ -152,10 +158,10 @@ describe("Test Functions", () => {
       zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
       expect(zkey).toBeDefined()
 
-      // generate commitments for non zero amounts
+      // generate commitments for non zero values
       // and insert into merkle tree
-      commitments = test_non_zero_amounts.map((amount) => {
-        const commitment = genTestCommitment(amount, pK)
+      commitments = test_non_zero_values.map((value) => {
+        const commitment = genTestCommitment(value, pK)
         mt.insert(commitment.hash)
         commitment.index = BigInt(mt.size - 1)
         return commitment
@@ -174,7 +180,7 @@ describe("Test Functions", () => {
         non_zero_output
       ]
 
-      const circuit_inputs = FnPrivacyPool.GetInputsFn(
+      const circuit_io = FnPrivacyPool.GetInputsFn(
         mt,
         32,
         inputs,
@@ -182,7 +188,7 @@ describe("Test Functions", () => {
         100n
       )
       const out = await FnPrivacyPool.ProveFn(
-        circuit_inputs,
+        circuit_io.inputs,
         paths.WASM_PATH,
         paths.ZKEY_PATH
       )
@@ -205,7 +211,7 @@ describe("Test Functions", () => {
     // usiong remote paths (URLS)
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts_remnote
 
-    const test_non_zero_amounts = [50n, 100n, 150n, 200n, 250n, 300n]
+    const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
     let verifierKey: Groth16_VKeyJSONT
     let wasm: Uint8Array | string
@@ -224,10 +230,10 @@ describe("Test Functions", () => {
       zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
       expect(zkey).toBeDefined()
 
-      // generate commitments for non zero amounts
+      // generate commitments for non zero values
       // and insert into merkle tree
-      commitments = test_non_zero_amounts.map((amount) => {
-        const commitment = genTestCommitment(amount, pK)
+      commitments = test_non_zero_values.map((value) => {
+        const commitment = genTestCommitment(value, pK)
         mt.insert(commitment.hash)
         commitment.index = BigInt(mt.size - 1)
         return commitment
@@ -246,14 +252,14 @@ describe("Test Functions", () => {
         non_zero_output
       ]
 
-      const circuit_inputs = FnPrivacyPool.GetInputsFn(
+      const circuit_io = FnPrivacyPool.GetInputsFn(
         mt,
         32,
         inputs,
         outputs,
         100n
       )
-      const out = await FnPrivacyPool.ProveFn(circuit_inputs, wasm, zkey)
+      const out = await FnPrivacyPool.ProveFn(circuit_io.inputs, wasm, zkey)
       const ok = await FnPrivacyPool.VerifyFn(
         verifierKey,
         out.publicSignals,

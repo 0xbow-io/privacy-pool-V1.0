@@ -1,5 +1,2 @@
-<<<<<<< HEAD
 export * from './config'
-=======
-export * from './config'
->>>>>>> main
+export * from './abigen'

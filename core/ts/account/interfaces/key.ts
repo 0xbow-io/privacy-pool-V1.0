@@ -1,7 +1,6 @@
-import { PubKey } from "maci-domainobjs"
-
-import { type Ciphertext, type Signature, type Plaintext } from "maci-crypto"
-import { type Address } from "viem"
+import type { PubKey } from "maci-domainobjs"
+import type { Ciphertext, Signature, Plaintext } from "maci-crypto"
+import type { Address } from "viem"
 
 export namespace IPrivacyKey {
   export interface KeyI<
@@ -17,6 +16,5 @@ export namespace IPrivacyKey {
     sign(msg: MsgT): SigT
     encrypt(secret: SecretT, nonce: bigint): CipherT
     decrypt(cipher: CipherT, nonce: bigint, secretLen: number): Plaintext
-    asJSON: any
   }
 }

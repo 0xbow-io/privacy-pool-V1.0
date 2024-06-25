@@ -3,8 +3,9 @@ pragma circom 2.1.9;
 // ZK Kit imports
 include "safe-comparators.circom";
 
-// PSE MACI project imports
+// PSE MACI imports
 include "calculateTotal.circom";
+include "hashers.circom";
 
 /**
  * Calculates the path indices required for Merkle proof verifications.
@@ -68,7 +69,6 @@ template ComputeMerkleRoot(MAX_DEPTH) {
 
         nodes[i + 1] <== PoseidonHasher(2)(childNodes);
     }
-
 
     var isDepth = IsEqual()([depth, MAX_DEPTH]);
     out <== root + isDepth * nodes[MAX_DEPTH];

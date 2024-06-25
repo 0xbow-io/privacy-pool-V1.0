@@ -29,7 +29,9 @@
     "access": "public"
   },
   "scripts": {
+    "test:account:classes": "bun test c.commitment.test.ts && bun test c.privacyKey.test.ts",
     "test:zk-circuit:functions": "bunx jest .--findRelatedTests fn.privacypool.test.ts",
-    "test:zk-circuit:classes": "bunx jest .--findRelatedTests c.privacypool.test.ts"
+    "test:zk-circuit:classes": "bunx jest .--findRelatedTests c.privacypool.test.ts",
+    "test:pool:verifier:functions": "bunx jest .--findRelatedTests fn.groth16Verifier.test.ts"
   }
 }

@@ -1,1 +1,2 @@
-export * from './privacypool';
+export * from "./t.privacypool"
+export * from "./t.groth16verifier"

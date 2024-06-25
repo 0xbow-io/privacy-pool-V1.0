@@ -23,6 +23,7 @@ describe("Test Generating Proofs", () => {
     const circuitInputs = JSON.parse(fs.readFileSync(inputs, "utf-8"))
 
     const out =  await FnPrivacyPool.ProveFn(circuitInputs.inputs, PrivacyPool.circomArtifacts.WASM_PATH, PrivacyPool.circomArtifacts.ZKEY_PATH)
+    console.log("outputs: ", circuitInputs, " out ", out.publicSignals)
 
     const ok = await FnPrivacyPool.VerifyFn(
         verifierKey,

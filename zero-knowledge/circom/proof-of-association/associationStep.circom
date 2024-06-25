@@ -138,14 +138,14 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
 
     signal input inUnits[nIns];
     signal input inPk[nIns][2];
-    signal input inBlinding[nIns];
+    signal input insalt[nIns];
     signal input inLeafIndices[nIns];
     signal input inSigS[nIns];
 
     // data to compute output comitment
     signal input outUnits[nOuts];
     signal input outPk[nOuts][2];
-    signal input outBlinding[nOuts];
+    signal input outsalt[nOuts];
 
     signal input commitmentProofLength;
     signal input commitmentProofIndices[nOuts][MAX_DEPTH];
@@ -176,7 +176,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
         outCommitments[i] = Commitment();
         outCommitments[i].amount <== outUnits[i];
         outCommitments[i].pubKey <== outPk[i];
-        outCommitments[i].blinding <== outBlinding[i];
+        outCommitments[i].salt <== outsalt[i];
 
         // verify output signatures
         outSigVerifier[i] = VerifySignature();
@@ -221,7 +221,7 @@ template AssociationProof(MAX_DEPTH, nIns, nOuts) {
         inCommitment[i] = Commitment();
         inCommitment[i].amount <== inUnits[i];
         inCommitment[i].pubKey <== inPk[i];
-        inCommitment[i].blinding <== inBlinding[i];
+        inCommitment[i].salt <== insalt[i];
 
         // verify input nullifier
         inNullifier[i] = Nullifier();

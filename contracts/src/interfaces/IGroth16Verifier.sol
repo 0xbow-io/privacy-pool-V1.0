@@ -6,6 +6,6 @@ interface IGroth16Verifier {
         uint256[2] calldata _pA,
         uint256[2][2] calldata _pB,
         uint256[2] calldata _pC,
-        uint256[8] calldata _pubSignals
+        uint256[9] calldata _pubSignals
     ) external view returns (bool);
 }

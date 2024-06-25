@@ -3,12 +3,12 @@ import type { Signature } from "maci-crypto"
 export namespace TCommitment {
   export type RawT = {
     Pk: string[]
-    Units: string
+    Value: string
     Hash: string
     Index: string
     Nullifier: string
-    blinding: string
+    salt: string
     Signature: Signature
   }
-  export type SecretsT<N = bigint> = { amount?: N; blinding?: N }
+  export type SecretsT<N = bigint> = { value: N; salt?: N }
 }

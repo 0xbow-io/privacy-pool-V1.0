@@ -3,28 +3,20 @@ pragma solidity ^0.8.4;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
+
+import {IGroth16Verifier} from "../src/interfaces/IGroth16Verifier.sol";
+import {IVerifier} from "../src/interfaces/IVerifier.sol";
+
 import "../src/PrivacyPool.sol";
-import "../src/groth16_verifier";
-import "../src/TreeHasher.sol";
+import "../src/verifier/groth16_verifier.sol";
 import "../src/interfaces/IPrivacyPool.sol";
-import "@openzeppelin/contracts/utils/math/SignedMath.sol";
+import "../src/interfaces/IProcessor.sol";
 
 contract TestPrivacyPool is Test {
     Groth16Verifier internal verifier;
-    TreeHasher internal hasher;
     IPrivacyPool internal pool;
 
-    using SignedMath for int256; //W-08
-
-    function setUp() public {
-        verifier = new Groth16Verifier();
-        hasher = new TreeHasher();
-        pool = new PrivacyPool(
-            address(verifier), address(hasher), 1000000 ether, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, 32
-        );
-    }
-
-    IPrivacyPool.supplement dummy_supplement = IPrivacyPool.supplement({
+    IPrivacyPool.Supplement dummy_supplement = IPrivacyPool.Supplement({
         ciphertexts: [
             [
                 11549330060325127860021207148469549495284128169849350740792214974175008723205,
@@ -62,15 +54,14 @@ contract TestPrivacyPool is Test {
     ];
 
     function MockVerifier(
-        IPrivacyPool.signal memory s,
+        bool isCommitFlag,
         uint256 MerkleRoot,
+        uint256 publicVal,
+        uint256 scope,
         uint256[2] memory InputNullifiers,
         uint256[2] memory OutputCommitments,
         bool _expectedOut
     ) public {
-        uint256 publicVal = pool.calcPublicVal(s.units, s.fee);
-        uint256 signalHash = pool.calcSignalHash(s.units, s.fee, s.account, s.feeCollector);
-
         // mock call to verifier contract
         // to make testing of process function easily
         vm.mockCall(
@@ -82,8 +73,9 @@ contract TestPrivacyPool is Test {
                 dummy_pc,
                 [
                     MerkleRoot,
+                    isCommitFlag ? 1 : 0,
                     publicVal,
-                    signalHash,
+                    scope,
                     32,
                     InputNullifiers[0],
                     InputNullifiers[1],
@@ -95,39 +87,41 @@ contract TestPrivacyPool is Test {
         );
     }
 
-    struct TestCase {
-        IPrivacyPool.signal signal;
-        uint256 MerkleRoot;
-        uint256[2] InputNullifiers;
-        uint256[2] OutputCommitments;
-        bool verifierShallPass;
-        bytes expectedErrorMsg;
+    function setUp() public {
+        verifier = new Groth16Verifier();
+        pool = new PrivacyPool(1000000 ether, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, address(verifier));
     }
 
-    function execProcessOnTestCase(TestCase memory tc) public {
-        uint256 valueToSend = tc.signal.units > 0 ? uint256(tc.signal.units) : 0;
+    function execProcessOnTestCase(TestCase memory tc, uint256 MerkleRoot, uint256 publicVal, uint256 scope) public {
+        uint256 valueToSend = tc._r.isCommitFlag ? tc._r.units : 0;
 
-        // capture previous states
-        uint256[5] memory prev_state_values = [
-            pool.latestRoot(),
-            pool.size(),
-            address(pool).balance,
-            address(tc.signal.account).balance,
-            address(tc.signal.feeCollector).balance
-        ];
+        // Mock the verifier response so that we can test the process function
+        // without needing to generate a proof
+        MockVerifier(
+            tc._r.isCommitFlag,
+            tc.MerkleRoot == 0 ? MerkleRoot : tc.MerkleRoot,
+            publicVal,
+            scope,
+            tc.InputNullifiers,
+            tc.OutputCommitments,
+            tc.verifierShallPass
+        );
 
         // if expecting an error Msg, then assert it
         if (tc.expectedErrorMsg.length > 0) {
             vm.expectRevert(tc.expectedErrorMsg);
         }
         pool.process{value: valueToSend}(
-            tc.signal,
+            tc._r,
             dummy_supplement,
             dummy_pa,
             dummy_pb,
             dummy_pc,
             [
-                tc.MerkleRoot,
+                tc.MerkleRoot == 0 ? MerkleRoot : tc.MerkleRoot,
+                tc._r.isCommitFlag ? 1 : 0,
+                publicVal,
+                scope,
                 32,
                 tc.InputNullifiers[0],
                 tc.InputNullifiers[1],
@@ -135,37 +129,27 @@ contract TestPrivacyPool is Test {
                 tc.OutputCommitments[1]
             ]
         );
+    }
 
-        // if no error Msg, then assert the states
-        if (tc.expectedErrorMsg.length == 0) {
-            // assert the states
-            assertNotEq(pool.latestRoot(), prev_state_values[0]);
-            assertEq(pool.size(), prev_state_values[1] + 2);
-            assertEq(
-                address(pool).balance,
-                tc.signal.units > 0
-                    ? prev_state_values[2] + (tc.signal.units.abs() - tc.signal.fee)
-                    : prev_state_values[2] - (tc.signal.units.abs() + tc.signal.fee)
-            );
-
-            assertEq(
-                address(tc.signal.account).balance,
-                tc.signal.units < 0 ? prev_state_values[3] + tc.signal.units.abs() : prev_state_values[3]
-            );
-
-            assertEq(address(tc.signal.feeCollector).balance, prev_state_values[4] + tc.signal.fee);
-        }
+    struct TestCase {
+        IPrivacyPool.Request _r;
+        uint256 MerkleRoot;
+        uint256[2] InputNullifiers;
+        uint256[2] OutputCommitments;
+        bool verifierShallPass;
+        bytes expectedErrorMsg;
     }
 
     function testProcess() public {
         vm.deal(address(0x1), 1000000 ether);
         vm.startPrank(address(0x1));
 
-        TestCase[11] memory tcs = [
+        TestCase[10] memory tcs = [
             // Test Case 1 (Positive Test Case)
             // Std Commit of 50 units
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 50,
                     fee: 0,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -186,7 +170,8 @@ contract TestPrivacyPool is Test {
             // Test Case 2 (Negative Test Case)
             // Commit made on the same nullifiers
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 50,
                     fee: 0,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -203,14 +188,15 @@ contract TestPrivacyPool is Test {
                 ],
                 verifierShallPass: true,
                 expectedErrorMsg: abi.encodeWithSelector(
-                    IPrivacyPool.NullifierIsKnown.selector, 0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
+                    IVerifier.NullifierIsKnown.selector, 0x2ec3c8133f3995beb87fdc48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
                 )
             }),
             // Test Case 3 (Negative Test Case)
             // Commit of 100 units
             // Unknown Root specified
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 100,
                     fee: 0,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -227,14 +213,15 @@ contract TestPrivacyPool is Test {
                 ],
                 verifierShallPass: true,
                 expectedErrorMsg: abi.encodeWithSelector(
-                    IPrivacyPool.InvalidMerkleRoot.selector, 0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
+                    IVerifier.InvalidMerkleRoot.selector, 0x2ec3c8133f3995beb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927
                 )
             }),
             // Test Case 4 (Negative Test Case)
             // Commit of 100 units
             // Fees of 100 units
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 100,
                     fee: 100,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -250,13 +237,14 @@ contract TestPrivacyPool is Test {
                     0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
                 ],
                 verifierShallPass: true,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 100, 100)
+                expectedErrorMsg: abi.encodeWithSelector(IVerifier.FeeTooHigh.selector, 100, 100)
             }),
             // Test Case 5 (Negative Test Case)
             // Commit of 100 units
             // Fees of 200 units
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 100,
                     fee: 200,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -272,14 +260,15 @@ contract TestPrivacyPool is Test {
                     0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
                 ],
                 verifierShallPass: true,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 200, 100)
+                expectedErrorMsg: abi.encodeWithSelector(IVerifier.FeeTooHigh.selector, 200, 100)
             }),
             // Test Case 6 (Negative Test Case)
             // Release of 50 units
             // Fees of 200 units
             TestCase({
-                signal: IPrivacyPool.signal({
-                    units: -50,
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: false,
+                    units: 50,
                     fee: 200,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
                     feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
@@ -294,13 +283,14 @@ contract TestPrivacyPool is Test {
                     0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
                 ],
                 verifierShallPass: true,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidFee.selector, 200, 50)
+                expectedErrorMsg: abi.encodeWithSelector(IVerifier.FeeTooHigh.selector, 200, 50)
             }),
             // Test Case 7 (Negative Test Case)
             // 0 units
             // Fees of 200 units
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 0,
                     fee: 200,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -316,14 +306,15 @@ contract TestPrivacyPool is Test {
                     0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
                 ],
                 verifierShallPass: true,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidUnits.selector, 0, 1)
+                expectedErrorMsg: abi.encodeWithSelector(IVerifier.UnitsZero.selector)
             }),
             // Test Case 8 (Negative Test Case)
             // Commit 100 units
             // Fees of 0 units
             // Verification Failed
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 100,
                     fee: 0,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -339,13 +330,14 @@ contract TestPrivacyPool is Test {
                     0x0797799da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758980
                 ],
                 verifierShallPass: false,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.ProofVerificationFailed.selector)
+                expectedErrorMsg: abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
             }),
             // Test Case 9 (Positive Test Case)
             // Std Commit of 100 units
             // Fee of 50 units
             TestCase({
-                signal: IPrivacyPool.signal({
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: true,
                     units: 100,
                     fee: 50,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
@@ -367,8 +359,9 @@ contract TestPrivacyPool is Test {
             // Std Release of 50 units
             // Fee of 10 units
             TestCase({
-                signal: IPrivacyPool.signal({
-                    units: -50,
+                _r: IPrivacyPool.Request({
+                    isCommitFlag: false,
+                    units: 50,
                     fee: 10,
                     account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
                     feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
@@ -384,42 +377,44 @@ contract TestPrivacyPool is Test {
                 ],
                 verifierShallPass: true,
                 expectedErrorMsg: ""
-            }),
-            // Test Case 11 (Negative Test Case)
-            // Trying to release more than available
-            TestCase({
-                signal: IPrivacyPool.signal({
-                    units: -500,
-                    fee: 0,
-                    account: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-                    feeCollector: 0xA9959D135F54F91b2f889be628E038cbc014Ec62
-                }),
-                MerkleRoot: 0, // if 0 --> will get latestRoot instead
-                InputNullifiers: [
-                    0x2ec3c8f33f3995bdb87fdd48b6fab6e408f1d585bee0fc3f26f1f7c8cbcf7927,
-                    0x01b11a70d8c702def8ed0d11c3d6624bb8c82235706debca0f56e94136b8fb2f
-                ],
-                OutputCommitments: [
-                    0x2bdd8a7b0a0d6406faf91e3e24b5256b052d4edfad688ca95cca68ddf4eb132c,
-                    0x0797749da6dc418971ffcc593295f1d6210528c02cee5ddb1ff365588d758180
-                ],
-                verifierShallPass: true,
-                expectedErrorMsg: abi.encodeWithSelector(IPrivacyPool.InvalidUnits.selector, 500, 40)
             })
         ];
 
         for (uint256 i = 0; i < tcs.length; i++) {
-            tcs[i].MerkleRoot == 0 ? pool.latestRoot() : tcs[i].MerkleRoot;
+            uint256 publicVal = tcs[i]._r.fee > tcs[i]._r.units
+                ? 0
+                : tcs[i]._r.isCommitFlag ? tcs[i]._r.units - tcs[i]._r.fee : tcs[i]._r.units + tcs[i]._r.fee;
 
-            // Mock the verifier response so that we can test the process function easily
-            MockVerifier(
-                tcs[i].signal,
-                tcs[i].MerkleRoot,
-                tcs[i].InputNullifiers,
-                tcs[i].OutputCommitments,
-                tcs[i].verifierShallPass
-            );
-            execProcessOnTestCase(tcs[i]);
+            uint256 scope = pool.computeScope(tcs[i]._r);
+
+            // capture previous states
+            uint256[5] memory prev_state_values = [
+                pool.root(),
+                pool.size(),
+                address(pool).balance,
+                address(tcs[i]._r.account).balance,
+                address(tcs[i]._r.feeCollector).balance
+            ];
+
+            execProcessOnTestCase(tcs[i], prev_state_values[0], publicVal, scope);
+
+            // if no error Msg, then assert the states
+            if (tcs[i].expectedErrorMsg.length == 0) {
+                // assert the states
+                assertNotEq(pool.root(), prev_state_values[0]);
+                assertEq(pool.size(), prev_state_values[1] + 2);
+                assertEq(
+                    address(pool).balance,
+                    tcs[i]._r.isCommitFlag ? prev_state_values[2] + publicVal : prev_state_values[2] - publicVal
+                );
+
+                assertEq(
+                    address(tcs[i]._r.account).balance,
+                    tcs[i]._r.isCommitFlag ? prev_state_values[3] : prev_state_values[3] + tcs[i]._r.units
+                );
+
+                assertEq(address(tcs[i]._r.feeCollector).balance, prev_state_values[4] + tcs[i]._r.fee);
+            }
         }
         vm.stopPrank();
     }

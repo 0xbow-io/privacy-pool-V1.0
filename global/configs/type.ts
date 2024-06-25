@@ -31,6 +31,7 @@ export type ZKConfig = GlobalConfig & {
 
 export type ContractConfig = GlobalConfig & {
   CONTRACT_SRC_PATH: string
+  CONTRACT_OUT_PATH: string
   CONTRACT_TEST_PATH: string
   CONTRACT_TEST_DATA_PATH: string
 }

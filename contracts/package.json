@@ -20,6 +20,6 @@
     "compile": "bunx hardhat compile",
     "hardhat:test": "bunx hardhat test",
     "forge:test": "forge test -vvvv",
-    "deploy": "source .env && forge script --chain $CHAIN script/DeploymentScript.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
+    "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
   }
 }
