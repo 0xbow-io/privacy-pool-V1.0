@@ -1,12 +1,14 @@
-import { type ICommitment } from "@privacy-pool-v1/core-ts/account/interfaces"
-import { type TCommitment } from "@privacy-pool-v1/core-ts/account/types"
-import { type IPrivacyKey } from "@privacy-pool-v1/core-ts/account/interfaces"
-import { type Signature, type Ciphertext } from "maci-crypto"
-import { hash4 } from "maci-crypto"
-import assert from "assert"
-
+import type {
+  TCommitment,
+  ICommitment,
+  IPrivacyKey
+} from "@privacy-pool-v1/core-ts/account"
+import type { Signature, Ciphertext } from "maci-crypto"
+import type { PubKey } from "maci-domainobjs"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account/functions"
-import { PubKey } from "maci-domainobjs"
+
+import { hash4 } from "maci-crypto"
+import assert from "node:assert"
 
 // Useful aliases
 export type Commitment = ICommitment.CommitmentI
@@ -21,7 +23,7 @@ export function CreateCommitment(
 export namespace CCommitment {
   export class CommitmentC implements ICommitment.CommitmentI {
     static readonly SECRET_LEN: number = 2
-    _exhausted: boolean = false
+    _exhausted?: boolean
 
     private _secrets: TCommitment.SecretsT
     private _key: IPrivacyKey.KeyI
@@ -31,8 +33,8 @@ export namespace CCommitment {
     // - if the index is true leaf index in the commitment tree
     // - && the nullifier is not yet known (_exhausted)
     // Otherwise valid when commitment is zero (!isDummy)
-    public _index: bigint = 0n
-    public _nonce: bigint = 0n
+    public _index?: bigint
+    public _nonce?: bigint
 
     constructor(
       key: IPrivacyKey.KeyI,
@@ -41,11 +43,11 @@ export namespace CCommitment {
     ) {
       this._key = key
       this._secrets = {
-        amount: secrets.amount ?? 0n,
-        blinding: secrets.blinding ?? FnCommitment.BlinderFn()
+        value: secrets.value,
+        salt: secrets.salt ?? FnCommitment.SaltFn()
       } as TCommitment.SecretsT
 
-      this.index = index ?? this.index
+      this._index = index ?? 0n
     }
 
     static create(
@@ -57,7 +59,7 @@ export namespace CCommitment {
     }
 
     get index(): bigint {
-      return this._index
+      return this._index ?? 0n
     }
 
     set index(index: bigint) {
@@ -85,7 +87,7 @@ export namespace CCommitment {
     }
 
     get nonce(): bigint {
-      return this._nonce
+      return this._nonce ?? 0n
     }
 
     set nonce(nonce: bigint) {
@@ -98,28 +100,28 @@ export namespace CCommitment {
 
     get cipherText(): Ciphertext {
       return this._key.encrypt(
-        [this._secrets.amount || 0n, this._secrets.blinding || 0n],
-        this._nonce
+        [this._secrets.value || 0n, this._secrets.salt || 0n],
+        this.nonce
       )
     }
 
     get isDummy(): boolean {
-      return this._secrets.amount === 0n
+      return this._secrets.value === 0n
     }
     get isExhausted(): boolean {
-      return this._exhausted
+      return this._exhausted ?? false
     }
 
-    get amount(): bigint {
-      return this._secrets.amount || 0n
+    get value(): bigint {
+      return this._secrets.value || 0n
     }
 
-    get blinding(): bigint {
-      return this._secrets.blinding || 0n
+    get salt(): bigint {
+      return this._secrets.salt || 0n
     }
 
     asArray = (): bigint[] => {
-      const commitment = [...this.pubKey.asArray(), this.hash, this.index]
+      const commitment = [...this.pubKey.rawPubKey, this.hash, this.index]
       assert(commitment.length === 4)
       return commitment
     }
@@ -132,8 +134,8 @@ export namespace CCommitment {
         sig_r8: this.signature.R8.map((r) => r.toString()),
         sig_s: this.signature.S.toString(),
         nullifier: this.nullifier.toString(),
-        amount: this.amount.toString(),
-        blinding: this.blinding.toString(),
+        value: this.value.toString(),
+        salt: this.salt.toString(),
         isExhausted: this.isExhausted,
         isDummy: this.isDummy
       }

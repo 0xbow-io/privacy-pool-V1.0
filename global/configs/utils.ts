@@ -1,6 +1,6 @@
 import path from "path"
 
-const project_root_path = path.resolve(__dirname, "../../")
+import {project_base_url, project_root_path} from "./constants"
 
 export function getPath(
   project_name: string,
@@ -14,3 +14,18 @@ export function getPath(
     ...sub
   )
 }
+
+function removeSpecificPrefix(fullPath: string, prefixToRemove: string): string {
+  const fullParts = fullPath.split(path.sep);
+  const prefixParts = prefixToRemove.split(path.sep);
+  return fullParts.slice(prefixParts.length).join(path.sep);
+}
+
+export function DeriveURLPath( 
+  fullPath: string,
+): string { 
+  const retracted = removeSpecificPrefix(fullPath, project_root_path)
+  return `${project_base_url}/${retracted}` 
+}
+
+

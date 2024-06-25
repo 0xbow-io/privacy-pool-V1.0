@@ -1,8 +1,9 @@
 
-import { globalConf, getPath, circomArtifactPaths} from "@privacy-pool-v1/global"
+import { globalConf, getPath, getCircomArtifactPaths, DeriveURLPath } from "@privacy-pool-v1/global"
+import type {circomArtifactPaths} from "@privacy-pool-v1/global"
 import {generic_circom, project_privacy_pool, generic_ptau} from "@privacy-pool-v1/global"
 import type { CircomkitConfig, CircuitConfig } from "circomkit"
-import { contractConf} from "@privacy-pool-v1/contracts"
+import { contractArtifacts} from "@privacy-pool-v1/contracts"
 
 import {circomKit} from "@privacy-pool-v1/zero-knowledge";
 
@@ -16,31 +17,29 @@ export namespace PrivacyPool {
   export const template = "PrivacyPool"
   export const mainfile = "./privacy-pool/privacyPool"
 
-  export const inputs: string[] = [
-      "publicVal",
-      "signalHash",
-      "actualMerkleTreeDepth",
-      "inputNullifier",
-      "inUnits",
-      "inPk",
-      "inBlinding",
-      "inSigR8",
-      "inSigS",
-      "inLeafIndices",
-      "merkleProofSiblings",
-      "outCommitment",
-      "outUnits",
-      "outPk",
-      "outBlinding"
-  ]
-  export const outputs: string[] = ["merkleRoot"]
   export const publicInputs: string[] = [  
-      "publicVal",
-      "signalHash",
-      "actualMerkleTreeDepth",
-      "inputNullifier",
-      "outCommitment"
+    "commitFlag",
+    "publicVal",
+    "scope",
+    "actualMerkleTreeDepth",
+    "inputNullifier",
+    "outputCommitment"
   ]
+  export const privateInputs: string[] = [
+      "inputPublicKey",
+      "inputValue",
+      "inputSalt",
+      "inputSigR8",
+      "inSigS",
+      "inputLeafIndex",
+      "merkleProofSiblings",
+      "outputPublicKey",
+      "outputValue",
+      "outputSalt"
+  ]
+  export const inputs: string[] = publicInputs.concat(privateInputs)
+  export const outputs: string[] = ["merkleRoot"]
+
   export const default_params = [32, 2, 2]
 
   export const dependencies: string[] =  [
@@ -59,8 +58,15 @@ export namespace PrivacyPool {
       ]),
       getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "utils"])
   ]
+  // for local refereces through file paths
+  export const circomArtifacts: circomArtifactPaths = getCircomArtifactPaths(globalConf, project_privacy_pool, id)
 
-  export const circomArtifacts = circomArtifactPaths(globalConf, project_privacy_pool, id)
+  // for web references through URLs
+  export const circomArtifacts_remnote: circomArtifactPaths = {
+    WASM_PATH: DeriveURLPath(circomArtifacts.WASM_PATH),
+    ZKEY_PATH: DeriveURLPath(circomArtifacts.ZKEY_PATH),
+    VKEY_PATH: DeriveURLPath(circomArtifacts.VKEY_PATH),
+  }
 
   export const circomkitConf: CircomkitConfig = {
     protocol: protocol,
@@ -114,8 +120,8 @@ export namespace PrivacyPool {
         console.error(err)
     })
 
-    await circuit.generate_contract(contractConf.CONTRACT_SRC_PATH).then(() => {
-        console.log("generated contract at ", contractConf.CONTRACT_SRC_PATH)
+    await circuit.generate_contract(contractArtifacts.Groth16Verifier.srcPath).then(() => {
+        console.log("generated contract at ", contractArtifacts.Groth16Verifier.srcPath)
     }).catch((err) => {
         console.error(err)
     })

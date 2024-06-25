@@ -3,79 +3,49 @@ pragma solidity ^0.8.4;
 
 /// @title PrivacyPool contract interface.
 interface IPrivacyPool {
-    error ValMismatch(uint256 got, uint256 expected);
-    error ExceedsMax(uint256 got, uint256 expected);
-    error NullifierIsKnown(uint256 nullifier);
+    error InvalidRepresentation();
 
-    error InvalidFeeCollector(); // M-02
-    error InvalidFee(uint256 got, uint256 expected);
-    error InvalidFeeAndUnits(uint256 fee, int256 units);
-    error InvalidUnits(uint256 got, uint256 expected);
-
-    error FeeFailed();
-
-    error InvalidMerkleRoot(uint256 root);
-    // M-01
-    error InvalidMerkleDepth(uint256 got, uint256 expected);
-
-    error ProofVerificationFailed();
-
-    error IsZeroAddress();
-
-    error NoETHAllowed();
-
-    event NewCommitment(uint256 commitment, uint256 index, uint256[4] ciphertext);
-    event NewNullifier(uint256 nullifier);
-    event NewTxRecord(
-        uint256 inputNullifier1,
-        uint256 inputNullifier2,
-        uint256 outputCommitment1,
-        uint256 outputCommitment2,
-        uint256 publicAmount,
-        uint256 index
-    );
-    event NewRelease(
-        address to,
-        address feeCollector,
-        uint256 value,
-        string associationProofURI,
-        uint256 inputNullifier1,
-        uint256 inputNullifier2
-    );
-
-    struct signal {
-        int256 units;
+    /// @dev struct to holds
+    /// the specificities
+    /// of a commitment / release
+    struct Request {
+        // true if the request is a commitment
+        // false if the request is a release
+        bool isCommitFlag;
+        uint256 units;
         uint256 fee;
         address account;
         address feeCollector;
     }
 
-    struct supplement {
+    /// @dev struct to hold the
+    /// any additional information
+    /// relevant to a commitment / release
+    struct Supplement {
         uint256[4][2] ciphertexts;
         string associationProofURI;
     }
 
-    function maxCommitValue() external view returns (uint256);
-    function latestRoot() external view returns (uint256);
-    function size() external view returns (uint256);
-    function knownRoot(uint256 root) external view returns (bool);
-    function IsKnownNullifier(uint256 nullifier) external view returns (bool);
-    function currentDepth() external view returns (uint256);
+    event Record(
+        Request _r,
+        Supplement _s,
+        uint256[9] _pubSignals,
+        uint256 MerkleTreeRoot,
+        uint256 MerkleTreeDepth,
+        uint256 MerkleTreeSize
+    );
 
-    function valueUnitRepresentative() external view returns (address);
+    function computePublicVal(Request calldata _r) external pure returns (uint256);
+    function computeScope(Request calldata _r) external view returns (uint256);
     function process(
-        signal calldata s,
-        supplement calldata sp,
-        uint256[2] memory _pA,
-        uint256[2][2] memory _pB,
-        uint256[2] memory _pC,
-        uint256[6] memory _pubSignals
+        Request calldata _r,
+        Supplement calldata _s,
+        uint256[2] calldata _pA,
+        uint256[2][2] calldata _pB,
+        uint256[2] calldata _pC,
+        uint256[9] calldata _pubSignals
     ) external payable;
-
-    function calcSignalHash(int256 units, uint256 fee, address account, address feeCollector)
-        external
-        view
-        returns (uint256);
-
-    function calcPublicVal(int256 units, uint256 fee) external view returns (uint256);
+    function root() external view returns (uint256);
+    function size() external view returns (uint256);
+    function depth() external view returns (uint256);
 }

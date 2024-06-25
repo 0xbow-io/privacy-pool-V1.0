@@ -1,37 +1,36 @@
-
-import type {  CircomkitConfig, CircuitConfig } from "circomkit"
-import { Circomkit, WitnessTester } from "circomkit"
-import path from "path"
-import fs from "fs"
+import type { CircomkitConfig, CircuitConfig, WitnessTester } from "circomkit"
+import { Circomkit } from "circomkit"
+import path from "node:path"
+import fs from "node:fs"
 
 import { cleanThreads } from "@privacy-pool-v1/global"
-  
+
 function moveFileIfExists(
-    sourceFilePath: string,
-    destinationDir: string
-  ): void {
-    const destinationFilePath = path.join(
-      destinationDir,
-      path.basename(sourceFilePath)
-    )
-  
-    fs.access(sourceFilePath, fs.constants.F_OK, (err) => {
-      if (err) {
-        console.error(`File ${sourceFilePath} does not exist.`)
-        return
+  sourceFilePath: string,
+  destinationDir: string
+): void {
+  const destinationFilePath = path.join(
+    destinationDir,
+    path.basename(sourceFilePath)
+  )
+
+  fs.access(sourceFilePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`File ${sourceFilePath} does not exist.`)
+      return
+    }
+
+    fs.rename(sourceFilePath, destinationFilePath, (renameErr) => {
+      if (renameErr) {
+        console.error(`Error moving file: ${renameErr}`)
+      } else {
+        console.log(
+          `File moved from ${sourceFilePath} to ${destinationFilePath}`
+        )
       }
-  
-      fs.rename(sourceFilePath, destinationFilePath, (renameErr) => {
-        if (renameErr) {
-          console.error(`Error moving file: ${renameErr}`)
-        } else {
-          console.log(
-            `File moved from ${sourceFilePath} to ${destinationFilePath}`
-          )
-        }
-      })
     })
-  }
+  })
+}
 
 export class circomKit {
   circomkit: Circomkit
@@ -44,10 +43,13 @@ export class circomKit {
   }
 
   async witnessTester(): Promise<WitnessTester> {
-    const witTest =  await this.circomkit.WitnessTester(this.circuitName, this.circuitConf)
+    const witTest = await this.circomkit.WitnessTester(
+      this.circuitName,
+      this.circuitConf
+    )
     return witTest
   }
-  
+
   instantiate() {
     try {
       console.log("Instantiating circuit...")
@@ -106,4 +108,4 @@ export class circomKit {
       throw new Error("Failed to build circuit", { cause: e })
     }
   }
-} 
+}

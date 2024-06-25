@@ -3,10 +3,10 @@
 ## 1. Install Bun
 To install Bun, run the following commands:
 ```
-$ curl -fsSL https://bun.sh/install | bash 
+$ curl -fsSL https://bun.sh/install | bash
 ```
 ```
-$ export BUN_INSTALL="$HOME/.bun" 
+$ export BUN_INSTALL="$HOME/.bun"
 ```
 ```
 $ export PATH="$BUN_INSTALL/bin:$PATH"
@@ -27,12 +27,20 @@ RPC_URL=
 PRIVATE_KEY=
 ETHERSCAN_API_KEY=
 CHAIN=
-MAX_COMMIT_VAL=
-VALUE_UNIT_REPRESENTATIVE=
-MAX_MERKLETREE_DEPTH=
+MAX_UNITS_ALLOWED=
+UNIT_REPRESENTATION=
 ```
 ## 4. Run the deployment script
 To deploy the smart contracts, run the following command:
 ```bash
 $ bun run deploy
 ```
+
+
+## Latest Deployments:
+
+## Sepolia:
+
+## Gnosis:
+
+0x52e41dC97ffCc4b67BD50c4253554Ea73317be07 | xDAI

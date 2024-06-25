@@ -10,7 +10,7 @@ contract StandardizedInputTest is Test {
     Merkle m;
     CompleteMerkle cm;
     bytes32[100] data;
-    uint256[8] leaves = [4, 8, 15, 16, 23, 42, 69, 88];
+    uint256[9] leaves = [4, 8, 15, 16, 23, 42, 69, 88];
 
     function setUp() public {
         string[] memory inputs = new string[](2);

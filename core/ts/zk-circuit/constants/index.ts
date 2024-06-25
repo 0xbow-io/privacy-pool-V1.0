@@ -1,2 +1,1 @@
-export * from './circuit';
-export * from './merkle';
+ export * from './merkle';

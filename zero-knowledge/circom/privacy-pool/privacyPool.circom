@@ -2,6 +2,7 @@ pragma circom 2.1.9;
 
 // IDEN3 Circomlib imports
 include "mux1.circom";
+include "comparators.circom";
 
 // MACI imports
 include "verifySignature.circom";
@@ -9,84 +10,92 @@ include "verifySignature.circom";
 // local imports
 include "tree.circom";
 include "commitment.circom";
-include "nullifier.circom";
 
-template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
 
-    signal input publicVal;
-    signal input signalHash;
+template VerifyInput(maxMerkleTreeDepth){
+    signal input publicKey[2];
+    signal input value;
+    signal input salt;
+    signal input sigR8[2];
+    signal input sigS;
+    signal input nullifier;
+    signal input leafIndex;
     signal input actualMerkleTreeDepth;
+    signal input merkleProofSiblings[maxMerkleTreeDepth];
 
-    // data for nIns Nullifiers
+    signal output isSignatureValid;
+    signal output isNullifierValid;
+    signal output computedMerkleRoot;
+
+    component valCheck = Num2Bits(252);
+    valCheck.in <== value;
+
+    var computedCommitment = Commitment()(publicKey, value, salt);
+
+    isSignatureValid <== VerifySignature()(publicKey, sigR8, sigS, [publicKey[0], publicKey[1], computedCommitment, leafIndex]);
+    isNullifierValid <== VerifyNullifier()(computedCommitment, leafIndex, sigR8, sigS, nullifier);
+    computedMerkleRoot <== ComputeMerkleRoot(maxMerkleTreeDepth)(computedCommitment,actualMerkleTreeDepth,leafIndex,merkleProofSiblings);
+}
+
+template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
+
+    // Public inputs
+    signal input commitFlag; // either 1 or 0
+    signal input publicVal; 
+    signal input scope;
+    signal input actualMerkleTreeDepth;
     signal input inputNullifier[nIns];
-    signal input inUnits[nIns];
-    signal input inPk[nIns][2];
-    signal input inBlinding[nIns];
+    signal input outputCommitment[nOuts];
 
-    // input signature components
-    // used to verify knowledge of private key
-    // without revealing it
-    signal input inSigR8[nIns][2];
-    signal input inSigS[nIns];
+    signal input inputPublicKey[nIns][2];
+    signal input inputValue[nIns];
+    signal input inputSalt[nIns];
 
-    // merkle proofs for each input nullifiers
-    signal input inLeafIndices[nIns];
-    signal input merkleProofSiblings[nIns][MAX_DEPTH];
+    // EdDSA signature components
+    signal input inputSigR8[nIns][2];
+    signal input inputSigS[nIns];
 
-    // data for nOuts Commitments
-    signal input outCommitment[nOuts];
-    signal input outUnits[nOuts];
-    signal input outPk[nOuts][2];
-    signal input outBlinding[nOuts];
+    signal input inputLeafIndex[nIns];
+    signal input merkleProofSiblings[nIns][maxMerkleTreeDepth];
+
+    signal input outputPublicKey[nOuts][2];
+    signal input outputValue[nOuts];
+    signal input outputSalt[nOuts];
 
     signal output merkleRoot;
 
-    component inCommitment[nIns];
-    component inNullifier[nIns];
-    component isSignatureValid[nIns];
-    component isNullifierValid[nIns];
+    signal computedMerkleRoots[nIns];
 
-    component merkleRootMux[nIns];
-    signal inMerkleRoots[nIns];
+    // check publicVal is within range 
+    component publicValCheck = Num2Bits(252);
+    publicValCheck.in <== publicVal;
 
-    // compute commitments, signatures, nullifiers and merkle roots
+    component inputVerifiers[nIns];
     var sumIns = 0;
+    signal inMerkleRoots[nIns];
     for (var i = 0; i < nIns; i++) {
-        inCommitment[i] = Commitment();
-        inCommitment[i].amount <== inUnits[i];
-        inCommitment[i].pubKey <== inPk[i];
-        inCommitment[i].blinding <== inBlinding[i];
 
-        // verify signature from private key
-        isSignatureValid[i] = VerifySignature();
-        isSignatureValid[i].pubKey <== inPk[i];
-        isSignatureValid[i].R8 <== inSigR8[i];
-        isSignatureValid[i].S <== inSigS[i];
-        isSignatureValid[i].preimage <== [inPk[i][0], inPk[i][1], inCommitment[i].out, inLeafIndices[i]];
+        // Verify input
+        inputVerifiers[i] = VerifyInput(maxMerkleTreeDepth);
+        inputVerifiers[i].publicKey <== inputPublicKey[i];
+        inputVerifiers[i].value <== inputValue[i];
+        inputVerifiers[i].salt <== inputSalt[i];
+        inputVerifiers[i].sigR8 <== inputSigR8[i];
+        inputVerifiers[i].sigS <== inputSigS[i];
+        inputVerifiers[i].nullifier <== inputNullifier[i];
+        inputVerifiers[i].leafIndex <== inputLeafIndex[i];
+        inputVerifiers[i].actualMerkleTreeDepth <== actualMerkleTreeDepth;
+        inputVerifiers[i].merkleProofSiblings <== merkleProofSiblings[i];
+        
+        inputVerifiers[i].isSignatureValid === 1;
+        inputVerifiers[i].isNullifierValid === 1;
 
-        isSignatureValid[i].valid === 1;
+        var inputIsDummy = IsZero()(inputValue[i]); 
+        var lastComputedMerkleRoot = i == 0 ? 0 : inMerkleRoots[i-1];
+        var merkleRootMux = Mux1()([inputVerifiers[i].computedMerkleRoot, lastComputedMerkleRoot], inputIsDummy);
+        inMerkleRoots[i] <== merkleRootMux;
 
-        isNullifierValid[i] = IsEqual();
-        isNullifierValid[i].in[0] <== inputNullifier[i];
-        isNullifierValid[i].in[1] <== Nullifier()(inCommitment[i].out, inLeafIndices[i], inSigR8[i], inSigS[i]);
-
-        isNullifierValid[i].out === 1;
-
-        merkleRootMux[i] = Mux1();
-        // compute the new merkle root
-        merkleRootMux[i].c[0] <==  ComputeMerkleRoot(MAX_DEPTH)(
-                            inCommitment[i].out,
-                            actualMerkleTreeDepth,
-                            inLeafIndices[i],
-                            merkleProofSiblings[i]
-                        );
-        merkleRootMux[i].c[1] <==i == 0 ? 0 : inMerkleRoots[i-1];
-        // if units is 0, then no merkle proof is needed
-        // so adopt the previous computed merkle root
-        merkleRootMux[i].s <== IsZero()(inUnits[i]);
-        merkleRootMux[i].out ==> inMerkleRoots[i];
-
-        sumIns += inUnits[i];
+        sumIns += inputValue[i];
     }
 
     // verify that all computed roots are the same
@@ -94,41 +103,36 @@ template PrivacyPool(MAX_DEPTH, nIns, nOuts) {
         inMerkleRoots[i] === inMerkleRoots[i+1];
     }
 
+
+    component outValueCheck[nOuts];
+    component outputVerifiers[nOuts];
+    var sumOuts = 0;
+    // verify correctness of outputs
+    for (var i = 0; i < nOuts; i++) {
+        outputVerifiers[i] = VerifyCommitment();
+        outputVerifiers[i].pubKey <== outputPublicKey[i];
+        outputVerifiers[i].value <== outputValue[i];
+        outputVerifiers[i].salt <== outputSalt[i];
+        outputVerifiers[i].commitment <== outputCommitment[i];
+
+        outputVerifiers[i].isValid === 1;
+
+        outValueCheck[i] = Num2Bits(252);
+        outValueCheck[i].in <== outputValue[i];
+        sumOuts += outputValue[i];
+    }
+
+    // if commitFlag = 0, a release was requested
+    // therefore input is deducted by publicVal 
+    component expectedOutputSum = Mux1();
+    expectedOutputSum.c[0] <== sumIns + publicVal;
+    expectedOutputSum.c[1] <== sumIns - publicVal;
+    expectedOutputSum.s <== IsZero()(commitFlag);
+
+    expectedOutputSum.out === sumOuts;
+
     // signal merkleroot as output
     merkleRoot <== inMerkleRoots[nIns-1];
 
-    component computedOutCommitment[nOuts];
-    component outUnitsCheck[nOuts];
-    var sumOuts = 0;
-
-    // verify correctness of outputs
-    for (var i = 0; i < nOuts; i++) {
-        computedOutCommitment[i] = Commitment();
-        computedOutCommitment[i].amount <== outUnits[i];
-        computedOutCommitment[i].pubKey <== outPk[i];
-        computedOutCommitment[i].blinding <== outBlinding[i];
-
-        computedOutCommitment[i].out === outCommitment[i];
-
-        // Check that amount fits into 248 bits to prevent overflow
-        outUnitsCheck[i] = Num2Bits(248);
-        outUnitsCheck[i].in <== outUnits[i];
-
-        sumOuts += outUnits[i];
-    }
-
-    // check that there are no same nullifiers among all inputs
-    component sameNullifiers[nIns * (nIns - 1) / 2];
-    var index = 0;
-    for (var i = 0; i < nIns - 1; i++) {
-      for (var j = i + 1; j < nIns; j++) {
-          sameNullifiers[index] = IsEqual();
-          sameNullifiers[index].in[0] <== inputNullifier[i];
-          sameNullifiers[index].in[1] <== inputNullifier[j];
-          sameNullifiers[index].out === 0;
-          index++;
-      }
-    }
-    sumIns + publicVal === sumOuts;
-    signal signalSquare <== signalHash * signalHash;
+    signal scopeSquare <== scope * scope;
 }

@@ -1,5 +1,5 @@
+export * from "./constants"
 export * from "./type"
 export * from "./utils"
-export * from "./constants"
 export * from "./global"
 export * from "./zkConfig"

@@ -1,0 +1,23 @@
+{
+  "name": "poseidon-solidity",
+  "version": "0.0.5",
+  "description": "Poseidon hash function implemented in Solidity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vimwitch/poseidon-solidity.git"
+  },
+  "keywords": [
+    "poseidon",
+    "solidity",
+    "zk",
+    "ethereum",
+    "hash"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {},
+  "author": "Chance Hudson",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

@@ -1,14 +1,18 @@
 import fs from "fs"
 import path from "path"
 
+import { type WitnessTester } from "circomkit";
 import { cleanThreads } from "@privacy-pool-v1/global"
-import {PrivacyPool} from "@privacy-pool-v1/zero-knowledge";
+import {PrivacyPool, getSignal} from "@privacy-pool-v1/zero-knowledge";
 
 import { test, describe, afterEach } from "@jest/globals"
 
+const circomkitInstance = PrivacyPool.circomkit()
+
+
 describe("Test Circom Circuit", () => {
-  const circuit = PrivacyPool.circomkit()
-  const testData: Array<string> = Array.from({ length: PrivacyPool.test_data_size }, (_, i) =>
+
+  const testData: Array<string> = Array.from({ length: PrivacyPool.test_data_size }, (_, i) => 
     path.resolve(PrivacyPool.circomkitConf.dirInputs, "testcase_" + i.toString() + ".json")
   )
   
@@ -16,9 +20,13 @@ describe("Test Circom Circuit", () => {
     await cleanThreads()
   })
 
-  test.each(testData)("witnessTester should pass for %s", async (inputs) => {
-    const witnessTester = await circuit.witnessTester()
-    const circuitInputs = JSON.parse(fs.readFileSync(inputs, "utf-8"))
-    await witnessTester.expectPass(circuitInputs.inputs, circuitInputs.outputs)
+  test.each(testData)("witnessTester should pass for %s", async (path) => {
+    const circuitInputs = JSON.parse(fs.readFileSync(path, "utf-8"))
+    const witnessTester = await circomkitInstance.witnessTester()
+
+    const witness = await witnessTester.calculateWitness(circuitInputs.inputs);
+    await witnessTester.expectConstraintPass(witness);
+    const merkleRoot = await getSignal(witnessTester, witness, "merkleRoot");
+    console.log("inputs: ", circuitInputs, " computed merkleRoot: ", merkleRoot)
   })
 })

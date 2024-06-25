@@ -1,66 +1,36 @@
-import type { ICircuit, TPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
+import type { ICircuit, TPrivacyPool, Groth16_VKeyJSONT } from '@privacy-pool-v1/core-ts/zk-circuit';
 import { FnPrivacyPool } from '@privacy-pool-v1/core-ts/zk-circuit';
 
-
 import { stringifyBigInts } from 'maci-crypto';
+
 // Handy Aliases
 export type PrivacyPoolCircuit = ICircuit.CircuitI;
-export function NewPrivacyPoolCircuit(paths: {
-  vKey: any;
-  zKeyPath: string;
-  wasmPath: string;
-}): PrivacyPoolCircuit {return new CPrivacyPool.CircuitC(paths)}
+export const NewPrivacyPoolCircuit = (
+  wasm: string | Uint8Array, 
+  zkey: string | Uint8Array,
+  vKJSON: Groth16_VKeyJSONT): PrivacyPoolCircuit => new CPrivacyPool.CircuitC(wasm, zkey, vKJSON);
 
 export namespace CPrivacyPool {
   export class CircuitC implements ICircuit.CircuitI {
-    public _vKey: any;
-    public _zKeyPath: string;
-    public _wasmPath: string;
+    constructor( 
+      public wasm: string | Uint8Array, 
+      public zkey: string | Uint8Array,
+      public vKJSON: Groth16_VKeyJSONT
+    ) {}
 
-    public _inputs: TPrivacyPool.InT | undefined = undefined;
-
-    _output: TPrivacyPool.OutputT | undefined = undefined;
-    constructor(paths: {
-      vKey: any;
-      zKeyPath: string;
-      wasmPath: string;
-    }) {
-      this._vKey = paths.vKey;
-      this._zKeyPath = paths.zKeyPath;
-      this._wasmPath = paths.wasmPath;
+    prove = async (input: TPrivacyPool.InT, pack?: boolean): Promise<TPrivacyPool.OutputT | TPrivacyPool.PackedGroth16ProofT<bigint>>  => {
+      const output = await FnPrivacyPool.ProveFn(input, this.wasm, this.zkey)
+      .then(({proof, publicSignals}) => { 
+        return FnPrivacyPool.ParseFn(proof, publicSignals)
+      }).catch((e) => {
+        throw new Error('unable to cmpute proof', { cause: e });
+      })
+      return pack ? FnPrivacyPool.packGroth16ProofFn(output) : output;
     }
 
-    set inputs(input: TPrivacyPool.InT ) {
-      this._inputs = input;
-    }
-
-    get inputs(): TPrivacyPool.InT | undefined {
-      return this._inputs;
-    }
-
-    get output(): TPrivacyPool.OutputT | undefined {
-      return this._output;
-    }
-
-    set output(snarkOut: { proof: snarkjs.Groth16Proof; publicSignals: snarkjs.NumericString[] }) {
-      this._output = FnPrivacyPool.ParseFn(snarkOut.proof, snarkOut.publicSignals);
-    }
-
-    async compute() {
-      if (this._inputs === undefined) {
-        throw new Error('inputs not set');
-      }
-      const { proof, publicSignals } = await Promise.resolve(
-        FnPrivacyPool.ProveFn(this._inputs, this._wasmPath, this._zKeyPath),
-      ).catch((e) => {
-        throw new Error('unable to prove circuit', { cause: e });
-      });
-      this.output = { proof, publicSignals };
-    }
-
-    async verify(output: TPrivacyPool.OutputT): Promise<boolean> {
-      const out = await FnPrivacyPool.VerifyFn(
-        this._vKey,
+    verify = async (output: TPrivacyPool.OutputT): Promise<boolean>  => {
+        const out = await FnPrivacyPool.VerifyFn(
+        this.vKJSON,
         output.publicSignals.map((x) => stringifyBigInts(x)) as string[],
         {
           pi_a: output.proof.pi_a.map((x) => stringifyBigInts(x)) as string[],

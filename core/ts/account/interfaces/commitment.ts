@@ -1,5 +1,5 @@
-import { type Signature, type Ciphertext } from "maci-crypto"
-import { PubKey } from "maci-domainobjs"
+import type { Signature, Ciphertext } from "maci-crypto"
+import type { PubKey } from "maci-domainobjs"
 
 export namespace ICommitment {
   export interface CommitmentI<
@@ -9,8 +9,8 @@ export namespace ICommitment {
     SigT = Signature,
     CipherT = Ciphertext
   > {
-    amount: bigint
-    blinding: bigint
+    value: bigint
+    salt: bigint
     hash: HashT
     pubKey: PkT
     index: bigint

@@ -1,17 +1,16 @@
-import {
-  type TCommitment,
-  type TPrivacyKey
+import type {
+  TCommitment,
+  TPrivacyKey
 } from "@privacy-pool-v1/core-ts/account/types"
-import { PubKey } from "maci-domainobjs"
-import { type Signature } from "maci-crypto"
+import type { PubKey } from "maci-domainobjs"
+import type { Signature } from "maci-crypto"
 import {
-  hash2,
   hash5,
   hash4,
   genRandomBabyJubValue,
   verifySignature
 } from "maci-crypto"
-import { type Ciphertext } from "maci-crypto"
+import type { Ciphertext } from "maci-crypto"
 
 export namespace FnCommitment {
   export function HashFn(
@@ -19,10 +18,10 @@ export namespace FnCommitment {
     pubKey: PubKey
   ): bigint {
     return hash4([
-      secrets.amount ?? 0n,
+      secrets.value ?? 0n,
       pubKey.rawPubKey[0],
       pubKey.rawPubKey[1],
-      secrets.blinding ?? 0n
+      secrets.salt ?? 0n
     ])
   }
 
@@ -63,10 +62,10 @@ export namespace FnCommitment {
     secrets: TCommitment.SecretsT,
     nonce: bigint
   ): Ciphertext {
-    return encryptor([secrets.amount || 0n, secrets.blinding || 0n], nonce)
+    return encryptor([secrets.value || 0n, secrets.salt || 0n], nonce)
   }
 
-  export function BlinderFn(): bigint {
+  export function SaltFn(): bigint {
     return genRandomBabyJubValue()
   }
 }
