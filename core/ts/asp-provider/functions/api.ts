@@ -1,5 +1,5 @@
 import type { ApiResponse, AssociationSetParams } from "@privacy-pool-v1/core-ts/asp-provider/interfaces/api";
-import {baseUrl, apiUrl} from "@privacy-pool-v1/core-ts/asp-provider/constants/api";
+import {baseUrl, apiUrl} from "./../constants"//"@privacy-pool-v1/core-ts/asp-provider/constants/api";
 import axios from 'axios';
 
 export const buildURL = (baseUrl: string, apiUrl: string, type: string, params: AssociationSetParams): string => {
@@ -28,9 +28,29 @@ export const getConfig = (baseUrl: string, apiUrl: string, type: string, params:
   }
 }};
 
+export function validateParams(params: AssociationSetParams): void {
+  if (typeof params.chain !== 'string') {
+    throw new Error('Invalid type for chain');
+  }
+  if (typeof params.contract !== 'string') {
+    throw new Error('Invalid type for contract');
+  }
+  if (params.hash_only && typeof params.hash_only !== 'string') {
+    throw new Error('Invalid type for hash_only');
+  }
+  if (params.size_limit && typeof params.size_limit !== 'string') {
+    throw new Error('Invalid type for size_limit');
+  }
+  if (params.pin_to_ipfs && typeof params.pin_to_ipfs !== 'string') {
+    throw new Error('Invalid type for pin_to_ipfs');
+  }
+}
+
+
 export async function GetAssociationSet(type: 'inclusion' | 'exclusion', params: AssociationSetParams): Promise<ApiResponse> {
   try {
-
+    
+    validateParams(params);
     const response = await axios.request(getConfig(baseUrl, apiUrl, type, params));
     return response.data;
 
