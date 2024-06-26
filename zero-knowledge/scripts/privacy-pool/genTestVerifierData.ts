@@ -6,7 +6,7 @@ import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { contractConf } from "@privacy-pool-v1/contracts"
 import { stringifyBigInts } from "maci-crypto"
 
-import { cleanThreads } from "@privacy-pool-v1/global"
+import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 
 const verifierKey = JSON.parse(
   fs.readFileSync(PrivacyPool.circomArtifacts.VKEY_PATH, "utf-8")

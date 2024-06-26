@@ -8,7 +8,6 @@ import type { PubKey } from "maci-domainobjs"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account/functions"
 
 import { hash4 } from "maci-crypto"
-import assert from "node:assert"
 
 // Useful aliases
 export type Commitment = ICommitment.CommitmentI
@@ -120,11 +119,7 @@ export namespace CCommitment {
       return this._secrets.salt || 0n
     }
 
-    asArray = (): bigint[] => {
-      const commitment = [...this.pubKey.rawPubKey, this.hash, this.index]
-      assert(commitment.length === 4)
-      return commitment
-    }
+    asArray = (): bigint[] => [...this.pubKey.rawPubKey, this.hash, this.index]
 
     asStringValues() {
       return {

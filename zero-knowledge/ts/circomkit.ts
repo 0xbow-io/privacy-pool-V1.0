@@ -1,36 +1,7 @@
 import type { CircomkitConfig, CircuitConfig, WitnessTester } from "circomkit"
 import { Circomkit } from "circomkit"
-import path from "node:path"
-import fs from "node:fs"
 
-import { cleanThreads } from "@privacy-pool-v1/global"
-
-function moveFileIfExists(
-  sourceFilePath: string,
-  destinationDir: string
-): void {
-  const destinationFilePath = path.join(
-    destinationDir,
-    path.basename(sourceFilePath)
-  )
-
-  fs.access(sourceFilePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      console.error(`File ${sourceFilePath} does not exist.`)
-      return
-    }
-
-    fs.rename(sourceFilePath, destinationFilePath, (renameErr) => {
-      if (renameErr) {
-        console.error(`Error moving file: ${renameErr}`)
-      } else {
-        console.log(
-          `File moved from ${sourceFilePath} to ${destinationFilePath}`
-        )
-      }
-    })
-  })
-}
+import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 
 export class circomKit {
   circomkit: Circomkit
@@ -84,11 +55,10 @@ export class circomKit {
     }
   }
 
-  async generate_contract(finalPath: string = "") {
+  async generate_contract() {
     try {
       console.log("generating verifier contract...")
       const path = await this.circomkit.contract(this.circuitName)
-      moveFileIfExists(path, finalPath)
       await cleanThreads()
       return path
     } catch (e) {

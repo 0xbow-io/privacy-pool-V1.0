@@ -1,6 +1,7 @@
+import fs from "node:fs"
 import { expect, test, describe, afterEach, beforeAll } from "@jest/globals"
 
-import { cleanThreads } from "@privacy-pool-v1/global"
+import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 
 import {
@@ -31,13 +32,15 @@ describe("Testing CPrivacyPool", () => {
     beforeAll(async () => {
       // File Paths
       const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
-      verifierKey = await FnPrivacyPool.LoadVkeyFn(paths.VKEY_PATH)
+      verifierKey = await FnPrivacyPool.LoadVkeyFn(
+        fs.readFileSync(paths.VKEY_PATH, "utf-8")
+      )
 
       expect(verifierKey).toBeDefined()
-      wasm = await FnPrivacyPool.loadBytesFn(paths.WASM_PATH)
+      wasm = await FnPrivacyPool.LoadBinFn(paths.WASM_PATH)
 
       expect(wasm).toBeDefined()
-      zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
+      zkey = await FnPrivacyPool.LoadBinFn(paths.ZKEY_PATH)
       expect(zkey).toBeDefined()
 
       privacyPool = NewPrivacyPoolCircuit(wasm, zkey, verifierKey)

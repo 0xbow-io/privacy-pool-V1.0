@@ -1,6 +1,7 @@
 import type { PubKey } from "maci-domainobjs"
 import type { Ciphertext, Signature, Plaintext } from "maci-crypto"
 import type { Address } from "viem"
+import type { TPrivacyKey } from "@privacy-pool-v1/core-ts/account"
 
 export namespace IPrivacyKey {
   export interface KeyI<
@@ -13,6 +14,7 @@ export namespace IPrivacyKey {
     pubKey: PkT
     publicAddress: Address
     pubKeyHash: bigint
+    asJSON: TPrivacyKey.JSONKeyT
     sign(msg: MsgT): SigT
     encrypt(secret: SecretT, nonce: bigint): CipherT
     decrypt(cipher: CipherT, nonce: bigint, secretLen: number): Plaintext

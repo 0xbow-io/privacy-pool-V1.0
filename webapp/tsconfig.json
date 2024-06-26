@@ -8,15 +8,21 @@
     ],
     "target": "ESNext",
     "module": "ESNext",
+    "jsx": "preserve",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
     "incremental": true,
     "allowImportingTsExtensions": true,
     "plugins": [
@@ -25,14 +31,22 @@
       }
     ],
     "types": [
-      "bun-types", // add Bun global
+      "bun-types",
       "node"
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/providers/*": ["./src/providers/*"],
-      "@/stores/*": ["./src/stores/*"],
-      "@/utils/*": ["./src/utils/*"],
+      "@/*": [
+        "./src/*"
+      ],
+      "@/providers/*": [
+        "./src/providers/*"
+      ],
+      "@/stores/*": [
+        "./src/stores/*"
+      ],
+      "@/utils/*": [
+        "./src/utils/*"
+      ],
       "@sections/*": [
         "./src/app/sections/*"
       ],
@@ -47,6 +61,13 @@
       ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

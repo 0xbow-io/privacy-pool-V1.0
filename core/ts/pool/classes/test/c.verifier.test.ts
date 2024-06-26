@@ -1,33 +1,50 @@
+import fs from "node:fs"
+
 import { expect, test, describe, afterEach, beforeAll } from "@jest/globals"
 import { createPublicClient, http } from "viem"
 import { sepolia } from "viem/chains"
 
-import { cleanThreads } from "@privacy-pool-v1/global"
+import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
+import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 
 import {
   PrivacyPool,
   genTestCircuitInputsFn
 } from "@privacy-pool-v1/zero-knowledge"
 
+import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
+
 import type { IVerifier } from "@privacy-pool-v1/core-ts/pool"
-import { GetVerifier } from "@privacy-pool-v1/core-ts/pool"
+import {
+  GetVerifier,
+  InitVerifiersCircuit
+} from "@privacy-pool-v1/core-ts/pool"
 
 describe("Testing CPrivacyPool", () => {
   const testData = genTestCircuitInputsFn(10)
 
-  let verifier: IVerifier.VerifierI
+  const verifier: IVerifier.VerifierI = GetVerifier(
+    createPublicClient({
+      chain: sepolia,
+      transport: http()
+    }),
+    "0x542a99775c5eee7f165cfd19954680ab85d586e5"
+  )
 
   beforeAll(async () => {
-    await GetVerifier(
-      createPublicClient({
-        chain: sepolia,
-        transport: http()
-      }),
-      "0x542a99775c5eee7f165cfd19954680ab85d586e5",
-      PrivacyPool.circomArtifacts
-    ).then((v) => {
-      verifier = v
-    })
+    // File Paths
+    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
+    const verifierKey = await FnPrivacyPool.LoadVkeyFn(
+      fs.readFileSync(paths.VKEY_PATH, "utf-8")
+    )
+    const wasm = await FnPrivacyPool.LoadBinFn(paths.WASM_PATH)
+    const zkey = await FnPrivacyPool.LoadBinFn(paths.ZKEY_PATH)
+
+    expect(verifierKey).toBeDefined()
+    expect(wasm).toBeDefined()
+    expect(zkey).toBeDefined()
+
+    InitVerifiersCircuit(wasm, zkey, verifierKey)
   })
 
   describe("should pass with file paths", () => {

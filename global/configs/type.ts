@@ -1,4 +1,4 @@
-import { type CircomkitConfig } from "circomkit"
+import type { CircomkitConfig } from "circomkit"
 
 export type ProjectPaths = {
   ZERO_KNOWLEDGE_DIR: string

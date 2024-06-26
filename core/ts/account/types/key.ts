@@ -1,5 +1,5 @@
 import type { Hex, PrivateKeyAccount } from "viem"
-import type { Keypair } from "maci-domainobjs"
+import type { Keypair, IJsonKeyPair } from "maci-domainobjs"
 import type {
   Ciphertext,
   Signature,
@@ -29,4 +29,12 @@ export namespace TPrivacyKey {
     nonce: bigint,
     secretLen: number
   ) => PlaintextT
+
+  export type JSONKeyT = {
+    privateKey: Hex
+    pubAddr: Hex
+    keypair: IJsonKeyPair
+    ek_x: Hex
+    ek_y: Hex
+  }
 }

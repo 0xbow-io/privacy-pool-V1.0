@@ -1,3 +1,4 @@
+import fs from "node:fs"
 import type { Commitment, PrivacyKey } from "@privacy-pool-v1/core-ts/account"
 import {
   CreateCommitment,
@@ -11,7 +12,7 @@ import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import type { circomArtifactPaths } from "@privacy-pool-v1/global"
-import { cleanThreads } from "@privacy-pool-v1/global"
+import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 
 function getTestDummyCommimtment(pK: PrivacyKey): Commitment {
   return CreateCommitment(pK, { value: 0n })
@@ -60,6 +61,7 @@ describe("Test Functions", () => {
     })
 
     test("Two dummy Inputs, 1 dummy Ouptut and 1 non-dummy Ouptut of size 100n", () => {
+      const expected_isCommit = true
       const expected_public_val = 100n
       const inputs: Commitment[] = genTestCommitments([
         { value: 0n, pK: pK },
@@ -70,8 +72,9 @@ describe("Test Functions", () => {
         { value: 100n, pK: pK }
       ]).map((c) => c)
 
-      const public_val = FnPrivacyPool.CalcPublicValFn(inputs, outputs)
-      expect(public_val).toEqual(expected_public_val)
+      const out = FnPrivacyPool.CalcPublicValFn(inputs, outputs)
+      expect(out.isCommit).toEqual(expected_isCommit)
+      expect(out.publicVal).toEqual(expected_public_val)
     })
   })
 
@@ -134,7 +137,7 @@ describe("Test Functions", () => {
     let pK: PrivacyKey
 
     // File Paths
-    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
+    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
 
     const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
@@ -149,13 +152,14 @@ describe("Test Functions", () => {
       mt = new LeanIMT(hashLeftRight)
       pK = CreatePrivacyKey()
 
-      verifierKey = await FnPrivacyPool.LoadVkeyFn(paths.VKEY_PATH)
-      expect(verifierKey).toBeDefined()
+      verifierKey = await FnPrivacyPool.LoadVkeyFn(
+        fs.readFileSync(paths.VKEY_PATH, "utf-8")
+      )
 
-      wasm = await FnPrivacyPool.loadBytesFn(paths.WASM_PATH)
+      wasm = await FnPrivacyPool.LoadBinFn(paths.WASM_PATH)
       expect(wasm).toBeDefined()
 
-      zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
+      zkey = await FnPrivacyPool.LoadBinFn(paths.ZKEY_PATH)
       expect(zkey).toBeDefined()
 
       // generate commitments for non zero values
@@ -208,27 +212,22 @@ describe("Test Functions", () => {
     let mt: LeanIMT
     let pK: PrivacyKey
 
-    // usiong remote paths (URLS)
-    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts_remnote
+    // using remote paths (URLS)
+    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(true)
 
     const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
-    let verifierKey: Groth16_VKeyJSONT
-    let wasm: Uint8Array | string
-    let zkey: Uint8Array | string
+    let verifierKey: Groth16_VKeyJSONT | undefined = undefined
+    let wasm: Uint8Array | string | undefined = undefined
+    let zkey: Uint8Array | string | undefined = undefined
 
     beforeEach(async () => {
       mt = new LeanIMT(hashLeftRight)
       pK = CreatePrivacyKey()
 
       verifierKey = await FnPrivacyPool.LoadVkeyFn(paths.VKEY_PATH)
-      expect(verifierKey).toBeDefined()
-
-      wasm = await FnPrivacyPool.loadBytesFn(paths.WASM_PATH)
-      expect(wasm).toBeDefined()
-
-      zkey = await FnPrivacyPool.loadBytesFn(paths.ZKEY_PATH)
-      expect(zkey).toBeDefined()
+      wasm = await FnPrivacyPool.LoadBinFn(paths.WASM_PATH)
+      zkey = await FnPrivacyPool.LoadBinFn(paths.ZKEY_PATH)
 
       // generate commitments for non zero values
       // and insert into merkle tree
@@ -238,13 +237,17 @@ describe("Test Functions", () => {
         commitment.index = BigInt(mt.size - 1)
         return commitment
       })
-    })
+    }, 100000)
 
     afterEach(async () => {
       await cleanThreads()
     })
 
     test("Input: (0, 50), Ouptut: (0, 100), PublicVal: 50", async () => {
+      expect(verifierKey).toBeDefined()
+      expect(wasm).toBeDefined()
+      expect(zkey).toBeDefined()
+
       const non_zero_output = genTestCommitment(100n, pK)
       const inputs: Commitment[] = [commitments[0], getTestDummyCommimtment(pK)]
       const outputs: Commitment[] = [
@@ -259,12 +262,19 @@ describe("Test Functions", () => {
         outputs,
         100n
       )
-      const out = await FnPrivacyPool.ProveFn(circuit_io.inputs, wasm, zkey)
-      const ok = await FnPrivacyPool.VerifyFn(
-        verifierKey,
-        out.publicSignals,
-        out.proof
+      const out = await FnPrivacyPool.ProveFn(
+        circuit_io.inputs,
+        wasm ?? "",
+        zkey ?? ""
       )
+      let ok = false
+      if (verifierKey) {
+        ok = await FnPrivacyPool.VerifyFn(
+          verifierKey,
+          out.publicSignals,
+          out.proof
+        )
+      }
       expect(ok).toEqual(true)
 
       const parsed_proof = FnPrivacyPool.ParseFn(out.proof, out.publicSignals)

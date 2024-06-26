@@ -6,12 +6,7 @@
   "repository": "https://github.com/0xbow-io/privacy-pools-v1",
   "license": "MIT",
   "author": "0xBow",
-  "workspaces": [
-    "core/ts/*",
-    "zero-knowledge/*",
-    "contracts/*",
-    "*"
-  ],
+  "workspaces": ["core/ts/*", "zero-knowledge/*", "contracts/*", "*"],
   "devDependencies": {
     "@types/bun": "latest",
     "prettier": "3.3.0"
@@ -30,7 +25,6 @@
     "circomlib": "^2.0.5",
     "dotenv": "^16.4.5",
     "hardhat": "^2.22.5",
-    "i": "^0.3.7",
     "maci-circuits": "^1.2.5",
     "poseidon-lite": "^0.2.0",
     "snarkjs": "^0.7.4",

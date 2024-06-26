@@ -1,6 +1,10 @@
-import * as snarkjs from "snarkjs"
-import fs from "node:fs"
-
+import type {
+  CircuitSignals,
+  Groth16Proof,
+  PublicSignals,
+  NumericString
+} from "snarkjs"
+import { groth16 } from "snarkjs"
 import type {
   MerkleProofT,
   Groth16_VKeyJSONT,
@@ -11,11 +15,11 @@ import { FnCommitment } from "@privacy-pool-v1/core-ts/account"
 import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
 import type { LeanIMT, LeanIMTMerkleProof } from "@zk-kit/lean-imt"
 
+import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
 import {
-  isUrlOrFilePath,
   fetchJsonWithRetry,
   loadBytesFromUrl
-} from "@privacy-pool-v1/global"
+} from "@privacy-pool-v1/global/utils/fetch"
 
 export namespace FnPrivacyPool {
   export function MerkleProofFn(
@@ -130,49 +134,43 @@ export namespace FnPrivacyPool {
     }
   }
 
-  export const LoadVkeyFn = async (
-    vKeyPath: string
-  ): Promise<Groth16_VKeyJSONT> => {
-    switch (isUrlOrFilePath(vKeyPath)) {
-      case "file":
-        return JSON.parse(fs.readFileSync(vKeyPath, "utf-8"))
-      case "url":
-        try {
-          const data = await fetchJsonWithRetry<Groth16_VKeyJSONT>(vKeyPath)
+  export const LoadVkeyFn = async (_v: string): Promise<Groth16_VKeyJSONT> => {
+    if (isUrlOrFilePath(_v) === "url") {
+      const vKey = await fetchJsonWithRetry<Groth16_VKeyJSONT>(_v)
+        .then((data) => {
           return data
-        } catch (e) {
-          throw new Error("Failed to load verifying key from URL", { cause: e })
-        }
-      default:
-        throw new Error("Invalid path")
+        })
+        .catch((e) => {
+          throw new Error("Failed to load wasm module from URL", { cause: e })
+        })
+      return vKey
     }
+    return JSON.parse(_v)
   }
 
-  export const loadBytesFn = async (
-    filepath: string
-  ): Promise<Uint8Array | string> => {
-    if (isUrlOrFilePath(filepath) === "url") {
-      const module = await loadBytesFromUrl(filepath)
+  export const LoadBinFn = async (_f: string): Promise<Uint8Array | string> => {
+    if (isUrlOrFilePath(_f) === "url") {
+      const buffer = await loadBytesFromUrl(_f)
         .then((uint8arr) => {
           return uint8arr
         })
         .catch((e) => {
           throw new Error("Failed to load wasm module from URL", { cause: e })
         })
-      return module
+      return buffer
     }
-    return filepath
+    return _f
   }
 
   export const ProveFn = async (
-    inputs: snarkjs.CircuitSignals,
+    inputs: CircuitSignals,
     wasm: string | Uint8Array,
     zkey: string | Uint8Array
   ): Promise<{
-    proof: snarkjs.Groth16Proof
-    publicSignals: snarkjs.PublicSignals
+    proof: Groth16Proof
+    publicSignals: PublicSignals
   }> => {
-    const out = await snarkjs.groth16
+    const out = await groth16
       .fullProve(inputs, wasm, zkey)
       .then((output) => {
         return output
@@ -186,10 +184,10 @@ export namespace FnPrivacyPool {
 
   export const VerifyFn = async (
     vKJSON: Groth16_VKeyJSONT,
-    publicSignals: snarkjs.PublicSignals,
-    proof: snarkjs.Groth16Proof
+    publicSignals: PublicSignals,
+    proof: Groth16Proof
   ): Promise<boolean> => {
-    const out = await snarkjs.groth16
+    const out = await groth16
       .verify(vKJSON, publicSignals, proof)
       .then((output) => {
         return output
@@ -202,8 +200,8 @@ export namespace FnPrivacyPool {
   }
 
   export function ParseFn(
-    proof: snarkjs.Groth16Proof,
-    publicSignals: snarkjs.NumericString[]
+    proof: Groth16Proof,
+    publicSignals: NumericString[]
   ): TPrivacyPool.OutputT {
     return {
       proof: {

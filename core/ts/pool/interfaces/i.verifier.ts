@@ -8,13 +8,11 @@ import type {
 export namespace IVerifier {
   export interface VerifierI<
     ProofArgsT = TGroth16Verifier.verifyProofFn_in_T,
-    CircuitT = ICircuit.CircuitI,
     InputArgsT = {
       inputs: TPrivacyPool.InT
       ouptuts: bigint[]
     }
   > {
-    zkCircuit: CircuitT
     generateProofArgs: (inputs: InputArgsT) => Promise<ProofArgsT>
     verifyProofARgs: (args: ProofArgsT) => Promise<boolean>
   }

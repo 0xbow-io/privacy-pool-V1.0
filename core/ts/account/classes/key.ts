@@ -72,13 +72,13 @@ export namespace CPrivacyKey {
       }
     }
 
-    get asJSON() {
+    get asJSON(): TPrivacyKey.JSONKeyT {
       return {
         privateKey: this._key.privateKey,
         pubAddr: this.publicAddress,
         keypair: this._key.keypair.toJSON(),
         ek_x: `0x_${this._key?.eK === undefined ? "" : this._key.eK[0].toString(16)}`,
-        ek_y: `0x_${this._key?.eK === undefined ? "" : this._key.eK[1].toString(16)} `
+        ek_y: `0x_${this._key?.eK === undefined ? "" : this._key.eK[1].toString(16)}`
       }
     }
   }
