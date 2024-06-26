@@ -45,14 +45,12 @@ describe("Test GetAssociationSet", () => {
 
         const type = "exclusion";
 
-        const params = mockParams;
-
-        const result = await GetAssociationSet(type, params);
+        const result = await GetAssociationSet(type, mockParams);
         expect(result).toEqual(mockData);
 
         const request = mockedAxios.request.mock.calls[0][0];
         //tests for proper url structure
-        expect(request.url).toBe(`${baseUrl}${apiUrl}${type}?chain=${params.chain}&contract=${params.contract}&hash_only=${params.hash_only}&size_limit=${params.size_limit}&pin_to_ipfs=${params.pin_to_ipfs}`)
+        expect(request.url).toBe(`${baseUrl}${apiUrl}${type}?chain=${mockParams.chain}&contract=${mockParams.contract}&hash_only=${mockParams.hash_only}&size_limit=${mockParams.size_limit}&pin_to_ipfs=${mockParams.pin_to_ipfs}`)
         //tests for accurate header data
         expect(request.headers).toBeDefined(); //this was required as an error popped up for headers being undefined
         if (request.headers) {
@@ -70,14 +68,12 @@ describe("Test GetAssociationSet", () => {
 
         const type = "inclusion";
 
-        const params = mockParams;
-
-        const result = await GetAssociationSet(type, params);
+        const result = await GetAssociationSet(type, mockParams);
         expect(result).toEqual(mockData);
 
         const request = mockedAxios.request.mock.calls[0][0];
         //tests for proper url structure
-        expect(request.url).toBe(`${baseUrl}${apiUrl}${type}?chain=${params.chain}&contract=${params.contract}&hash_only=${params.hash_only}&size_limit=${params.size_limit}&pin_to_ipfs=${params.pin_to_ipfs}`)
+        expect(request.url).toBe(`${baseUrl}${apiUrl}${type}?chain=${mockParams.chain}&contract=${mockParams.contract}&hash_only=${mockParams.hash_only}&size_limit=${mockParams.size_limit}&pin_to_ipfs=${mockParams.pin_to_ipfs}`)
         //tests for accurate header data
         expect(request.headers).toBeDefined(); //this was required as an error popped up for request.headers being undefined
         if (request.headers) {
@@ -97,9 +93,8 @@ describe("Test GetAssociationSet", () => {
         mockedAxios.request.mockRejectedValueOnce(new Error('Network Error'));
 
         const type = 'exclusion';
-        const params = mockParams;
 
-        await expect(GetAssociationSet(type, params)).rejects.toThrow('Error making external API request');
+        await expect(GetAssociationSet(type, mockParams)).rejects.toThrow('Error making external API request');
     });
 
     it('should handle missing optional parameters for the inclusion set', async () => {
@@ -145,7 +140,7 @@ describe("Test GetAssociationSet", () => {
 
 describe("Test buildURL", () => {
 
-    it('should generate a URL which matches the parameters', () => {
+    it('should generate a URL which matches the parameters. All parameters are included.', () => {
       const type = 'inclusion';
       const result = buildURL(baseUrl, apiUrl, type, mockParams);
       expect(result).toBe("https://api.0xbow.io/api/v1/inclusion?chain=sepolia&contract=0xb0w&hash_only=true&size_limit=20&pin_to_ipfs=false");
@@ -211,6 +206,27 @@ describe("Test getConfig", () => {
             method: "post",
             maxBodyLength: Infinity,
             url: "https://api.0xbow.io/api/v1/exclusion?chain=sepolia&contract=0x123",
+            headers: {
+                "Content-Type": "application/json"
+              },
+              data:  {
+                hashSet: [],
+                hashFilter: ""
+              }
+        };
+
+        const result = getConfig(baseUrl, apiUrl, type, params);
+        expect(result).toEqual(confResponse);
+    });
+
+    it('should handle empty parameters', () => {
+        const type = 'inclusion';
+        const params: AssociationSetParams = { chain: '', contract: '' };
+        //mock return response which matches the params for this test
+        const confResponse = {
+            method: "post",
+            maxBodyLength: Infinity,
+            url: "https://api.0xbow.io/api/v1/inclusion?chain=&contract=",
             headers: {
                 "Content-Type": "application/json"
               },
