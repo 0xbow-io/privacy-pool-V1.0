@@ -2,8 +2,6 @@ import type { Address } from "viem"
 import type { Chain } from "viem/chains"
 import { sepolia, gnosis } from "viem/chains"
 
-import type { IVerifier } from "@privacy-pool-v1/core-ts/pool"
-
 export const availChains = [sepolia, gnosis]
 export const DEFAULT_CHAIN = sepolia
 import { _sepolia_public_client, _gnosis_public_client } from "./clients"
@@ -11,7 +9,7 @@ import { _sepolia_public_client, _gnosis_public_client } from "./clients"
 export type PrivacyPoolMeta = {
   chain: Chain // network chain
   address: Address // contract address
-  verifier: IVerifier.VerifierI // verifier contract address
+  verifier: Address
   genesis: bigint // when pool was deployed
   id: string // reference id
   unitRepresentative: string // what representation of value is used
@@ -81,10 +79,7 @@ export const PrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
         chain: sepolia,
         id: "Sepolia Eth Pool 1",
         address: "0xfd892e3845b3c16112bbc2581b23da80cd8d8557" as Address,
-        verifier: GetVerifier(
-          _sepolia_public_client,
-          "0x52e41dc97ffcc4b67bd50c4253554ea73317be07" as Address
-        ),
+        verifier: "0x542a99775c5eee7f165cfd19954680ab85d586e5" as Address,
         genesis: 6179793n,
         unitRepresentative: "ETH", // reference by ticker
         minmaxCommitValue: [0n, 1000000000000000000n]
@@ -97,11 +92,8 @@ export const PrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
       {
         chain: gnosis,
         id: "Gnosis xDAI Pool 1",
-        address: "0xfd892e3845b3c16112bbc2581b23da80cd8d8557" as Address,
-        verifier: GetVerifier(
-          _gnosis_public_client,
-          "0x542a99775c5eee7f165cfd19954680ab85d586e5" as Address
-        ),
+        address: "0x52e41dc97ffcc4b67bd50c4253554ea73317be07" as Address,
+        verifier: "0x8c6561ca85229fd0b2a3d652d1734e60f9f57140" as Address,
         genesis: 34635522n,
         unitRepresentative: "xDAI", // reference by ticker
         minmaxCommitValue: [0n, 1000000000000000000n]

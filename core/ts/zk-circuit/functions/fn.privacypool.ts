@@ -279,8 +279,8 @@ export namespace FnPrivacyPool {
 
   export const parseOutputFn =
     <
-      proofT extends SnarkJSOutputT | CircomOutputT,
-      packedT extends PackedGroth16ProofT<bigint>
+      packedT extends PackedGroth16ProofT<bigint>,
+      proofT extends SnarkJSOutputT | CircomOutputT
     >(
       opt: "parse" | "pack" | "none" = "parse"
     ) =>

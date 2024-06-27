@@ -30,8 +30,10 @@
   },
   "scripts": {
     "test:account:classes": "bun test c.commitment.test.ts && bun test c.privacyKey.test.ts",
-    "test:zk-circuit:functions": "bunx jest .--findRelatedTests fn.privacypool.test.ts",
+    "test:zk-circuit:functions": "bunx jest .--findRelatedTests ./zk-circuit/functions/test/fn.privacypool.test.ts",
     "test:zk-circuit:classes": "bunx jest .--findRelatedTests c.privacypool.test.ts",
-    "test:pool:verifier:functions": "bunx jest .--findRelatedTests fn.groth16Verifier.test.ts"
+    "test:pool:verifier:functions": "bunx jest .--findRelatedTests fn.groth16Verifier.test.ts",
+    "test:pool:privacypool:functions": "bunx jest .--findRelatedTests ./pool/functions/test/fn.privacypool.test.ts",
+    "test:pool:privacypool:classes": "bunx jest .--findRelatedTests ./pool/classes/test/c.pool.test.ts"
   }
 }

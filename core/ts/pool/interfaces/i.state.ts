@@ -5,15 +5,12 @@ export namespace IState {
   export interface StateI<
     MerkleT = LeanIMT,
     NullifierT = bigint,
-    ProofArgsT = {
-      index: bigint
-    },
     ProofT = MerkleProofT
   > {
     MAX_MERKLE_DEPTH: bigint | number
     merkleTree: MerkleT
     nullifiers: Set<NullifierT>
-    genProof: (args: ProofArgsT) => ProofT
+    genProofFor: (index: bigint) => ProofT
     insertNullifier: (nullifier: bigint) => boolean
   }
 }

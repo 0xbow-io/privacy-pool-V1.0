@@ -134,7 +134,6 @@ describe("Test Functions", () => {
 
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
     const prover = FnPrivacyPool.ProveFn(paths.WASM_PATH, paths.ZKEY_PATH)
-    let verifierKey: CircomArtifactT
 
     const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
@@ -151,9 +150,6 @@ describe("Test Functions", () => {
         commitment.index = BigInt(mt.size - 1)
         return commitment
       })
-      verifierKey = await FnPrivacyPool.LoadVkeyFn()(
-        fs.readFileSync(paths.VKEY_PATH, "utf-8")
-      )
     }, 100000)
 
     afterEach(async () => {
@@ -161,7 +157,9 @@ describe("Test Functions", () => {
     })
 
     test("Input: (0, 50), Ouptut: (0, 100), PublicVal: 50", async () => {
-      const verifier = FnPrivacyPool.VerifyFn(verifierKey)
+      const verifier = FnPrivacyPool.VerifyFn(
+        fs.readFileSync(paths.VKEY_PATH, "utf-8")
+      )
 
       const non_zero_output = genTestCommitment(100n, pK)
       const io = FnPrivacyPool.getInputsFn({
