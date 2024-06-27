@@ -2,14 +2,20 @@
 pragma solidity ^0.8.4;
 
 import {InternalLeanIMT, LeanIMTData} from "@zk-kit/lean-imt.sol/InternalLeanIMT.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IState} from "../interfaces/IState.sol";
 
 contract State is IState {
+    // @dev using the EnumerableSet library for sets
+    using EnumerableSet for EnumerableSet.UintSet;
+
     /// @dev Incremental Merkle Tree
     /// where leaves are hashes of commitment ciphertexts
     using InternalLeanIMT for LeanIMTData;
 
     LeanIMTData commitmentTree;
+    EnumerableSet.UintSet nullifiers
+
 
     // @dev knownNullifiers keep track of all nullifiers
     // that were used as inputs for new commitments
