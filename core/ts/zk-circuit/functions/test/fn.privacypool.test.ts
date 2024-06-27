@@ -1,5 +1,8 @@
 import fs from "node:fs"
-import type { CircomOutputT } from "@privacy-pool-v1/core-ts/zk-circuit"
+import type {
+  CircomArtifactT,
+  CircomOutputT
+} from "@privacy-pool-v1/core-ts/zk-circuit"
 import type { Commitment, PrivacyKey } from "@privacy-pool-v1/core-ts/account"
 import {
   CreateCommitment,
@@ -131,7 +134,7 @@ describe("Test Functions", () => {
 
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
     const prover = FnPrivacyPool.ProveFn(paths.WASM_PATH, paths.ZKEY_PATH)
-    const verifier = FnPrivacyPool.VerifyFn()
+    let verifierKey: CircomArtifactT
 
     const test_non_zero_values = [50n, 100n, 150n, 200n, 250n, 300n]
     let commitments: Commitment[]
@@ -148,6 +151,9 @@ describe("Test Functions", () => {
         commitment.index = BigInt(mt.size - 1)
         return commitment
       })
+      verifierKey = await FnPrivacyPool.LoadVkeyFn()(
+        fs.readFileSync(paths.VKEY_PATH, "utf-8")
+      )
     }, 100000)
 
     afterEach(async () => {
@@ -155,6 +161,8 @@ describe("Test Functions", () => {
     })
 
     test("Input: (0, 50), Ouptut: (0, 100), PublicVal: 50", async () => {
+      const verifier = FnPrivacyPool.VerifyFn(verifierKey)
+
       const non_zero_output = genTestCommitment(100n, pK)
       const io = FnPrivacyPool.getInputsFn({
         mt: mt,
@@ -164,15 +172,9 @@ describe("Test Functions", () => {
         scope: 100n
       })()
 
-      let ok = false
-
       const out = await prover(io.inputs)
-      const verifierKey = await FnPrivacyPool.LoadVkeyFn(
-        fs.readFileSync(paths.VKEY_PATH, "utf-8")
-      )
-      if (verifierKey) {
-        ok = await verifier(verifierKey, out)
-      }
+      const ok = await verifier(out)
+
       expect(ok).toEqual(true)
 
       const parsed_proof = FnPrivacyPool.parseOutputFn()(out) as CircomOutputT

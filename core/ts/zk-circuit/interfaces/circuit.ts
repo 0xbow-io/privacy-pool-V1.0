@@ -16,16 +16,17 @@ export namespace ICircuit {
 
     verify: <outputT extends SnarkJSOutputT | CircomOutputT>(
       output: outputT,
-      onOk?: (c: circuitI) => Promise<boolean>
+      onOk?: (args: { c: circuitI; out: outputT }) => Promise<boolean>
     ) => Promise<boolean>
 
-    prove: <argsT extends TPrivacyPool.GetCircuitInArgsT>(
+    prove: <
+      argsT extends TPrivacyPool.GetCircuitInArgsT,
+      outputT extends SnarkJSOutputT | CircomOutputT
+    >(
       args: argsT,
       verify?: boolean
-    ) => Promise<
-      (
-        onOk?: (c: circuitI) => Promise<boolean>
-      ) => Promise<boolean | SnarkJSOutputT | CircomOutputT>
-    >
+    ) => (
+      onOk?: (args: { c: circuitI; out: outputT }) => Promise<boolean>
+    ) => Promise<boolean | outputT>
   }
 }

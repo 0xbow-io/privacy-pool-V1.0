@@ -8,14 +8,13 @@ import type {
 import type { CircuitSignals } from "snarkjs"
 import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 
-/*
-export type PrivacyPoolCircuit = ICircuit.CircuitI
+export type PrivacyPoolCircuit = ICircuit.circuitI
 export const NewPrivacyPoolCircuit = (
-  wasm: string | Uint8Array,
-  zkey: string | Uint8Array,
-  vKJSON: Groth16_VKeyJSONT
-): PrivacyPoolCircuit => new CPrivacyPool.CircuitC(wasm, zkey, vKJSON)
-  */
+  artifacts: CircomArtifactsT
+): PrivacyPoolCircuit => {
+  return new CCircuit.circuitC(artifacts)
+}
+
 export namespace CCircuit {
   export class circuitC implements ICircuit.circuitI {
     _prover?: (
@@ -30,32 +29,42 @@ export namespace CCircuit {
 
     verify = async <outputT extends SnarkJSOutputT | CircomOutputT>(
       output: outputT,
-      onOk?: (c: ICircuit.circuitI) => Promise<boolean> // callback on when ok = true
+      onOk?: (args: { c: ICircuit.circuitI; out: outputT }) => Promise<boolean> // callback on when ok = true
     ): Promise<boolean> =>
       this._verifier
         ? await this._verifier(output).then(async (ok: boolean) =>
             ok
               ? onOk
-                ? await onOk(this).catch((e) => {
-                    throw new Error("callback fn failed", { cause: e })
-                  })
+                ? await onOk({ c: this, out: output }).catch(
+                    (e: Error): never => {
+                      throw new Error("callback fn failed", { cause: e })
+                    }
+                  )
                 : ok
               : Promise.reject("proof verification failed")
           )
         : Promise.reject("verifier not initialized")
 
     prove =
-      async <argsT extends TPrivacyPool.GetCircuitInArgsT>(
+      <
+        argsT extends TPrivacyPool.GetCircuitInArgsT,
+        outputT extends SnarkJSOutputT | CircomOutputT
+      >(
         args: argsT,
         verify = true
       ) =>
       async (
-        onOk?: (c: ICircuit.circuitI) => Promise<boolean>
-      ): Promise<boolean | SnarkJSOutputT | CircomOutputT> =>
+        onOk?: (args: {
+          c: ICircuit.circuitI
+          out: outputT
+        }) => Promise<boolean>
+      ): Promise<boolean | outputT> =>
         this._prover
           ? await this._prover(FnPrivacyPool.getInputsFn(args)().inputs)
               .then(async (output) => {
-                return verify ? await this.verify(output, onOk) : output
+                return verify
+                  ? await this.verify(output as outputT, onOk)
+                  : (output as outputT)
               })
               .catch((e) => {
                 throw new Error("unable to compute proof", { cause: e })

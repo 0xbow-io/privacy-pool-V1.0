@@ -181,24 +181,24 @@ export namespace FnPrivacyPool {
       } as OuT
     }
 
-  export const LoadVkeyFn = async (
-    _v: CircomArtifactT
-  ): Promise<CircomArtifactT> => {
-    if (isUrlOrFilePath(_v as string) === "url") {
-      const vKey = await fetchJsonWithRetry<Groth16_VKeyJSONT>(_v as string)
-        .then((data) => {
-          return data
-        })
-        .catch((e) => {
-          throw new Error("Failed to load wasm module from URL", { cause: e })
-        })
-      return vKey as CircomArtifactT
+  export const LoadVkeyFn =
+    <artifactT extends CircomArtifactT>() =>
+    async (_v: artifactT): Promise<artifactT> => {
+      if (isUrlOrFilePath(_v as string) === "url") {
+        const vKey = await fetchJsonWithRetry<Groth16_VKeyJSONT>(_v as string)
+          .then((data) => {
+            return data
+          })
+          .catch((e) => {
+            throw new Error("Failed to load wasm module from URL", { cause: e })
+          })
+        return vKey as artifactT
+      }
+      return JSON.parse(_v as string) as artifactT
     }
-    return JSON.parse(_v as string) as CircomArtifactT
-  }
 
   export const FetchArtifactFn =
-    <artifactT = CircomArtifactT>() =>
+    <artifactT extends CircomArtifactT>() =>
     async (_f: artifactT): Promise<artifactT> => {
       if (typeof _f === "string" && isUrlOrFilePath(_f) === "url") {
         const buffer = await loadBytesFromUrl(_f)
@@ -214,7 +214,10 @@ export namespace FnPrivacyPool {
     }
 
   export const ProveFn =
-    <artifactT = CircomArtifactT, proofT = SnarkJSOutputT | CircomOutputT>(
+    <
+      artifactT extends CircomArtifactT,
+      proofT = SnarkJSOutputT | CircomOutputT
+    >(
       wasm: artifactT,
       zKey: artifactT,
       artifactsFetcher: (
@@ -247,23 +250,32 @@ export namespace FnPrivacyPool {
         })
 
   export const VerifyFn =
-    <artifactT = CircomArtifactT, proofT = SnarkJSOutputT | CircomOutputT>(
+    <
+      artifactT extends CircomArtifactT,
+      proofT = SnarkJSOutputT | CircomOutputT
+    >(
       vkey: artifactT
     ) =>
-    async (proof: proofT): Promise<boolean> =>
-      await groth16
-        .verify(
-          vkey,
-          (proof as SnarkJSOutputT).publicSignals as PublicSignals,
-          (proof as SnarkJSOutputT).proof as Groth16Proof
-        )
-        .then((output) => {
-          return output
-        })
-        .catch((e) => {
-          console.log(e)
-          throw new Error("snarkjs.groth16 verify failed ", { cause: e })
-        })
+    async (
+      proof: proofT,
+      vKeyFetcher: (_v: artifactT) => Promise<artifactT> = LoadVkeyFn()
+    ): Promise<boolean> =>
+      await vKeyFetcher(vkey).then(
+        async (_vkey) =>
+          await groth16
+            .verify(
+              _vkey,
+              (proof as SnarkJSOutputT).publicSignals as PublicSignals,
+              (proof as SnarkJSOutputT).proof as Groth16Proof
+            )
+            .then((output) => {
+              return output
+            })
+            .catch((e) => {
+              console.log(e)
+              throw new Error("snarkjs.groth16 verify failed ", { cause: e })
+            })
+      )
 
   export const parseOutputFn =
     <

@@ -41,8 +41,8 @@ describe("Testing CPrivacyPool", () => {
 
     beforeAll(async () => {
       // File Paths
-      const paths: circomArtifactPaths = PrivacyPool.circomArtifacts
-      verifierKey = await FnPrivacyPool.LoadVkeyFn(
+      const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
+      verifierKey = await FnPrivacyPool.LoadVkeyFn()(
         fs.readFileSync(paths.VKEY_PATH, "utf-8")
       )
 
