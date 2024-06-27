@@ -17,10 +17,6 @@ import {
   getDefaultRepresentation
 } from "@/network/pools"
 
-import {
-  LoadRemoteArtifacts,
-  InitVerifiersCircuit
-} from "@privacy-pool-v1/core-ts/pool"
 
 export type AccountState = {
   keys: PrivacyKey[]
@@ -101,14 +97,7 @@ export const defaultInitState: AccountState = {
   outputAmountIsValid: [false, false],
   outputAmountReasons: ["no encryption key set", "no encryption key set"]
 }
-export const initKeyStore = (): AccountState => {
-  LoadRemoteArtifacts().then(({ wasm, zkey, verifierKey }) => {
-    InitVerifiersCircuit(wasm, zkey, verifierKey)
-    console.log("Remote artifacts loaded")
-  })
-
-  return defaultInitState
-}
+export const initKeyStore = (): AccountState => defaultInitState
 
 export const createKeyStore = (initState: AccountState = defaultInitState) => {
   return createStore<KeyStore>()((set, get) => ({

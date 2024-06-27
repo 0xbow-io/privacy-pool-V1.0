@@ -1,1 +1,1 @@
-export * from './privacypool';
+export * from "./fn.privacypool"

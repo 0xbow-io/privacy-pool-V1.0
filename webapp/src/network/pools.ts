@@ -3,7 +3,6 @@ import type { Chain } from "viem/chains"
 import { sepolia, gnosis } from "viem/chains"
 
 import type { IVerifier } from "@privacy-pool-v1/core-ts/pool"
-import { GetVerifier } from "@privacy-pool-v1/core-ts/pool"
 
 export const availChains = [sepolia, gnosis]
 export const DEFAULT_CHAIN = sepolia
