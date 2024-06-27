@@ -35,6 +35,8 @@ export namespace CCommitment {
     public _index?: bigint
     public _nonce?: bigint
 
+    _hasher: (secrets: TCommitment.SecretsT) => bigint
+
     constructor(
       key: IPrivacyKey.KeyI,
       secrets: TCommitment.SecretsT,
@@ -45,7 +47,7 @@ export namespace CCommitment {
         value: secrets.value,
         salt: secrets.salt ?? FnCommitment.SaltFn()
       } as TCommitment.SecretsT
-
+      this._hasher = FnCommitment.hashFn(this._key.pubKey)
       this._index = index ?? 0n
     }
 
@@ -56,6 +58,14 @@ export namespace CCommitment {
     ): ICommitment.CommitmentI {
       return new CCommitment.CommitmentC(key, secrets, index)
     }
+
+    hash = (): bigint => this._hasher(this._secrets)
+
+    asArray = (): bigint[] => [
+      ...this.pubKey.rawPubKey,
+      this.hash(),
+      this.index
+    ]
 
     get index(): bigint {
       return this._index ?? 0n
@@ -73,16 +83,12 @@ export namespace CCommitment {
       return this._key.pubKeyHash
     }
 
-    get hash(): bigint {
-      return FnCommitment.HashFn(this._secrets, this.pubKey)
-    }
-
     get signature(): Signature {
       return this._key.sign(hash4(this.asArray()))
     }
 
     get nullifier(): bigint {
-      return FnCommitment.NullifierFn(this.signature, this.hash, this.index)
+      return FnCommitment.NullifierFn(this.signature, this.hash(), this.index)
     }
 
     get nonce(): bigint {
@@ -118,8 +124,6 @@ export namespace CCommitment {
     get salt(): bigint {
       return this._secrets.salt || 0n
     }
-
-    asArray = (): bigint[] => [...this.pubKey.rawPubKey, this.hash, this.index]
 
     asStringValues() {
       return {

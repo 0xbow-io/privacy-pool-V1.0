@@ -11,7 +11,6 @@ export namespace ICommitment {
   > {
     value: bigint
     salt: bigint
-    hash: HashT
     pubKey: PkT
     index: bigint
     nonce: bigint
@@ -21,7 +20,7 @@ export namespace ICommitment {
     nullifier: NullifierT
     cipherText: CipherT
     secret_len: number
-    asStringValues(): any
+    hash(): HashT
     asArray(): bigint[]
   }
 }

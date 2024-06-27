@@ -1,18 +1,31 @@
-import type { TPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit/types"
+import type {
+  TPrivacyPool,
+  SnarkJSOutputT,
+  CircomOutputT,
+  CircomArtifactsT
+} from "@privacy-pool-v1/core-ts/zk-circuit"
+import type { CircuitSignals } from "snarkjs"
 
 export namespace ICircuit {
-  export interface CircuitI<
-    InT = TPrivacyPool.InT,
-    OuT = TPrivacyPool.OutputT,
-    CallDataT = TPrivacyPool.PackedGroth16ProofT<bigint>
-  > {
-    prove: (inputs: InT) => Promise<OuT | CallDataT>
-    verify: (output: OuT) => Promise<boolean>
-  }
-}
+  export interface circuitI {
+    artifacts: CircomArtifactsT
+    _prover?: (
+      inputs: CircuitSignals
+    ) => Promise<SnarkJSOutputT | CircomOutputT>
+    _verifier?: (proof: SnarkJSOutputT | CircomOutputT) => Promise<boolean>
 
-export namespace IPrivacyPool {
-  export interface InputSignalsI<CommitmentT, MerkleProofT> {
-    get: (c: CommitmentT, proof: MerkleProofT) => CommitmentT & MerkleProofT
+    verify: <outputT extends SnarkJSOutputT | CircomOutputT>(
+      output: outputT,
+      onOk?: (c: circuitI) => Promise<boolean>
+    ) => Promise<boolean>
+
+    prove: <argsT extends TPrivacyPool.GetCircuitInArgsT>(
+      args: argsT,
+      verify?: boolean
+    ) => Promise<
+      (
+        onOk?: (c: circuitI) => Promise<boolean>
+      ) => Promise<boolean | SnarkJSOutputT | CircomOutputT>
+    >
   }
 }

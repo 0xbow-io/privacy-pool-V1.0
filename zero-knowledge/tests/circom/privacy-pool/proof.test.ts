@@ -1,16 +1,19 @@
-import fs from "fs"
+import fs from "node:fs"
 import path from "node:path"
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
+import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 
 import { test, describe, afterEach, expect } from "@jest/globals"
 
 describe("Test Generating Proofs", () => {
-  const verifierKey = JSON.parse(
-    fs.readFileSync(PrivacyPool.circomArtifacts.VKEY_PATH, "utf-8")
-  )
+  const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
+
+  const verifierKey = JSON.parse(fs.readFileSync(paths.VKEY_PATH, "utf-8"))
+  const prover = FnPrivacyPool.ProveFn(paths.WASM_PATH, paths.ZKEY_PATH)
+  const verifier = FnPrivacyPool.VerifyFn()
 
   const testData: Array<string> = Array.from(
     { length: PrivacyPool.test_data_size },
@@ -27,18 +30,10 @@ describe("Test Generating Proofs", () => {
     async (inputs) => {
       const circuitInputs = JSON.parse(fs.readFileSync(inputs, "utf-8"))
 
-      const out = await FnPrivacyPool.ProveFn(
-        circuitInputs.inputs,
-        PrivacyPool.circomArtifacts.WASM_PATH,
-        PrivacyPool.circomArtifacts.ZKEY_PATH
-      )
+      const out = await prover(circuitInputs.inputs)
       console.log("outputs: ", circuitInputs, " out ", out.publicSignals)
 
-      const ok = await FnPrivacyPool.VerifyFn(
-        verifierKey,
-        out.publicSignals,
-        out.proof
-      )
+      const ok = await verifier(verifierKey, out)
       expect(ok).toEqual(true)
     }
   )

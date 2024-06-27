@@ -1,6 +1,6 @@
-import path from "path"
+import path from "node:path"
 
-import {project_base_url, project_root_path} from "./constants"
+import { project_base_url, project_root_path } from "./constants"
 
 export function getPath(
   project_name: string,
@@ -15,17 +15,16 @@ export function getPath(
   )
 }
 
-function removeSpecificPrefix(fullPath: string, prefixToRemove: string): string {
-  const fullParts = fullPath.split(path.sep);
-  const prefixParts = prefixToRemove.split(path.sep);
-  return fullParts.slice(prefixParts.length).join(path.sep);
-}
-
-export function DeriveURLPath( 
+function removeSpecificPrefix(
   fullPath: string,
-): string { 
-  const retracted = removeSpecificPrefix(fullPath, project_root_path)
-  return `${project_base_url}/${retracted}` 
+  prefixToRemove: string
+): string {
+  const fullParts = fullPath.split(path.sep)
+  const prefixParts = prefixToRemove.split(path.sep)
+  return fullParts.slice(prefixParts.length).join(path.sep)
 }
 
-
+export function DeriveURLPath(fullPath: string): string {
+  const retracted = removeSpecificPrefix(fullPath, project_root_path)
+  return `${project_base_url}/${retracted}`
+}

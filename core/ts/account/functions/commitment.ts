@@ -13,25 +13,20 @@ import {
 import type { Ciphertext } from "maci-crypto"
 
 export namespace FnCommitment {
-  export function HashFn(
-    secrets: TCommitment.SecretsT,
-    pubKey: PubKey
-  ): bigint {
-    return hash4([
-      secrets.value ?? 0n,
-      pubKey.rawPubKey[0],
-      pubKey.rawPubKey[1],
-      secrets.salt ?? 0n
-    ])
-  }
-
-  // EdDSA signature of Poseidon(2)([hash, index])
-  export function SignatureFn(
-    signer: TPrivacyKey.SignerT,
-    inputs: bigint[]
-  ): Signature {
-    return signer(hash4(inputs))
-  }
+  // Hash function for commitment
+  // Default: Poseidon(4)([secrets.value, pubKey[0], pubKey[1], secrets.salt])
+  export const hashFn =
+    <ST extends TCommitment.SecretsT, PkT extends PubKey>(
+      pubKey: PkT,
+      hasFn: (args: bigint[]) => bigint = hash4
+    ) =>
+    (secrets: ST): bigint =>
+      hasFn([
+        secrets.value ?? 0n,
+        pubKey.rawPubKey[0],
+        pubKey.rawPubKey[1],
+        secrets.salt ?? 0n
+      ])
 
   export function VerifySignatureFn(
     signature: Signature,

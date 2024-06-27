@@ -178,7 +178,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) => {
     updateInCommit: (index: number, value: string): void => {
       // verify that these commit are still available
       const commit = get().avilCommits.find(
-        (c) => c.hash.toString(16) === value
+        (c) => c.hash().toString(16) === value
       )
       if (commit === undefined) {
         throw new Error(`Commitment ${value} is not available`)
@@ -196,14 +196,14 @@ export const createKeyStore = (initState: AccountState = defaultInitState) => {
     getAvailableInputOptions: (index: number): string[] => {
       const _input_taken = get().inCommits[index === 0 ? 1 : 0]
       const avail = get().avilCommits.filter(
-        (c) => c.hash.toString(16) !== _input_taken
+        (c) => c.hash().toString(16) !== _input_taken
       )
-      return avail.map((c) => c.hash.toString(16))
+      return avail.map((c) => c.hash().toString(16))
     },
     refreshInTotalValue: (): void => {
       const _total_input: number = get().inCommits.reduce((acc, val) => {
         const commit = get().avilCommits.find(
-          (c) => c.hash.toString(16) === val
+          (c) => c.hash().toString(16) === val
         )
         // only add the value if the commit is available
         let incrementBy = 0
@@ -344,7 +344,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) => {
         }
         // check if it is available
         const commit = get().avilCommits.find(
-          (c) => c.hash.toString(16) === hash
+          (c) => c.hash().toString(16) === hash
         )
         if (commit === undefined) {
           _all_inputs_valid[i] = false

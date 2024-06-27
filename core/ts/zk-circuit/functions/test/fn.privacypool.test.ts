@@ -96,7 +96,7 @@ describe("Test Functions", () => {
       // and insert into merkle tree
       commitments = test_non_zero_values.map((value) => {
         const commitment = genTestCommitment(value, pK)
-        mt.insert(commitment.hash)
+        mt.insert(commitment.hash())
         commitment.index = BigInt(mt.size - 1)
         return commitment
       })
@@ -119,7 +119,7 @@ describe("Test Functions", () => {
       expect(io.inputs.inputPublicKey[1]).toEqual(pK.pubKey.asCircuitInputs())
       expect(io.inputs.inputNullifier[1]).toEqual(commitments[0].nullifier)
       expect(io.inputs.outputValue).toEqual([0n, 100n])
-      expect(io.inputs.outputCommitment[1]).toEqual(non_zero_output.hash)
+      expect(io.inputs.outputCommitment[1]).toEqual(non_zero_output.hash())
       expect(io.inputs.actualMerkleTreeDepth).toEqual(3n)
       expect(io.inputs.inputLeafIndex).toEqual([0n, 0n])
     })
@@ -144,7 +144,7 @@ describe("Test Functions", () => {
       // and insert into merkle tree
       commitments = test_non_zero_values.map((value) => {
         const commitment = genTestCommitment(value, pK)
-        mt.insert(commitment.hash)
+        mt.insert(commitment.hash())
         commitment.index = BigInt(mt.size - 1)
         return commitment
       })

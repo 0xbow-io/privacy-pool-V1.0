@@ -153,7 +153,7 @@ export namespace FnPrivacyPool {
           publicVal: publicVal.publicVal,
           scope: args.scope,
           inputNullifier: args.inputs.map((input) => input.nullifier),
-          outputCommitment: args.outputs.map((output) => output.hash),
+          outputCommitment: args.outputs.map((output) => output.hash()),
           inputValue: args.inputs.map((input) => input.value),
           inputPublicKey: args.inputs.map((input) =>
             input.pubKey.asCircuitInputs()
@@ -247,8 +247,10 @@ export namespace FnPrivacyPool {
         })
 
   export const VerifyFn =
-    <artifactT = CircomArtifactT, proofT = SnarkJSOutputT | CircomOutputT>() =>
-    async (vkey: artifactT, proof: proofT): Promise<boolean> =>
+    <artifactT = CircomArtifactT, proofT = SnarkJSOutputT | CircomOutputT>(
+      vkey: artifactT
+    ) =>
+    async (proof: proofT): Promise<boolean> =>
       await groth16
         .verify(
           vkey,

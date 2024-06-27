@@ -25,7 +25,7 @@ describe("Creating Commitments with Signature & Nullifier", () => {
       value: 100n,
       salt: FnCommitment.SaltFn()
     }
-    const test_commitment_hash = FnCommitment.HashFn(test_secret, pK.pubKey)
+    const test_commitment_hash = FnCommitment.hashFn(pK.pubKey)(test_secret)
     const sig_msg = hash4([
       ...pK.pubKey.asArray(),
       test_commitment_hash,
@@ -43,7 +43,7 @@ describe("Creating Commitments with Signature & Nullifier", () => {
     const commitment: Commitment = CreateCommitment(pK, test_secret, test_index)
     expect(commitment).toBeDefined()
     expect(commitment.index).toBe(test_index)
-    expect(commitment.hash).toEqual(test_commitment_hash)
+    expect(commitment.hash()).toEqual(test_commitment_hash)
     expect(commitment.signature).toEqual(test_signature)
     expect(commitment.nullifier).toEqual(test_nullifier)
     expect(commitment.isDummy).not.toBeTrue()
@@ -73,10 +73,10 @@ describe("Creating Commitments with Signature & Nullifier", () => {
       value: 100n,
       salt: FnCommitment.SaltFn()
     }
-    const test_commitment_hash = FnCommitment.HashFn(test_secret, pK.pubKey)
+    const test_commitment_hash = FnCommitment.hashFn(pK.pubKey)(test_secret)
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()
-    expect(commitment.hash).toEqual(test_commitment_hash)
+    expect(commitment.hash()).toEqual(test_commitment_hash)
     expect(commitment.isDummy).not.toBeTrue()
 
     const cipherText: Ciphertext = commitment.cipherText

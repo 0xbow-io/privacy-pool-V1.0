@@ -57,7 +57,7 @@ export const genTestCircuitInputsFn = (numberOfTests: number) => {
       // only inert into the tree if it's not a dummy commitment
       if (!commitment.isDummy) {
         // insert it into the tree so we can generate merkle proofs
-        mt.insert(commitment.hash)
+        mt.insert(commitment.hash())
         commitment.index = BigInt(mt.size - 1)
       }
       return commitment
@@ -75,13 +75,13 @@ export const genTestCircuitInputsFn = (numberOfTests: number) => {
     ]
 
     return {
-      io: FnPrivacyPool.GetInputsFn(
-        mt,
-        32,
-        input_commitments,
-        output_comitments,
-        100n // doesn't matter for now
-      ),
+      io: FnPrivacyPool.getInputsFn({
+        mt: mt,
+        maxDepth: 32,
+        inputs: input_commitments,
+        outputs: output_comitments,
+        scope: 100n
+      })(),
       commitments: {
         inCommitments: input_commitments,
         outCommitments: output_comitments
