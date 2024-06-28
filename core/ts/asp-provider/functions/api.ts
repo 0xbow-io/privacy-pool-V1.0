@@ -46,11 +46,10 @@ export function validateParams(params: AssociationSetParams): void {
   }
 }
 
-
 export async function GetAssociationSet(type: 'inclusion' | 'exclusion', params: AssociationSetParams): Promise<ApiResponse> {
   try {
-    
-    validateParams(params);
+
+    await validateParams(params);
     const response = await axios.request(getConfig(baseUrl, apiUrl, type, params));
     return response.data;
 

@@ -32,7 +32,7 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 mockedAxios.request.mockResolvedValue({ data: mockData });
 
-//tests for the inclusion set
+//tests for the inclusion set for the GetAssociation()
 describe("Test GetAssociationSet (INCLUSION SET)", () => {
 
     beforeEach(() => {
