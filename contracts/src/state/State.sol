@@ -9,6 +9,7 @@ contract State is IState {
 
     PrivacyPoolState.PrivacyPoolStateData private _state;
 
-    function hasNullifier(uint256 nullifier) external view returns (bool, uint256) {}
-    function hasCommitment(uint256 nullifier) external view returns (bool, uint256) {}
+    function validStateRoot(uint256 nullifier) external view returns (bool, uint256) {}
+    function hasNullRoot(uint256 nullifier) external view returns (bool, uint256) {}
+    function hasCommitRoot(uint256 nullifier) external view returns (bool, uint256) {}
 }

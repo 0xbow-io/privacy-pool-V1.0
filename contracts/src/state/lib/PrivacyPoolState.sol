@@ -40,15 +40,8 @@ library PrivacyPoolState {
         /// the Encryption key
         uint256[][] _ciphers;
         /// _roots: map of roots to the depth recorded at that root
+        EnumerableMap.UintToUintMap _stateRoots;
         EnumerableMap.UintToUintMap _roots;
-        /// _commitmentRoots: commitmentRoots as leaf nodes mapped to its leaf index.
-        /// commitment root is a sub-tree root calculated from a merkle tree constructed with all the
-        /// public fields (i.e. scope, commitment hash, ciphertext hash, salt public key, etc.)
-        /// as leaf nodes.
-        /// Refer to the circom circuit:  domain/commitment.circom
-        /// Using EnumerableMap to easyily iterate through all known roots
-        /// or to check if a commitmentRoot exists in the tree
-        EnumerableMap.UintToUintMap _commitmentRoots;
         EnumerableSet.UintSet _sideNodes;
     }
 
@@ -57,16 +50,16 @@ library PrivacyPoolState {
     ///  ** Ensure that the commitment has not been inserted before
     modifier verifyCommit(PrivacyPoolStateData storage self, uint256 commitment) {
         CheckCommitmentWithinRange(commitment);
-        if (self._commitmentRoots.contains(commitment)) {
+        if (self._roots.contains(commitment)) {
             revert CommitmentAlreadyExists();
         }
         _;
     }
 
-    /// @dev Iterates through _commitmentRoots starting from a specified index, and retrieves sate data between the index range.
+    /// @dev Iterates through _roots starting from a specified index, and retrieves sate data between the index range.
     function _grabFromIndexRange(PrivacyPoolStateData storage self, uint256 _from, uint256 _to) public view {
         for (uint256 i = _from; i < _to; i++) {
-            self._commitmentRoots.at(i);
+            self._roots.at(i);
         }
     }
 
@@ -98,7 +91,7 @@ library PrivacyPoolState {
 
     /// @dev Size is determiend by the length of the commitments set.
     function _size(PrivacyPoolStateData storage self) internal view returns (uint256) {
-        return self._commitmentRoots.length();
+        return self._roots.length();
     }
 
     /// @dev Retrieves the root of the tree from the 'sideNodes' mapping using the
@@ -114,7 +107,7 @@ library PrivacyPoolState {
     /// @param commitment: The value of the Commitment to check for existence.
     /// @return A boolean value indicating whether the Commitment exists in the tree.
     function _hasCommitment(PrivacyPoolStateData storage self, uint256 commitment) internal view returns (bool) {
-        return self._commitmentRoots.contains(commitment);
+        return self._roots.contains(commitment);
     }
 
     /// @dev Retrieves the index of a given Commitment in the tree.
@@ -123,7 +116,7 @@ library PrivacyPoolState {
     /// @return The index of the specified Commitment within the tree. If the Commitment is not present, the function
     /// reverts with a custom error.
     function _indexOf(PrivacyPoolStateData storage self, uint256 commitment) internal view returns (uint256) {
-        (bool ok, uint256 index) = self._commitmentRoots.tryGet(commitment);
+        (bool ok, uint256 index) = self._roots.tryGet(commitment);
         if (!ok) {
             revert CommitmentDoesNotExist();
         }
