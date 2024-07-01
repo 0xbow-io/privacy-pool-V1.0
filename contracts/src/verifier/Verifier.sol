@@ -150,8 +150,22 @@ contract Verifier is IVerifier, State {
         }
     }
 
+        /// @dev if the commitment tree is non-empty then
+        /// it is required that the circuit output  is a known merkle root
+        /// but if both input commitments were dummy (0 value)
+        /// then the circuit will output 0 for the merkle root
+        /*
+            snippet from privacyPool.cirom (line-93):
+            var lastComputedMerkleRoot = i == 0 ? 0 : inMerkleRoots[i-1];
+            var inputIsDummy = IsZero()(inputValue[i]);
+            var merkleRootMux = Mux1()([inputVerifiers[i].computedMerkleRoot, lastComputedMerkleRoot], inputIsDummy);
+            inMerkleRoots[i] <== merkleRootMux;
+        */
+        /// the verifier will confirm whether the inputs are dummy inputs or not
     function _requireKnownMerkleRoot(uint256[9] calldata _pubSignals, uint8 _index) internal view {
-        if (merkleTreeSize() > 0 && !isMerkleRootKnown(_pubSignals[_index])) {
+        if (
+            merkleTreeSize() > 0 && !isMerkleRootKnown(_pubSignals[_index]) && _pubSignals[_index] != 0
+        ) {
             revert InvalidMerkleRoot(_pubSignals[_index]);
         }
     }
@@ -165,6 +179,7 @@ contract Verifier is IVerifier, State {
         }
     }
 
+    /// @dev Might be redundant as the EnumerableSet will report on duplicates
     function _requireNewNullifiers(uint256[9] calldata _pubSignals, uint8 _index) internal view {
         for (uint8 i = _index; i < _index + N_INPUT_COMMITMENTS; i++) {
             if (isNullifierKnown(_pubSignals[i])) {

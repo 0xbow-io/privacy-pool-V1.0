@@ -1,9 +1,11 @@
-// SPDX-License-Identifier: MIT
+ SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 /// @title PrivacyPool contract interface.
 interface IPrivacyPool {
     error InvalidRepresentation();
+    error NullifierReused();
+    error CiphertextInsertionFailed();
 
     /// @dev struct to holds
     /// the specificities
@@ -28,11 +30,10 @@ interface IPrivacyPool {
 
     event Record(
         Request _r,
-        Supplement _s,
-        uint256[9] _pubSignals,
-        uint256 MerkleTreeRoot,
-        uint256 MerkleTreeDepth,
-        uint256 MerkleTreeSize
+        uint256 root,
+        uint256 depth,
+        uint256 size,
+        uint256 nullifiers
     );
 
     function computePublicVal(Request calldata _r) external pure returns (uint256);

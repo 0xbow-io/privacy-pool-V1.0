@@ -77,6 +77,7 @@ contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
         _updateState(_r, _s, _pubSignals);
 
         //ReleaseFee: release the fee to the feeCollector if any
+
     }
 
     function _doCommit(Request calldata _r) internal OnlyCommit(_r) {
@@ -106,16 +107,33 @@ contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
         internal
         ValidStateChange(_pubSignals)
     {
-        for (uint256 i = NewNullifierStartIndex; i < NewNullifierStartIndex + N_INPUT_COMMITMENTS; i++) {
-            markNullifierAsKnown(_pubSignals[i]);
+        // Insert nullifiers whilst checking for reuse
+        uint256 _offset  = NewNullifierStartIndex;
+        for (uint256 i = 0; i < N_INPUT_COMMITMENTS; i ++){
+            if (markNullifierAsKnown(_pubSignals[i])) {
+                revert NullifierReused();
+            }
         }
 
-        for (uint256 i = NewCommitmentStartIndex; i < NewCommitmentStartIndex + N_OUTPUT_COMMITMENTS; i++) {
-            insertCommitment(_pubSignals[i]);
+        // Insert new commitments & ciphertexts
+         _offset  = NewCommitmentStartIndex;
+        for (uint256 i = 0; i < N_OUTPUT_COMMITMENTS; i ++){
+            uint256 root = insertCommitment(_pubSignals[i+_offset]);
+            if (
+                    !insertCiphertext(
+                    root,
+                    _s.ciphertexts[i][0],
+                    _s.ciphertexts[i][1],
+                    _s.ciphertexts[i][2],
+                    _s.ciphertexts[i][3]
+                    )
+                ) {
+                revert CiphertextInsertionFailed();
+            }
         }
 
-        // Apply the state change based on the request
-        emit Record(_r, _s, _pubSignals, latestMerkleRoot(), merkleTreeDepth(), merkleTreeSize());
+        // emit the record
+        emit Record(_r,  latestMerkleRoot(), merkleTreeDepth(), merkleTreeSize(), numberOfNullifiers);
     }
 
     function computePublicVal(Request calldata _r) external pure returns (uint256) {

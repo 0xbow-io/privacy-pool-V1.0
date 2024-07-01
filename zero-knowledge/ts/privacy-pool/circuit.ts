@@ -54,11 +54,20 @@ export namespace PrivacyPool {
       "binary-merkle-root.circom",
       "src"
     ]),
-    getPath(globalConf.NODE_MODULES, "@zk-kit", ["circuits", "circom"]),
     getPath(globalConf.NODE_MODULES, "@zk-kit", [
       "poseidon-cipher.circom",
       "src"
     ]),
+    getPath(globalConf.NODE_MODULES, "@zk-kit", [
+      "ecdh.circom",
+      "src"
+    ]),
+    getPath(globalConf.NODE_MODULES, "@zk-kit", [
+      "utils.circom",
+      "src"
+    ]),
+    //getPath(globalConf.NODE_MODULES, "@zk-kit", ["circuits", "circom"]),
+    //getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "trees"]),
     getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "utils"])
   ]
 
@@ -102,7 +111,7 @@ export namespace PrivacyPool {
     params: default_params
   }
 
-  export const circomkit = () => new circomKit(id, circomkitConf, circuitConf)
+  export const circomkit = (_circuitConf = circuitConf) => new circomKit(id, circomkitConf, _circuitConf)
 
   export const build_artifacts = async (): Promise<string> => {
     const circuit = circomkit()

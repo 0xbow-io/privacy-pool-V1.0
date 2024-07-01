@@ -11,5 +11,9 @@
       "outputCommitment"
     ],
     "params": [32, 2, 2]
+  },
+  "domain-CommitmentOwnershipProof": {
+    "file": "./domain/commitment",
+    "template": "CommitmentOwnershipProof"
   }
 }

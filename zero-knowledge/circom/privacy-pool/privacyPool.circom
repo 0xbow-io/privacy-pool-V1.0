@@ -41,7 +41,7 @@ template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
 
     // Public inputs
     signal input commitFlag; // either 1 or 0
-    signal input publicVal; 
+    signal input publicVal;
     signal input scope;
     signal input actualMerkleTreeDepth;
     signal input inputNullifier[nIns];
@@ -66,7 +66,7 @@ template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
 
     signal computedMerkleRoots[nIns];
 
-    // check publicVal is within range 
+    // check publicVal is within range
     component publicValCheck = Num2Bits(252);
     publicValCheck.in <== publicVal;
 
@@ -86,12 +86,12 @@ template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
         inputVerifiers[i].leafIndex <== inputLeafIndex[i];
         inputVerifiers[i].actualMerkleTreeDepth <== actualMerkleTreeDepth;
         inputVerifiers[i].merkleProofSiblings <== merkleProofSiblings[i];
-        
+
         inputVerifiers[i].isSignatureValid === 1;
         inputVerifiers[i].isNullifierValid === 1;
 
-        var inputIsDummy = IsZero()(inputValue[i]); 
         var lastComputedMerkleRoot = i == 0 ? 0 : inMerkleRoots[i-1];
+        var inputIsDummy = IsZero()(inputValue[i]);
         var merkleRootMux = Mux1()([inputVerifiers[i].computedMerkleRoot, lastComputedMerkleRoot], inputIsDummy);
         inMerkleRoots[i] <== merkleRootMux;
 
@@ -123,7 +123,7 @@ template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
     }
 
     // if commitFlag = 0, a release was requested
-    // therefore input is deducted by publicVal 
+    // therefore input is deducted by publicVal
     component expectedOutputSum = Mux1();
     expectedOutputSum.c[0] <== sumIns + publicVal;
     expectedOutputSum.c[1] <== sumIns - publicVal;

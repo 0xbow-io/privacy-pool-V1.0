@@ -2,3 +2,7 @@ ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 @zk-kit/lean-imt.sol/=lib/lean-imt.sol/
 poseidon-solidity/=lib/poseidon-solidity/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+
+
+

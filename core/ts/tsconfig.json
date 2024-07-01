@@ -1,5 +1,13 @@
 {
   "extends": "../../tsconfig.json",
   "include": [
-    "./account/*.ts", "./account/**/*.ts", "./zk-circuit/*.ts", "./zk-circuit/**/*.ts","./pool/*.ts",  "./pool/**/*.ts"]
+    "./domain/*.ts",
+    "./domain/**/*.ts",
+    "./account/*.ts",
+    "./account/**/*.ts",
+    "./zk-circuit/*.ts",
+    "./zk-circuit/**/*.ts",
+    "./pool/*.ts",
+    "./pool/**/*.ts"
+  ]
 }

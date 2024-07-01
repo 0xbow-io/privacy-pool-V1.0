@@ -29,3 +29,5 @@ describe("Test Circom Circuit", () => {
     console.log("inputs: ", circuitInputs, " computed merkleRoot: ", merkleRoot)
   })
 })
+
+
