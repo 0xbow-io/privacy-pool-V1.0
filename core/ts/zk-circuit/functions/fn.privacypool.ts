@@ -84,7 +84,7 @@ export namespace FnPrivacyPool {
         return {
           Root: proof.root,
           Depth: BigInt(depth),
-          LeafIndex: BigInt(leafIndex),
+          LeafIndex: BigInt(proof.index),
           Siblings: proof.siblings
         } as OuT
       } catch (e) {

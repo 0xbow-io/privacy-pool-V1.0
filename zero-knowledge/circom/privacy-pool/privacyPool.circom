@@ -1,138 +1,94 @@
-pragma circom 2.1.9;
 
-// IDEN3 Circomlib imports
-include "mux1.circom";
-include "comparators.circom";
-
-// MACI imports
-include "verifySignature.circom";
-
-// local imports
-include "tree.circom";
-include "commitment.circom";
+//Local Imports
+include "../domain/commitment.circom";
 
 
-template VerifyInput(maxMerkleTreeDepth){
-    signal input publicKey[2];
-    signal input value;
-    signal input salt;
-    signal input sigR8[2];
-    signal input sigS;
-    signal input nullifier;
-    signal input leafIndex;
-    signal input actualMerkleTreeDepth;
-    signal input merkleProofSiblings[maxMerkleTreeDepth];
+template PrivacyPool(maxTreeDepth, nIn, nOut) {
+    //** Public Inputs **//
+    signal input scope;
+    signal input stateRoot;
+    signal input actualTreeDepth;
 
-    signal output isSignatureValid;
-    signal output isNullifierValid;
-    signal output computedMerkleRoot;
-
-    component valCheck = Num2Bits(252);
-    valCheck.in <== value;
-
-    var computedCommitment = Commitment()(publicKey, value, salt);
-
-    isSignatureValid <== VerifySignature()(publicKey, sigR8, sigS, [publicKey[0], publicKey[1], computedCommitment, leafIndex]);
-    isNullifierValid <== VerifyNullifier()(computedCommitment, leafIndex, sigR8, sigS, nullifier);
-    computedMerkleRoot <== ComputeMerkleRoot(maxMerkleTreeDepth)(computedCommitment,actualMerkleTreeDepth,leafIndex,merkleProofSiblings);
-}
-
-template PrivacyPool(maxMerkleTreeDepth, nIns, nOuts) {
-
-    // Public inputs
     signal input commitFlag; // either 1 or 0
     signal input publicVal;
-    signal input scope;
-    signal input actualMerkleTreeDepth;
-    signal input inputNullifier[nIns];
-    signal input outputCommitment[nOuts];
+    
+    signal input newNullRoot[nIn];
+    signal input newCommitmentRoot[nOut];
+    signal input newSaltPublicKey[nOut][2]; 
+    signal input newCiphertext[nOut][7];
 
-    signal input inputPublicKey[nIns][2];
-    signal input inputValue[nIns];
-    signal input inputSalt[nIns];
+    //** Public Inputs **//
+    signal input privateKey[nIn+nOut]; 
+    signal input nonce[nIn+nOut];     
+    signal input oldCommitmentRoot[nOut];
+    signal input outSaltPublicKey[nOut][2]; 
+    signal input oldCiphertext[nIn][7];
+    signal input oldIndex[nIn];
+    signal input oldSiblings[nIn][treeDepth];
 
-    // EdDSA signature components
-    signal input inputSigR8[nIns][2];
-    signal input inputSigS[nIns];
+    signal output commitmentHash[nOut];
 
-    signal input inputLeafIndex[nIns];
-    signal input merkleProofSiblings[nIns][maxMerkleTreeDepth];
+    component OwernshipProver[nIn+nOut];
+    component MembershipProver[nIn];
 
-    signal input outputPublicKey[nOuts][2];
-    signal input outputValue[nOuts];
-    signal input outputSalt[nOuts];
+    var _inputSum = 0;
+    var k = 0;
+    for (var i = 0; i < nIn; i++) {
+        // prove ownership of an old cipherText
+        OwernshipProver[i] = CommitmentOwnershipProof();    
+        OwernshipProver[i].privateKey <== privateKey[i];
+        OwernshipProver[i].nonce <== nonce[i];
+        OwernshipProver[i].saltPublicKey[0] <== outSaltPublicKey[i][0];
+        OwernshipProver[i].saltPublicKey[1] <== outSaltPublicKey[i][1];
+        OwernshipProver[i].ciphertext <== oldCiphertext[i];
+        // verify scope
+        OwernshipProver[i].scope === scope;
+        // verify nullRoots 
+        OwernshipProver[i].nullRoot === newNullRoot[i];
 
-    signal output merkleRoot;
+        var isDummyIpnut = IsZero()(OwernshipProver.value);
 
-    signal computedMerkleRoots[nIns];
+        MembershipProver[i] = CommitmentMembershipProof(maxTreeDepth);
+        MembershipProver[i].index <== oldCommitmentRoot;
+        MembershipProver[i].stateRoot <== stateRoot;
+        MembershipProver[i].siblings <== oldIndex[i];
+        MembershipProver[i].actualTreeDepth <== actualTreeDepth;
 
-    // check publicVal is within range
-    component publicValCheck = Num2Bits(252);
-    publicValCheck.in <== publicVal;
+        // check if value is less than 252
+        component valCheck = Num2Bits(252);
+        valCheck.in <== OwernshipProver[i].value;
 
-    component inputVerifiers[nIns];
-    var sumIns = 0;
-    signal inMerkleRoots[nIns];
-    for (var i = 0; i < nIns; i++) {
-
-        // Verify input
-        inputVerifiers[i] = VerifyInput(maxMerkleTreeDepth);
-        inputVerifiers[i].publicKey <== inputPublicKey[i];
-        inputVerifiers[i].value <== inputValue[i];
-        inputVerifiers[i].salt <== inputSalt[i];
-        inputVerifiers[i].sigR8 <== inputSigR8[i];
-        inputVerifiers[i].sigS <== inputSigS[i];
-        inputVerifiers[i].nullifier <== inputNullifier[i];
-        inputVerifiers[i].leafIndex <== inputLeafIndex[i];
-        inputVerifiers[i].actualMerkleTreeDepth <== actualMerkleTreeDepth;
-        inputVerifiers[i].merkleProofSiblings <== merkleProofSiblings[i];
-
-        inputVerifiers[i].isSignatureValid === 1;
-        inputVerifiers[i].isNullifierValid === 1;
-
-        var lastComputedMerkleRoot = i == 0 ? 0 : inMerkleRoots[i-1];
-        var inputIsDummy = IsZero()(inputValue[i]);
-        var merkleRootMux = Mux1()([inputVerifiers[i].computedMerkleRoot, lastComputedMerkleRoot], inputIsDummy);
-        inMerkleRoots[i] <== merkleRootMux;
-
-        sumIns += inputValue[i];
+        _inputSum += OwernshipProver[i].value;
     }
 
-    // verify that all computed roots are the same
-    for (var i = 0; i < nIns - 1; i++) {
-        inMerkleRoots[i] === inMerkleRoots[i+1];
+    // Sum all outputs
+    var _outputSum = 0;
+    for (var i = nIn; i < nIn+nOut; i++) {
+    
+        // prove ownership of an old cipherText
+        OwernshipProver[i] = CommitmentOwnershipProof();
+        OwernshipProver[i].privateKey <== privateKey[i];
+        OwernshipProver[i].nonce <== nonce[i];
+        OwernshipProver[i].saltPublicKey[0] <== newSaltPublicKey[i][0];
+        OwernshipProver[i].saltPublicKey[1] <== newSaltPublicKey[i][1];
+        OwernshipProver[i].ciphertext <== newCiphertext[i];
+        // verify scope
+        OwernshipProver[i].scope === scope;
+        // verify the new commitmentRoot 
+        OwernshipProver[i].commitmentRoot === newCommitmentRoot[i];
+        commitmentHash <== OwernshipProver[i].commitmentHash;
+
+        component valCheck = Num2Bits(252);
+        valCheck.in <== OwernshipProver[i].value;
+        _outputSum += OwernshipProver[i].value;
     }
 
-
-    component outValueCheck[nOuts];
-    component outputVerifiers[nOuts];
-    var sumOuts = 0;
-    // verify correctness of outputs
-    for (var i = 0; i < nOuts; i++) {
-        outputVerifiers[i] = VerifyCommitment();
-        outputVerifiers[i].pubKey <== outputPublicKey[i];
-        outputVerifiers[i].value <== outputValue[i];
-        outputVerifiers[i].salt <== outputSalt[i];
-        outputVerifiers[i].commitment <== outputCommitment[i];
-
-        outputVerifiers[i].isValid === 1;
-
-        outValueCheck[i] = Num2Bits(252);
-        outValueCheck[i].in <== outputValue[i];
-        sumOuts += outputValue[i];
-    }
-
+    // verify publicval
     // if commitFlag = 0, a release was requested
     // therefore input is deducted by publicVal
     component expectedOutputSum = Mux1();
-    expectedOutputSum.c[0] <== sumIns + publicVal;
-    expectedOutputSum.c[1] <== sumIns - publicVal;
+    expectedOutputSum.c[0] <== _inputSum + publicVal;
+    expectedOutputSum.c[1] <== _inputSum - publicVal;
     expectedOutputSum.s <== IsZero()(commitFlag);
-
-    expectedOutputSum.out === sumOuts;
-
-    // signal merkleroot as output
-    merkleRoot <== inMerkleRoots[nIns-1];
-
-    signal scopeSquare <== scope * scope;
+    expectedOutputSum.out === _outputSum;
 }

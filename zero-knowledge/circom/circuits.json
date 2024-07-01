@@ -3,17 +3,25 @@
     "file": "./privacy-pool/privacyPool",
     "template": "PrivacyPool",
     "pubs": [
+      "scope",
+      "stateRoot",
+      "actualTreeDepth",
       "commitFlag",
       "publicVal",
-      "scope",
-      "actualMerkleTreeDepth",
-      "inputNullifier",
-      "outputCommitment"
+      "newNullRoot",
+      "newCommitmentRoot",
+      "newSaltPublicKey",
+      "newCiphertext"
     ],
     "params": [32, 2, 2]
   },
   "domain-CommitmentOwnershipProof": {
     "file": "./domain/commitment",
     "template": "CommitmentOwnershipProof"
+  },
+  "domain-CommitmentMembershipProof": {
+    "file": "./domain/commitment",
+    "template": "CommitmentMembershipProof",
+    "params": [32]
   }
 }

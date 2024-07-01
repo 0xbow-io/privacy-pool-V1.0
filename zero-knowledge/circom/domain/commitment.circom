@@ -14,7 +14,7 @@ include "./stateTree.circom";
 
 /** Context:
 Privacy Pool store arbitary values without ever revealing it.
-To achieve privacy-preservation, a value (i.e. 10 atoms) needs to exist within some domain & must be owned by a keypair: 
+To achieve privacy-preservation, a value (i.e. 10 atoms) needs to exist within some domain & must be owned by some keypair: 
     - Domain: A structured set where all set elements holds verifiable membership proof (i.e. leaves of a Merkle Tree).
         * will be referenced through the Scope value.
         * A Privacy Pool is a domain.
@@ -58,9 +58,9 @@ template CommitmentOwnershipProof(){
     // recovered commitment fields
     signal output scope; 
     signal output value; 
-    signal output cipherTextHash; 
-    signal output commitmentRoot;
     signal output nullRoot;
+    signal output commitmentRoot;
+    signal output commitmentHash;
 
     // compute public key & shared secret key
     var publicKey[2] = PrivToPubKey()(privateKey);
@@ -91,9 +91,10 @@ template CommitmentOwnershipProof(){
     scope <== recoveredTuple[1];
 
     // compute the hash of the commitment tuple
-    var commimentHash = PoseidonHasher(4)([
+    var commitmentHash = PoseidonHasher(4)([
         value, scope, secretKey[0], secretKey[1]
     ]);
+    commitmentHash <== commitmentHash;
 
     // compute commitment root
     // we will use 3 levels which holds 8 leaves 
@@ -102,7 +103,7 @@ template CommitmentOwnershipProof(){
         ciphertext[0], ciphertext[1], 
         ciphertext[2], ciphertext[3],
         ciphertext[4], ciphertext[5], 
-        ciphertext[6], commimentHash
+        ciphertext[6], commitmentHash
     ]);
     commitmentRoot <== computedRoot;
 
@@ -138,4 +139,14 @@ Commitments in a domain must hold sufficient membership.
 template CommitmentMembershipProof(treeDepth){
     signal input commitmentRoot;
     signal input index;
+    signal input stateRoot; 
+    signal input siblings[treeDepth];
+    signal input actualTreeDepth;
+    var computedMerkleRoot = MerkleTreeInclusionProof(treeDepth)(
+        commitmentRoot,
+        actualTreeDepth,
+        index,
+        siblings
+    );
+    stateRoot === computedMerkleRoot;   
 }

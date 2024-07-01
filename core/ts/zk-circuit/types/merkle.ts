@@ -1,8 +1,6 @@
 export type MerkleProofT = {
-  Root: bigint;
-  LeafIndex: bigint;
-  Depth: bigint;
-  Siblings: bigint[];
-};
-
-
+  Root: bigint
+  index: bigint
+  Depth: bigint
+  Siblings: bigint[]
+}

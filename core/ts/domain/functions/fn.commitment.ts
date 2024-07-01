@@ -1,15 +1,9 @@
-import type { PrivKey } from "maci-crypto"
 import {
-  formatPrivKeyForBabyJub,
   genRandomSalt,
-  genEcdhSharedKey
 } from "maci-crypto"
 import { poseidon4 } from "poseidon-lite"
 import {
-  derivePublicKey,
   deriveSecretScalar,
-  packPublicKey,
-  unpackPublicKey
 } from "@zk-kit/eddsa-poseidon"
 import type { Hex } from "viem"
 import type { Point } from "@zk-kit/baby-jubjub"
@@ -18,7 +12,6 @@ import { generatePrivateKey } from "viem/accounts"
 
 import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
-
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 
 export namespace FnCommitment {

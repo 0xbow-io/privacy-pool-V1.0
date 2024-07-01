@@ -1,6 +1,6 @@
 import type { Groth16Proof, PublicSignals } from "snarkjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
-import type { Commitment } from "@privacy-pool-v1/core-ts/account"
+import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
 
 export type Groth16_VKeyJSONT = {
   protocol: string

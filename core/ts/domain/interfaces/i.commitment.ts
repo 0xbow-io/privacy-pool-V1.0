@@ -13,6 +13,8 @@ export namespace ICommitment {
       secret: Point<bigint> | string[]
     }
   > {
+    index: bigint
+    isDummy: () => boolean
     commitmentRoot: bigint
     nullRoot: bigint
     public: () => PubT

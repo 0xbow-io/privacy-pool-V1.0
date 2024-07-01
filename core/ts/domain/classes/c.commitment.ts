@@ -32,12 +32,14 @@ export const RecoverCommitment = (
   }
 ) => CCommitment.CommitmentC.recover(args, challenge)()
 
+export type Commitment = ICommitment.CommitmentI
 export namespace CCommitment {
   // Represent a commitment as a class type
   // which implements:
   // asTuple: represent the internals of a commitment as a an array
   // hash: computes the poseidon hash of the commitment tuple
-  export class CommitmentC implements ICommitment.CommitmentI {
+  export class CommitmentC implements Commitment {
+    _index = 0n
     commitmentRoot = 0n
     nullRoot = 0n
     constructor(
@@ -124,6 +126,15 @@ export namespace CCommitment {
     hash = (): bigint => FnCommitment.hashFn(this.asTuple())
 
     public = () => this._public
+
+    set index(i: bigint) {
+      this._index = i
+    }
+    get index() {
+      return this._index
+    }
+
+    isDummy = () => this._private.value === 0n
 
     toJSON = () => {
       return {
