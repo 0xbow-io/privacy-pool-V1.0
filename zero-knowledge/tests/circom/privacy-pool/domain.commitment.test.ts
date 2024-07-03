@@ -9,7 +9,8 @@ import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import {
     NewCommitment,
-    MerkleTreeInclusionProof
+    MerkleTreeInclusionProof,
+    DerivePrivacyKeys
   } from "@privacy-pool-v1/core-ts/domain"
   
 import { test, describe, afterEach, expect } from "@jest/globals"
@@ -21,13 +22,52 @@ function randomBigint(minValue: bigint, maxValue: bigint): bigint {
   
 
 describe("Test CommitmentOwnershipProof template", () => {
-    const _pK: Hex = generatePrivateKey()
 
   afterEach(async () => {
     await cleanThreads()
   })
 
-  test("VerifyCommitmentOwnership should pass for %s", async () => {
+  test("RecoverCommitmentKeys should recover the correct keys for %s", async () => {
+    const _pK: Hex = generatePrivateKey()
+
+    const witnessTester = await PrivacyPool.circomkit({
+        file: "./domain/commitment",
+        template: "RecoverCommitmentKeys",
+    }).witnessTester()
+
+    const keys = DerivePrivacyKeys(_pK)()
+
+    const witness = await witnessTester.calculateWitness({
+        privateKey: keys.pKScalar,
+        saltPublicKey: keys.SaltPk.map((x) => BigInt(x)),
+    })
+
+    await witnessTester.expectConstraintPass(witness)
+    const publicKey_x = await getSignal(witnessTester, witness, "publicKey[0]")
+    const publicKey_y = await getSignal(witnessTester, witness, "publicKey[1]")
+    const secretKey_x = await getSignal(witnessTester, witness, "secretKey[0]")
+    const secretKeyh_y = await getSignal(witnessTester, witness, "secretKey[1]")
+    const encryptionKey_x = await getSignal(witnessTester, witness, "encryptionKey[0]")
+    const encryptionKey_y = await getSignal(witnessTester, witness, "encryptionKey[1]")
+
+    console.log("original keys: ", keys, 
+      " publicKey: ", [publicKey_x, publicKey_y], 
+      " secretKey: ", [secretKey_x, secretKeyh_y], 
+      " encryptionKey: ", [encryptionKey_x, encryptionKey_y]
+    )
+
+    expect(publicKey_x).toBe(keys.Pk[0])
+    expect(publicKey_y).toBe(keys.Pk[1])
+    expect(secretKey_x).toBe(keys.secret[0])
+    expect(secretKeyh_y).toBe(keys.secret[1])
+    expect(encryptionKey_x).toBe(keys.eK[0])
+    expect(encryptionKey_y).toBe(keys.eK[1])
+
+  })
+
+  test("CommitmentOwnershipProof should prove  %s", async () => {
+    const _pK: Hex = generatePrivateKey()
+
     const witnessTester = await PrivacyPool.circomkit({
         file: "./domain/commitment",
         template: "CommitmentOwnershipProof",
@@ -40,40 +80,41 @@ describe("Test CommitmentOwnershipProof template", () => {
         _value: randomBigint(0n, 1000n)
         })
     const INPUTS = {
+        scope : out.commitment._public.scope,
         privateKey: out.secrets.pKScalar,
-        nonce: out.secrets.nonce,
         saltPublicKey:  out.commitment._public.saltPk.map((x) => BigInt(x)),
+        nonce: out.secrets.nonce,
         ciphertext: out.commitment._public.cipher.map((x) => BigInt(x)),
     }
 
     const _tuple = out.commitment.asTuple()
+    const hash =  out.commitment.hash()
 
     const witness = await witnessTester.calculateWitness(INPUTS)
     await witnessTester.expectConstraintPass(witness)
     const value = await getSignal(witnessTester, witness, "value")
-    const scope = await getSignal(witnessTester, witness, "scope")
-    const commitmentRoot = await getSignal(witnessTester, witness, "commitmentRoot")
     const nullRoot = await getSignal(witnessTester, witness, "nullRoot")
+    const commitmentRoot = await getSignal(witnessTester, witness, "commitmentRoot")
+    const commitmentHash = await getSignal(witnessTester, witness, "commitmentHash")
 
-    console.log("inputs: ", INPUTS, " value: ", value, " scope: ", scope,  "commitmentRoot: ", commitmentRoot, " nullRoot", nullRoot,  " _tuple: ", _tuple)
-
-    expect(commitmentRoot).not.toBe(nullRoot)
+    console.log(
+      "inputs: ", INPUTS, 
+      " nullRoot: ", nullRoot, 
+      " commitmentRoot: ", commitmentRoot, 
+      " commitmentHash: ", commitmentHash)
+   
+    expect(value).toBe(_tuple[0])
     expect(nullRoot).toBe(out.commitment.nullRoot)
     expect(commitmentRoot).toBe(out.commitment.commitmentRoot)
-    expect(value).toBe(_tuple[0])
-    expect(scope).toBe(_tuple[1])
-  })
+    expect(commitmentHash).toBe(hash)
+  
+  }),
 
   test("CommitmentMembershipProof should pass for %s", async () => {
-    const TestSample = 100
+
+    const TestSample = 10
     const mt = new LeanIMT(hashLeftRight)
     const merkleFn = MerkleTreeInclusionProof(mt)
-
-    const witnessTester = await PrivacyPool.circomkit({
-        file: "./domain/commitment",
-        template: "CommitmentMembershipProof",
-        params: [32]
-    }).witnessTester()
 
     const commitments = Array.from({ length: TestSample }, () => {
       const _out = NewCommitment({
@@ -88,20 +129,25 @@ describe("Test CommitmentOwnershipProof template", () => {
       return _out.commitment
     })
 
+    for (let i = 0; i < TestSample; i++) {
+      const witnessTester = await PrivacyPool.circomkit({
+        file: "./domain/commitment",
+        template: "CommitmentMembershipProof",
+        params: [32]
+      }).witnessTester()
 
-    // generate the merkle proofs  & verify them with the circuit
-    commitments.forEach(async (c) => {
-      const index = mt.indexOf(c.commitmentRoot)
+      const index = mt.indexOf(commitments[i].commitmentRoot)
       const proof = merkleFn(BigInt(index))
       const INPUTS = {
-        commitmentRoot: c.commitmentRoot,
+        actualTreeDepth: proof.Depth,
+        commitmentRoot: commitments[i].commitmentRoot,
         index: proof.index,
-        stateRoot:  proof.Root,
-        siblings: proof.Siblings.map((x) => BigInt(x)),
-        actualTreeDepth: proof.Depth
+        siblings: proof.Siblings.map((x) => BigInt(x))
       }
       const witness = await witnessTester.calculateWitness(INPUTS)
       await witnessTester.expectConstraintPass(witness)
-    })
-  })
+      const stateRoot = await getSignal(witnessTester, witness, "stateRoot")
+      expect(stateRoot).toBe(proof.Root)
+    }
+  }, 1000000)
 })

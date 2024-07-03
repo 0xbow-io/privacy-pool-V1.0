@@ -18,3 +18,6 @@ export const getSignal = async (tester: WitnessTester, witness: bigint[], name: 
     const out = await tester.readWitness(witness, [signalFullName]);
     return BigInt(out[signalFullName]);
   };
+
+
+// To:DO also try readWitnessSignals(witness: Readonly<WitnessType>, signals: string[] | OUT): Promise<CircuitSignals>;

@@ -14,6 +14,24 @@ import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 
+
+export const DerivePrivacyKeys = (_pK: Hex = generatePrivateKey(), withSalt = true) => (
+    PrivateKey = deriveSecretScalar(_pK),
+    PublicKey = mulPointEscalar(Base8, PrivateKey),
+    Secret = mulPointEscalar(PublicKey, PrivateKey) ,
+    Salt = withSalt ? genRandomSalt(): 0n,
+    SaltPk =withSalt ? mulPointEscalar(Base8, Salt) : [0n,0n],
+    Ek = withSalt ? mulPointEscalar(PublicKey, Salt): [0n,0n]
+  ) => {
+    return {
+      pKScalar: PrivateKey,
+      Pk: PublicKey,
+      SaltPk: SaltPk,
+      eK: Ek,
+      secret: Secret
+    }
+  }
+
 export namespace FnCommitment {
   export const hashFn = (tuple: TCommitment.TupleT) => poseidon4(tuple)
 

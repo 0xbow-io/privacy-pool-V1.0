@@ -1,3 +1,5 @@
+pragma circom 2.1.9;
+
 // zk-kit imports
 include "safe-comparators.circom";
 // MACI imports
@@ -5,7 +7,7 @@ include "calculateTotal.circom";
 include "hashers.circom";
 
 // Taken from @zk-kit/binary-merkle-root.circom
-// If imported directly we get a conflic with poseidon import from circomlib
+// If imported directly we get a conflict with poseidon import from circomlib
 template MerkleTreeInclusionProof(MAX_DEPTH) {
     signal input leaf, depth, leafIndex, siblings[MAX_DEPTH];
 
