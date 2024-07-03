@@ -1,4 +1,4 @@
-//  bunx jest ./tests/circom/privacy-pool/privacypool.test.ts
+//  bunx jest ./tests/circom/privacy-pool/privacypool.templates.ts
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
@@ -69,7 +69,7 @@ describe("Test Privacy Pool templates", () => {
     async () => {
         const witnessTester = await PrivacyPool.circomkit({
             file: "./privacy-pool/privacyPool",
-            template: "HandleExistingCommitment",
+            template: "PrivacyPool",
             params: [32, 7, 4]
         }).witnessTester()
 
@@ -102,92 +102,5 @@ describe("Test Privacy Pool templates", () => {
             expect(value).toBe(_tuple[0])
         }
     }, 100000)
-
-    test("Root mismatch should reveal commitmentRoot & CommitmentHash, zero value and valid nullRoot for all commitments", 
-        async () => {
-            const merkleFn = MerkleTreeInclusionProof(mt)
-
-            const witnessTester = await PrivacyPool.circomkit({
-                file: "./privacy-pool/privacyPool",
-                template: "HandleExistingCommitment",
-                params: [32, 7, 4]
-            }).witnessTester()
-            // cause a root mismatch 
-            // value is not 0, therefore not void
-            const _c = NewCommitment({
-                _pK: generatePrivateKey(),
-                _nonce: randomBigint(0n, 1000n),
-                _scope: randomBigint(0n, 1000n),
-                _value: randomBigint(0n, 1000n)
-                })
-            
-            // insert into tree to get proof
-            mt.insert(_c.commitment.commitmentRoot)
-            // confirm mt has the leaf exists
-            expect(mt.has(_c.commitment.commitmentRoot)).toBe(true)
-            const index = mt.indexOf(_c.commitment.commitmentRoot)
-             const mtProof = merkleFn(BigInt(index))    
-
-            const _tuple = _c.commitment.asTuple()
-            const INPUTS = {
-                scope : _tuple[1],
-                stateRoot: mt.root - 100n, // alter the state root to invalidate the commitment membership proof
-                actualTreeDepth: mtProof.Depth,
-                privateKey: _c.secrets.pKScalar,
-                nonce: _c.secrets.nonce,
-                saltPublicKey: _c.commitment.public().saltPk.map((x) => BigInt(x)),
-                ciphertext: _c.commitment.public().cipher.map((x) => BigInt(x)),
-                index: mtProof.index,
-                siblings: mtProof.Siblings.map((x) => BigInt(x))
-            }
-            const witness = await witnessTester.calculateWitness(INPUTS)
-            await witnessTester.expectConstraintPass(witness)
-            const nullRoot = await getSignal(witnessTester, witness, "out[0]")
-            const commitmentRoot = await getSignal(witnessTester, witness, "out[1]")
-            const commitmentHash = await getSignal(witnessTester, witness, "out[2]")
-            const value = await getSignal(witnessTester, witness, "out[3]")
-
-            expect(nullRoot).toBe(_c.commitment.nullRoot)
-
-            // commitment root & hash should be revealed 
-            // due to root mismatch and non-void status
-            expect(commitmentRoot).toBe(_c.commitment.commitmentRoot)
-            expect(commitmentHash).toBe(_c.commitment.hash())
-            expect(value).toBe(0n)
-        
-        }, 100000)
-
-    test(" HandleNewCommitment should reveal commitmentRoot & CommitmentHash and value but not nullRoot for all commitments", 
-    async () => {
-        const witnessTester = await PrivacyPool.circomkit({
-            file: "./privacy-pool/privacyPool",
-            template: "HandleNewCommitment",
-            params: [7, 4]
-        }).witnessTester()
-
-        for (let i = 0; i < TestSample; i++) {
-            const _tuple = commitments[i].asTuple()
-            const INPUTS = {
-                scope : _tuple[1],
-                privateKey: secrets[i].pKScalar,
-                nonce: secrets[i].nonce,
-                saltPublicKey: commitments[i].public().saltPk.map((x) => BigInt(x)),
-                ciphertext: commitments[i].public().cipher.map((x) => BigInt(x))
-            }
-            const witness = await witnessTester.calculateWitness(INPUTS)
-            await witnessTester.expectConstraintPass(witness)
-            const nullRoot = await getSignal(witnessTester, witness, "out[0]")
-            const commitmentRoot = await getSignal(witnessTester, witness, "out[1]")
-            const commitmentHash = await getSignal(witnessTester, witness, "out[2]")
-            const value = await getSignal(witnessTester, witness, "out[3]")
-
-            expect(nullRoot).toBe(0n)
-
-            // neither commiment root & hash should be revealed 
-            // when commitment is valid.
-            expect(commitmentRoot).toBe(commitments[i].commitmentRoot)
-            expect(commitmentHash).toBe(commitments[i].hash())
-            expect(value).toBe(_tuple[0])
-        }
-    }, 100000)
 })
+ 

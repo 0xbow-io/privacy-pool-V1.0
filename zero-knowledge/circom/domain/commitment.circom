@@ -109,7 +109,15 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     signal output commitmentHash;
 
     //  [publicKey, secretKey, encryptionKey]
-    var (publicKey[2], secretKey[2], encryptionKey[2]) = RecoverCommitmentKeys()(privateKey,saltPublicKey);
+    var (
+        publicKey[2], 
+        secretKey[2], 
+        encryptionKey[2]
+    ) = RecoverCommitmentKeys()
+        (
+            privateKey,
+            saltPublicKey
+        );
 
     // null root is the computed root of all secrets/keys
     // that were involved with the commitment.
@@ -125,9 +133,16 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
         ]);
 
     //  [value, scope, secret.x, secret.y]
-    var (tuple[tupleLen], hash) = DecryptCommitment(cipherLen,tupleLen)(
-                                    encryptionKey, nonce, ciphertext
-                                );
+    var (
+        tuple[tupleLen], 
+        hash
+        ) = DecryptCommitment(
+                cipherLen,
+                tupleLen
+            )(
+                encryptionKey, nonce, ciphertext
+            );
+
     value <== tuple[0];
     commitmentHash <== hash; 
 
@@ -135,11 +150,29 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     // Compute commitment root
     // CommitmentRoot can be verified outside of the circuit
     // as ciphertext & commitmenthash are public values.
-    var (eqScope, eqSecret_x, eqSecret_y, computedCommitmentRoot) = ( 
-                    IsEqual()([scope, tuple[1]]),   
-                    IsEqual()([secretKey[0], tuple[2]]),
-                    IsEqual()([secretKey[1], tuple[3]]),
-                    CheckRoot(3)(
+    var (
+            scopeEqCheck, 
+            secret_xEqCheck, 
+            secret_yEqCheck, 
+            computedCommitmentRoot
+        ) = ( 
+            IsEqual()(
+                        [
+                            scope, tuple[1] // match scope
+                        ]
+                    ),   
+            IsEqual()(
+                        [
+                            secretKey[0], tuple[2] // match secret.x component
+                        ]
+                    ),
+            IsEqual()(
+                        [
+                            secretKey[1], tuple[3] // match secret.y component
+                        ]
+                    ),
+            // compute commitment root
+            CheckRoot(3)(
                         [  
                             ciphertext[0], ciphertext[1], 
                             ciphertext[2], ciphertext[3],
@@ -147,11 +180,17 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
                             ciphertext[6], hash
                         ]
                     )
-    );
+        );
+
     // invalidate the root if ownership is invalid
     // necessary to invalidate membership proofs
-    var isValid = IsEqual()([eqScope + eqSecret_x + eqSecret_y, 3]);
-    commitmentRoot <== computedCommitmentRoot * isValid; 
+    var ownershipValidityCheck = IsEqual()(
+            [
+                scopeEqCheck + secret_xEqCheck + secret_yEqCheck, 
+                3
+            ]
+        );
+    commitmentRoot <== computedCommitmentRoot * ownershipValidityCheck; 
 }
 
 /** Context: 
@@ -169,11 +208,13 @@ template CommitmentMembershipProof(maxTreeDepth){
     signal input siblings[maxTreeDepth];
 
     signal output root; 
-    var computedRoot = MerkleTreeInclusionProof(maxTreeDepth)(
-        commitmentRoot,
-        actualTreeDepth,
-        index,
-        siblings
-    );
+    var computedRoot = MerkleTreeInclusionProof(
+                            maxTreeDepth
+                        )(
+                            commitmentRoot,
+                            actualTreeDepth,
+                            index,
+                            siblings
+                        );
     root <== computedRoot;
 }
