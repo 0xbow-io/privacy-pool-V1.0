@@ -30,7 +30,7 @@ export const RecoverCommitment = (
     _tuple?: bigint[]
     _secet?: Point<bigint>
   }
-) => CCommitment.CommitmentC.recover(args, challenge)()
+): Commitment => CCommitment.CommitmentC.recover(args, challenge)()
 
 export type Commitment = ICommitment.CommitmentI
 export namespace CCommitment {

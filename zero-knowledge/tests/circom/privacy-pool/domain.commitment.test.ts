@@ -4,7 +4,6 @@ import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
 import { generatePrivateKey } from "viem/accounts"
 import type { Hex } from "viem"
-import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import {
@@ -146,8 +145,8 @@ describe("Test CommitmentOwnershipProof template", () => {
       }
       const witness = await witnessTester.calculateWitness(INPUTS)
       await witnessTester.expectConstraintPass(witness)
-      const stateRoot = await getSignal(witnessTester, witness, "stateRoot")
-      expect(stateRoot).toBe(proof.Root)
+      const root = await getSignal(witnessTester, witness, "root")
+      expect(root).toBe(proof.Root)
     }
   }, 1000000)
 })

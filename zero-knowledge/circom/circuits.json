@@ -23,5 +23,10 @@
     "file": "./domain/commitment",
     "template": "CommitmentMembershipProof",
     "params": [32]
+  },
+  "privacyPool-HandleExistingCommitment": {
+    "file": "./privacy-pool/privacyPool",
+    "template": "HandleExistingCommitment",
+    "params": [32, 7]
   }
 }

@@ -1,64 +1,144 @@
+pragma circom 2.1.9;
 
 // circomlib import
 include "comparators.circom";
+include "gates.circom";
 
 //Local Imports
 include "../domain/commitment.circom";
 
 /**
-A commitment is the binding of value to a domain (indentified by a scope value) 
-& a cryptographic keypair. 
+    A commitment is the binding of value to a domain (indentified by a scope value) 
+    & a cryptographic keypair. 
 
-It is represented as a tuple: (value, scope, Secret.x, Secret.y)
-Where secret is the ECDH shared secret key derived from 
-the keypair's private & public key
+    It is represented as a tuple: (value, scope, Secret.x, Secret.y)
+    Where secret is the ECDH shared secret key derived from 
+    the keypair's private & public key
 
-Note:   The value must be a real number that is ≥ 0. 
-        A commitment in which the value = 0, is considered a "void" commitment.
-        
-** stateRoot: 
-    * Merkle root of Pool's state Tree (Lean IMT)
-** actualTreeDepth: 
-    * The current depth of the State Tree
-** context: 
-    * The context of the hash of transaction details & scope:
-        ** keccak256(chainID, contractAddress, fee, feeCollector, units...) 
-        ** mitigation against tampering of values after proof generation
-** External: 
-    * External existing/new input
-** PrivateKey: 
-    * Private keys with ownership of the existing/new commitments
-** Nonce: 
-    * Nonce values for the existing/new commitments
-** CommitmentRoot: 
-    * Commitment roots of the new/existing commitments:
-        ** Compute Hash (commitmentHash) of the commitment tuple: 
-            ** Poseidon(4)([value, scope, Secret.x, Secret.y])
-        ** Construct Binary Merkle Tree with leave nodes being CipherText elements & Commitment Hash
-        ** Compute the root of the tree ==> Commitment 
-** NullRoot: 
-    * Null roots of the existing/newcommitments
-        ** Similary computed like the commitment root but leaf nodes are: 
-            ** Keypair Public Key
-            ** Keypair Secret Key
-            ** Salt Public Key
-            ** Encryption Key
-        ** Functions as a nullifier to the commitRoot when inserted into the state tree. 
-        ** Prevents replay attacks
-        ** Private for the new commitments but public for the existing commitments 
-** SaltPublicKey: 
-    * EdDSA Public-key derived from the Salt generated for the new/existing commitments
-        ** Salts are random values in the BabyJub Curve
-** Ciphertext: 
-    * Encrypted values of the new commitments
-        ** Poseidon encryption with ECDH shared secret key derived from either:
-            ** Salt & public key 
-            ** Private key & Salt public key
-            ** Assume Salt is unrecoverable, only Salt public key is known and public
-** Index & Siblings: 
-    ** Inclusion Merkle Proof of the commitmentRoot for existing commitments
-    ** Verified against state root.
+    Note:   The value must be a real number that is ≥ 0. 
+            A commitment in which the value = 0, is considered a "void" commitment.
+            Void comitments do not exsits in the domain. 
+            
+    ** stateRoot: Merkle root of Pool's state Tree (Lean IMT)
+    ** actualTreeDepth:The current depth of the State Tree
+    ** context: The context is the hash of transaction details & scope:
+                ** keccak256(chainID, contractAddress, fee, feeCollector, units...) 
+                ** mitigation against tampering of values after proof generation
+    ** externIO: external input & output values
+    ** PrivateKey: Private keys with ownership of the existing/new commitments
+    ** Nonce: Nonce values for the existing/new commitments
+    ** CommitmentRoot: Commitment roots of the new/existing commitments:
+                    ** Compute Hash (commitmentHash) of the commitment tuple: 
+                        ** Poseidon(4)([value, scope, Secret.x, Secret.y])
+                    ** Construct Binary Merkle Tree with leave nodes being CipherText elements & Commitment Hash
+                    ** Compute the root of the tree ==> Commitment 
+    ** NullRoot: Null roots of the existing/newcommitments
+                ** Similary computed like the commitment root but leaf nodes are: 
+                    ** Keypair Public Key
+                    ** Keypair Secret Key
+                    ** Salt Public Key
+                    ** Encryption Key
+                ** Functions as a nullifier to the commitRoot when inserted into the state tree. 
+                ** Prevents replay attacks
+                ** Private for the new commitments but public for the existing commitments 
+    ** SaltPublicKey: EdDSA Public-key derived from the Salt generated for the new/existing commitments
+                ** Salts are random values in the BabyJub Curve
+    ** Ciphertext: Encrypted values of new / existing commitments
+                ** Poseidon encryption with ECDH shared secret key derived from either:
+                    ** Salt & public key 
+                    ** Private key & Salt public key
+                    ** Assume Salt is unrecoverable, only Salt public key is known and public
+    ** Index & Siblings: Inclusion Merkle Proof of the commitmentRoot for existing commitments
 **/
+
+template HandleExistingCommitment(maxTreeDepth, cipherLen, tupleLen){
+    signal input scope;
+    signal input stateRoot;
+    signal input actualTreeDepth;
+
+    signal input privateKey; 
+    signal input nonce;
+    signal input saltPublicKey[2];
+    signal input ciphertext[cipherLen];
+
+    signal input index; 
+    signal input siblings[maxTreeDepth];
+
+    // aggregate (nullRoot, commitmentRoot, hash, value)
+    // into 1 array output signal
+    signal output out[4];
+
+    component isVoidCheck = IsZero();
+    component stateRootEqCheck = IsZero();
+    
+    var (value,nullRoot,commitmentRoot,hash) = CommitmentOwnershipProof(cipherLen, tupleLen)(
+                                                    scope, 
+                                                    privateKey, 
+                                                    saltPublicKey, 
+                                                    nonce, 
+                                                    ciphertext
+                                                );
+    var computedRoot =  CommitmentMembershipProof(maxTreeDepth)( 
+                                                    actualTreeDepth,
+                                                    commitmentRoot,
+                                                    index,
+                                                    siblings
+                                                );
+
+    isVoidCheck.in <== value + computedRoot;
+    stateRootEqCheck.in <== computedRoot - stateRoot;
+
+    // only forward commitmentRoot & hash if the commitment is invalid
+    // commitment is invalid when its' not void and the stateRoot is not equal
+    component forward[3];
+    for (var i = 0; i < 3; i++) {
+        forward[i] = NOR();
+        forward[i].a <== isVoidCheck.out;
+        forward[i].b <== stateRootEqCheck.out;
+    }    
+
+    // nullifier for the commitment         
+    // need to check nullRoot allready exists in state Tree
+    // outside of the cricuit
+    out[0] <== nullRoot;
+    out[1] <== commitmentRoot * forward[0].out;
+    out[2] <== hash * forward[1].out;
+    out[3] <== value * (1 - forward[2].out);
+}
+
+template HandleNewCommitment(cipherLen, tupleLen){
+    signal input scope;
+    signal input privateKey; 
+    signal input nonce;
+    signal input saltPublicKey[2];
+    signal input ciphertext[cipherLen];
+
+    // aggregate (nullRoot, commitmentRoot, hash, value)
+    // into 1 array output signal
+    signal output out[4];
+
+    component zeroRootCheck = IsZero();
+    
+    var (value,nullRoot,commitmentRoot,hash) = CommitmentOwnershipProof(cipherLen, tupleLen)(
+                                                    scope, 
+                                                    privateKey, 
+                                                    saltPublicKey, 
+                                                    nonce, 
+                                                    ciphertext
+                                                );
+  
+    // If invalid ownership then commitmentRoot is 0
+    // Output nullRoot if so, as this nullifies the new commitment. 
+    zeroRootCheck.in <== commitmentRoot;
+    out[0] <==  nullRoot * zeroRootCheck.out;
+
+    // don't stop the circuit if the commitmentRoot is invalid
+    out[1] <== commitmentRoot;
+    out[2] <== hash;
+    // null value if commitmentRoot is invalid
+    out[3] <== value * (1 - zeroRootCheck.out);
+}
+
 
 template PrivacyPool(maxTreeDepth, nExisting, nNew) {
     /**** Public Signals ***/
@@ -95,14 +175,14 @@ template PrivacyPool(maxTreeDepth, nExisting, nNew) {
     /**** End Of Private Signals ***/
 
     signal output newNullRoot[nExisting+nNew];
-    signal output newCommitmentHash[nExisting+nNew];
     signal output newCommitmentRoot[nExisting+nNew];
+    signal output newCommitmentHash[nExisting+nNew];
 
     // ensure that External Input & Output
     // fits within the 252 bits
-    var n2b1[2][252];
-    n2b1[0] = Num2Bits(252)(externIO[0]);
-    n2b2[1] = Num2Bits(252)(externIO[1]);
+    var n2bIO[2][252];
+    n2bIO[0] = Num2Bits(252)(externIO[0]);
+    n2bIO[1] = Num2Bits(252)(externIO[1]);
 
 
     // get ownership & membership proofs for existing commitments
@@ -110,77 +190,50 @@ template PrivacyPool(maxTreeDepth, nExisting, nNew) {
     signal totalEx[nExisting+1];
     totalEx[0] <== externIO[0];
     for (var i = 0; i < nExisting; i++) {
-        var (value, nullRoot, commitmentRoot, hash) = CommitmentOwnershipProof()(scope, 
-                                                                            privateKey[i], 
-                                                                            ExSaltPublicKey[i], 
-                                                                            Nonce[i], 
-                                                                            ExCiphertext[i]
-                                                                        );
-
-        var computedStateRoot = CommitmentMembershipProof(maxTreeDepth)(actualTreeDepth, 
-                                                                        commitmentRoot, 
-                                                                        ExIndex[i], 
-                                                                        ExSiblings[i]
-                                                                    );
-        
-        // note that for a void commitment (that does not exist in the state tree)
-        // it should have 0 value and a computed stateRoot of 0.
-        // invalid ownership that yields 0 commitmentRoot might lead to 0 stateRoot
-        // therefore best to confirm if value is 0 as well.
-
-        var zeroValue = IsZero()(value);
-        var zeroStateRoot = IsZero()(stateRoot);  
-        var isVoid = IsZero()(zeroValue + zeroStateRoot, 0);             
-
-        // if the calculated root does not match, we output the commitmentRoot & hash
-        // unless the commitment is void.
-        // this could reveal the linkage between prover & the commiment.
-        // but still preserves the privacy of the commitment value.
-        var eqStateRoot = IsEqual()([computedStateRoot, existingStateRoot]);  
-        newCommitmentRoot[i] <== commitmentRoot * (1 - eqStateRoot) * (1 - isVoid); 
-        newCommitmentHash[i] <== hash * (1 - eqStateRoot) * (1 - isVoid);
-
-        // nullifier for the commitment         
-        // if nullRoot allready exists in state Tree
-        // then the transaction should be rejected
-        newNullRoot[i] <== nullRoot;
-        
-        // we zero the value if eqStateRoot is 0    
-        totalEx[i+1] <== totalEx[i] + value * (1 - eqStateRoot));
+        var out[4] = HandleExistingCommitment(maxTreeDepth, 7, 4)(
+                            scope, 
+                            existingStateRoot, 
+                            actualTreeDepth, 
+                            PrivateKey[i], 
+                            Nonce[i], 
+                            ExSaltPublicKey[i], 
+                            ExCiphertext[i], 
+                            ExIndex[i], 
+                            ExSiblings[i]
+                        );
+        newNullRoot[i] <== out[0];
+        newCommitmentRoot[i] <== out[1];
+        newCommitmentHash[i] <== out[2];
+        totalEx[i+1] <== totalEx[i] + out[3];
     }
     
     // get ownership for new commitments
-    var k = nExisting; // offset for new commitments
+    // and compute total sum
     signal totalNew[nNew+1];
     totalNew[0] <== externIO[1];
+    var k = nExisting; // offset for new commitments
     for (var i = 0; i < nNew; i++) {
-        var (value, nullRoot, commitmentRoot, hash) = CommitmentOwnershipProof()(scope, 
-                                                                            privateKey[k+i], 
-                                                                            newSaltPublicKey[i], 
-                                                                            Nonce[k+i], 
-                                                                            newCiphertext[i]
-                                                                    );
-        // If invalid ownership, commitmentRoot is 0
-        // Output nullRoot if commitmentRoot is 0
-        // this nullifies the commitment
-        // And forces prover to use the secret key 
-        // derived from the keypair
-        // and the correct scope value.
-        var cRootZero = IsZero()(commitmentRoot);
-        newNullRoot[k+i] <==  nullRoot * (1 - cRootZero);
-
-        // don't stop the circuit if the commitmentRoot is invalid
-        newCommitmentRoot[k+i] <== commitmentRoot;
-        commitmentHash[k+i] <== hash;
-
-        // reset value to 0 if commitmentRoot is invalid
-        totalNew[i+1] <== totalNew[i] + (value * (1 - cRootZero));
+        var out[4] = HandleNewCommitment(7, 4)(
+                            scope, 
+                            PrivateKey[k], 
+                            Nonce[k], 
+                            newSaltPublicKey[k], 
+                            newCiphertext[k]
+                        );
+        newNullRoot[i] <== out[0];
+        newCommitmentRoot[i] <== out[1];
+        newCommitmentHash[i] <== out[2];
+        totalNew[i+1] <== totalNew[i] + out[3];
+        k++;
     }
 
     // lastly ensure that all total sums are equal
-    var equalSums <== IsEqual()([totalEx[nExisting], totalNew[nNew]]);
-    equalSums === 1;
-
+    var equalSum = IsEqual()(
+                    [
+                        totalEx[nExisting], 
+                        totalNew[nNew]
+                    ]);
+    equalSum === 1;
     // constraint on the context
     signal contextSqrd <== context * context; 
 }

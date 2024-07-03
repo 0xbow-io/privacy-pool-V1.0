@@ -73,7 +73,7 @@ template DecryptCommitment(cipherLen, tupleLen){
     signal output tuple[tupleLen];
     signal output hash; 
 
-    var decryptor[cipherLen] = PoseidonDecryptWithoutCheck(tupleLen)(
+    var decryptor[cipherLen-1] = PoseidonDecryptWithoutCheck(tupleLen)(
         [
             ciphertext[0], ciphertext[1], ciphertext[2], ciphertext[3],
             ciphertext[4], ciphertext[5], ciphertext[6]
@@ -95,15 +95,13 @@ template DecryptCommitment(cipherLen, tupleLen){
     verifying the contents of tuple. 
     Then output the hash of the tuple.
 **/
-template CommitmentOwnershipProof(){
-    var CIPHER_LEN = 7;
-    var TUPLE_LEN = 4;
+template CommitmentOwnershipProof(cipherLen, tupleLen){
 
     signal input scope;
     signal input privateKey;                // EdDSA private key
     signal input saltPublicKey[2];          // used to derive the encryptionKey
     signal input nonce;                     // nonce value used for Poseidon decryption
-    signal input ciphertext[CIPHER_LEN];    // encrypted commitment tuple
+    signal input ciphertext[cipherLen];    // encrypted commitment tuple
 
     signal output value;
     signal output nullRoot;
@@ -127,7 +125,9 @@ template CommitmentOwnershipProof(){
         ]);
 
     //  [value, scope, secret.x, secret.y]
-    var (tuple[TUPLE_LEN], hash) = DecryptCommitment(CIPHER_LEN,TUPLE_LEN)(encryptionKey, nonce, ciphertext);
+    var (tuple[tupleLen], hash) = DecryptCommitment(cipherLen,tupleLen)(
+                                    encryptionKey, nonce, ciphertext
+                                );
     value <== tuple[0];
     commitmentHash <== hash; 
 
@@ -168,12 +168,12 @@ template CommitmentMembershipProof(maxTreeDepth){
     signal input index;
     signal input siblings[maxTreeDepth];
 
-    signal output stateRoot; 
-    var root = MerkleTreeInclusionProof(maxTreeDepth)(
+    signal output root; 
+    var computedRoot = MerkleTreeInclusionProof(maxTreeDepth)(
         commitmentRoot,
         actualTreeDepth,
         index,
         siblings
     );
-    stateRoot <== root;
+    root <== computedRoot;
 }

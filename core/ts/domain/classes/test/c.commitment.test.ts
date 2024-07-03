@@ -1,15 +1,12 @@
 import { expect, test, describe, beforeEach } from "bun:test"
-import { FnCommitment } from "@privacy-pool-v1/core-ts/domain"
 import type { Hex } from "viem"
 import { generatePrivateKey } from "viem/accounts"
-import type { Point } from "@zk-kit/baby-jubjub"
-import type { CipherText } from "@zk-kit/poseidon-cipher"
 import {
   ConstCommitment,
   NewCommitment,
   RecoverCommitment
 } from "@privacy-pool-v1/core-ts/domain"
-import type { TCommitment, CCommitment } from "@privacy-pool-v1/core-ts/domain"
+import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 import { mulPointEscalar } from "@zk-kit/baby-jubjub"
 
 function randomBigint(minValue: bigint, maxValue: bigint): bigint {

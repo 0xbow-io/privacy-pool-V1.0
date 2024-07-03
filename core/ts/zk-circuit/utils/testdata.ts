@@ -1,10 +1,18 @@
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { poseidon2 } from "poseidon-lite"
+import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
+import {
+  NewCommitment,
+} from "@privacy-pool-v1/core-ts/domain"
+
+/*
 import type { PrivacyKey } from "@privacy-pool-v1/core-ts/account"
 import {
   CreateCommitment,
   CreatePrivacyKey
 } from "@privacy-pool-v1/core-ts/account"
+*/
+
 // function will generate 2 input amounts & 2 output amounts
 export const generateTestAmounts = (
   numOfElements: number,
