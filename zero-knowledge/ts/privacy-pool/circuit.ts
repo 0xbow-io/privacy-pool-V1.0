@@ -24,29 +24,29 @@ export namespace PrivacyPool {
   export const mainfile = "./privacy-pool/privacyPool"
 
   export const publicInputs: string[] = [
-    "commitFlag",
-    "publicVal",
     "scope",
-    "actualMerkleTreeDepth",
-    "inputNullifier",
-    "outputCommitment"
+    "actualTreeDepth",
+    "context",
+    "externIO",
+    "newSaltPublicKey",
+    "newCiphertext"
   ]
   export const privateInputs: string[] = [
-    "inputPublicKey",
-    "inputValue",
-    "inputSalt",
-    "inputSigR8",
-    "inSigS",
-    "inputLeafIndex",
-    "merkleProofSiblings",
-    "outputPublicKey",
-    "outputValue",
-    "outputSalt"
+    "PrivateKey",
+    "Nonce",
+    "ExSaltPublicKey",
+    "ExCiphertext",
+    "ExIndex",
+    "ExSiblings"
   ]
   export const inputs: string[] = publicInputs.concat(privateInputs)
-  export const outputs: string[] = ["merkleRoot"]
+  export const outputs: string[] = [
+    "newNullRoot",
+    "newCommitmentRoot",
+    "newCommitmentHash"
+  ]
 
-  export const default_params = [32, 2, 2]
+  export const default_params = [32, 7, 4, 2, 2]
 
   export const dependencies: string[] = [
     getPath(globalConf.NODE_MODULES, "circomlib", ["circuits"]),
@@ -58,16 +58,8 @@ export namespace PrivacyPool {
       "poseidon-cipher.circom",
       "src"
     ]),
-    getPath(globalConf.NODE_MODULES, "@zk-kit", [
-      "ecdh.circom",
-      "src"
-    ]),
-    getPath(globalConf.NODE_MODULES, "@zk-kit", [
-      "utils.circom",
-      "src"
-    ]),
-    //getPath(globalConf.NODE_MODULES, "@zk-kit", ["circuits", "circom"]),
-    //getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "trees"]),
+    getPath(globalConf.NODE_MODULES, "@zk-kit", ["ecdh.circom", "src"]),
+    getPath(globalConf.NODE_MODULES, "@zk-kit", ["utils.circom", "src"]),
     getPath(globalConf.NODE_MODULES, "maci-circuits", ["circom", "utils"])
   ]
 
@@ -111,7 +103,8 @@ export namespace PrivacyPool {
     params: default_params
   }
 
-  export const circomkit = (_circuitConf = circuitConf) => new circomKit(id, circomkitConf, _circuitConf)
+  export const circomkit = (_circuitConf = circuitConf) =>
+    new circomKit(id, circomkitConf, _circuitConf)
 
   export const build_artifacts = async (): Promise<string> => {
     const circuit = circomkit()
