@@ -4,10 +4,12 @@ import { generatePrivateKey } from "viem/accounts"
 import {
   ConstCommitment,
   NewCommitment,
-  RecoverCommitment
+  RecoverCommitment,
+  DerivePrivacyKeys
 } from "@privacy-pool-v1/core-ts/domain"
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 import { mulPointEscalar } from "@zk-kit/baby-jubjub"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 
 function randomBigint(minValue: bigint, maxValue: bigint): bigint {
   const range = maxValue - minValue + 1n // Calculate the range of possible values
@@ -23,34 +25,34 @@ describe("Verifying Commitment Class", () => {
 
   beforeEach(() => {
     for (let i = 0; i < _testSize; i++) {
-      const out = NewCommitment({
+      const _pK = generatePrivateKey()
+      const nonce: bigint = randomBigint(0n, 1000n)
+      const c = NewCommitment({
         _pK: _pK,
-        _nonce: randomBigint(0n, 1000n),
+        _nonce: nonce,
         _scope: randomBigint(0n, 1000n),
         _value: randomBigint(0n, 1000n)
       })
-      _secrets.push(out.secrets)
-      commitments.push(out.commitment)
+      commitments.push(c)
       // recover the commitment from the encrypted commitment
       recovered.push(
         RecoverCommitment(
           {
-            _pKScalar: out.secrets.pKScalar,
-            _nonce: out.secrets.nonce,
+            _pKScalar: deriveSecretScalar(_pK),
+            _nonce: nonce,
             _len: ConstCommitment.STD_TUPLE_SIZE,
-            _saltPk: out.commitment._public.saltPk,
-            _cipher: out.commitment._public.cipher
+            _saltPk: c._public.saltPk,
+            _cipher: c._public.cipher
           },
           {
-            _hash: out.commitment.hash(),
-            _tuple: out.commitment.asTuple(),
-            _secet: mulPointEscalar(out.secrets.Pk, out.secrets.pKScalar)
+            _hash: c.hash(),
+            _tuple: c.asTuple()
           }
         )
       )
     }
   })
-  test("Verifying Generated & Receoverd Commitments", () => {
+  test("Verifying Generated & Reccovered Commitments", () => {
     for (let i = 0; i < _testSize; i++) {
       console.log("commitment: ", commitments[i].toJSON())
       expect(commitments[i].isEqual(recovered[i])).toBe(true)

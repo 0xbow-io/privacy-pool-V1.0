@@ -7,178 +7,103 @@ import type {
   MerkleProofT,
   Groth16_VKeyJSONT,
   CircomArtifactT,
-  PackedGroth16ProofT
+  StdPackedGroth16ProofT
 } from "@privacy-pool-v1/core-ts/zk-circuit"
-import type { Commitment } from "@privacy-pool-v1/core-ts/account"
+import type { Commitment, TCommitment } from "@privacy-pool-v1/core-ts/domain"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account"
 import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
-
+import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/core-ts/domain"
 import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
+import type { Point } from "@zk-kit/baby-jubjub"
 import {
   fetchJsonWithRetry,
   loadBytesFromUrl
 } from "@privacy-pool-v1/global/utils/fetch"
 
 export namespace FnPrivacyPool {
-  /**
-   * returns the public value which is the
-  // difference between the sum of
-   * output commitments and input commmitments
-   * @param inputs A set of commitments
-   * @param outputs A set of commitments
-   * @param diff The difference between
-            the sum of output
-            commitments and input commitments
-            either automatically calculated or provid a
-            function to calculate the difference (diffFn)
-   */
-
-  export const calcPublicValFn =
+  export const getExternIO =
     <
       argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      OuT extends {
-        publicVal: bigint | number
-        isCommit: boolean
-      }
+      OuT = [bigint, bigint]
     >(
       args: argsT,
-      diffFn: (args: argsT) => bigint | number = (
-        args: argsT
-      ): bigint | number =>
-        (args.outputs
-          ? args.outputs.reduce((acc, commitment) => acc + commitment.value, 0n)
+      diffFn: (args: argsT) => bigint = (args: argsT): bigint =>
+        (args.new
+          ? args.new.reduce(
+              (acc, commitment) => acc + commitment.asTuple()[0],
+              0n
+            )
           : 0n) -
-        (args.inputs
-          ? args.inputs.reduce((acc, commitment) => acc + commitment.value, 0n)
+        (args.existing
+          ? args.existing.reduce(
+              (acc, commitment) => acc + commitment.asTuple()[0],
+              0n
+            )
           : 0n)
     ) =>
-    (diff: bigint | number = diffFn(args)): OuT => {
-      return { publicVal: diff > 0n ? diff : -diff, isCommit: diff > 0n } as OuT
+    (diff: bigint = diffFn(args)): OuT => {
+      return [diff > 0 ? diff : 0n, diff < 0 ? diff * -1n : 0n] as OuT
     }
 
-  /**
-   * computes merkle proof for a commitment
-   * @param index leaf index of commitment
-   * @param mt lean-incremental merkle tree from zk-kit
-   * @param maxDepth maximum permitted depht of the merkle tree.
-   */
-  export const merkleProofFn =
-    <
-      argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      OuT extends Required<MerkleProofT>
-    >(
-      args: argsT
-    ) =>
-    (leafIndex: bigint | number): OuT => {
-      if (!args.mt) {
-        throw Error("Merkle tree is not defined")
-      }
-      try {
-        const proof = args.mt.generateProof(Number(leafIndex))
-        const depth = proof.siblings.length
-        for (let i = 0; i < (args.maxDepth ? args.maxDepth : 32); i += 1) {
-          if (proof.siblings[i] === undefined) {
-            proof.siblings[i] = BigInt(0)
-          }
-        }
-        return {
-          Root: proof.root,
-          Depth: BigInt(depth),
-          LeafIndex: BigInt(proof.index),
-          Siblings: proof.siblings
-        } as OuT
-      } catch (e) {
-        throw Error(`Error generating merkle proof for leaf index ${leafIndex}`)
-      }
-    }
-
-  export const merkleProofsFn =
-    <
-      argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      OuT extends Required<MerkleProofT>
-    >(
-      args: argsT,
-      merkleProof: (
-        args: argsT
-      ) => (idx: bigint | number) => OuT = merkleProofFn
-    ) =>
-    (
-      dummyPredicate: (c: Commitment) => boolean = (c: Commitment) => c.isDummy
-    ): OuT[] =>
-      args.inputs
-        ? args.inputs.map((input) =>
-            dummyPredicate(input)
-              ? (DummyMerkleProof as OuT)
-              : (merkleProof(args)(input.index) as OuT)
-          )
-        : []
-
-  export const getInputsFn =
+  export const getCircuitInFn =
     <
       argsT extends Required<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      publicValT extends {
-        publicVal: bigint
-        isCommit: boolean
-      },
-      OuT extends Required<TPrivacyPool.CircuitInT>
+      InputsT extends Required<TPrivacyPool.CircuitInT>,
+      ioT = [bigint, bigint]
     >(
       args: argsT
     ) =>
     (
       // calculate public value & isCommit
-      publicVal: publicValT = calcPublicValFn(args)() as publicValT,
+      externIO: ioT = getExternIO(args)() as ioT,
       // compute merkle proofs
-      merkleProofs: MerkleProofT[] = merkleProofsFn(args)() as MerkleProofT[]
-    ): OuT => {
-      // Verify args
-      for (let i = 0; i < args.inputs.length; i += 1) {
-        if (args.inputs[i].isDummy) {
-          continue
-        }
-        if (
-          // check that signatures are valid
-          !FnCommitment.VerifySignatureFn(
-            args.inputs[i].signature,
-            args.inputs[i].pubKey.rawPubKey,
-            args.inputs[i].asArray()
-          )
-          // TO-DO check merkle proofs are valid
-        ) {
-          throw Error(`Invalid signature for ${args.inputs[i].hash}`)
-        }
-      }
+      merkleProofs: MerkleProofT[] = MerkleTreeInclusionProofs(
+        args
+      )() as MerkleProofT[]
+    ): InputsT => {
+      // To-do add some verification checks here:
+      //for (let i = 0; i < args.existing.length; i += 1) {
+      //throw Error(`Invalid signature for ${args.inputs[i].hash}`)
+      //}
       return {
         inputs: {
-          commitFlag: publicVal.isCommit ? 1n : 0n,
-          publicVal: publicVal.publicVal,
           scope: args.scope,
-          inputNullifier: args.inputs.map((input) => input.nullifier),
-          outputCommitment: args.outputs.map((output) => output.hash()),
-          inputValue: args.inputs.map((input) => input.value),
-          inputPublicKey: args.inputs.map((input) =>
-            input.pubKey.asCircuitInputs()
+          actualTreeDepth: merkleProofs[0].Depth,
+          context: args.context,
+          externIO: externIO,
+          existingStateRoot: merkleProofs[0].Root,
+          newSaltPublicKey: args.new.map(
+            (c) => c.public().saltPk as [bigint, bigint]
           ),
-          inputSalt: args.inputs.map((input) => input.salt),
-          inputSigR8: args.inputs.map((input) => [
-            input.signature.R8[0],
-            input.signature.R8[1]
-          ]),
-          inputSigS: args.inputs.map((input) => input.signature.S),
-          outputValue: args.outputs.map((output) => output.value),
-          outputPublicKey: args.outputs.map((output) =>
-            output.pubKey.asCircuitInputs()
+          newCiphertext: args.new.map((c) =>
+            c.public().cipher.map((x) => x as bigint)
+          ) as TCommitment.CipherT[],
+          PrivateKey: args.pkScalars,
+          Nonce: args.nonces,
+          ExSaltPublicKey: args.existing.map(
+            (c) => c.public().saltPk as [bigint, bigint]
           ),
-          outputSalt: args.outputs.map((output) => output.salt),
-
-          actualMerkleTreeDepth:
-            merkleProofs[0].Root > 0n
-              ? merkleProofs[0].Depth
-              : merkleProofs[1].Depth,
-          inputLeafIndex: merkleProofs.map((proof) => proof.LeafIndex),
-          merkleProofSiblings: merkleProofs.map((proof) => proof.Siblings)
-        },
-        expectedOut: [merkleProofs[0].Root]
-      } as OuT
+          ExCiphertext: args.existing.map((c) =>
+            c.public().cipher.map((x) => x as bigint)
+          ) as TCommitment.CipherT[],
+          ExIndex: merkleProofs.map((p) => p.index),
+          ExSiblings: merkleProofs.map((p) => p.Siblings)
+        } as TPrivacyPool.InT,
+        expectedOut: {
+          newNullRoot: [
+            ...args.existing.map((c) => c.nullRoot),
+            ...args.new.map((c) => c.nullRoot)
+          ],
+          newCommitmentRoot: [
+            ...args.existing.map((c) => c.commitmentRoot),
+            ...args.new.map((c) => c.commitmentRoot)
+          ],
+          newCommitmentHash: [
+            ...args.existing.map((c) => c.hash()),
+            ...args.new.map((c) => c.hash())
+          ]
+        } as TPrivacyPool.PublicOutT
+      } as InputsT
     }
 
   export const LoadVkeyFn =
@@ -279,12 +204,12 @@ export namespace FnPrivacyPool {
 
   export const parseOutputFn =
     <
-      packedT extends PackedGroth16ProofT<bigint>,
+      stdPackedT extends StdPackedGroth16ProofT<bigint>,
       proofT extends SnarkJSOutputT | CircomOutputT
     >(
       opt: "parse" | "pack" | "none" = "parse"
     ) =>
-    (output: proofT): proofT | packedT => {
+    (output: proofT): proofT | stdPackedT => {
       return opt === "parse"
         ? ({
             proof: {
@@ -299,13 +224,13 @@ export namespace FnPrivacyPool {
             publicSignals: output.publicSignals.map((x) => BigInt(x))
           } as proofT)
         : opt === "pack"
-          ? (packGroth16ProofFn(output as CircomOutputT) as packedT)
+          ? (packStdGroth16ProofFn(output as CircomOutputT) as stdPackedT)
           : output
     }
 
-  export const packGroth16ProofFn = (
+  export const packStdGroth16ProofFn = (
     outputs: CircomOutputT
-  ): PackedGroth16ProofT<bigint> => {
+  ): StdPackedGroth16ProofT<bigint> => {
     return [
       [outputs.proof.pi_a[0], outputs.proof.pi_a[1]],
       [
@@ -322,7 +247,34 @@ export namespace FnPrivacyPool {
         outputs.publicSignals[5],
         outputs.publicSignals[6],
         outputs.publicSignals[7],
-        outputs.publicSignals[8]
+        outputs.publicSignals[8],
+        outputs.publicSignals[9],
+        outputs.publicSignals[10],
+        outputs.publicSignals[11],
+        outputs.publicSignals[12],
+        outputs.publicSignals[13],
+        outputs.publicSignals[14],
+        outputs.publicSignals[15],
+        outputs.publicSignals[16],
+        outputs.publicSignals[17],
+        outputs.publicSignals[18],
+        outputs.publicSignals[19],
+        outputs.publicSignals[20],
+        outputs.publicSignals[21],
+        outputs.publicSignals[22],
+        outputs.publicSignals[23],
+        outputs.publicSignals[24],
+        outputs.publicSignals[25],
+        outputs.publicSignals[26],
+        outputs.publicSignals[27],
+        outputs.publicSignals[28],
+        outputs.publicSignals[29],
+        outputs.publicSignals[30],
+        outputs.publicSignals[31],
+        outputs.publicSignals[32],
+        outputs.publicSignals[33],
+        outputs.publicSignals[34],
+        outputs.publicSignals[35]
       ]
     ]
   }

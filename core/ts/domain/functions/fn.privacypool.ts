@@ -1,13 +1,38 @@
 import type {
   TPrivacyPool,
-  MerkleProofT,
+  MerkleProofT
 } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
-import { LeanIMT } from "@zk-kit/lean-imt"
+import type { LeanIMT } from "@zk-kit/lean-imt"
 
 import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
 
-export const MerkleTreeInclusionProof = (mt: LeanIMT, maxDepth = 32) => (leafindex: bigint) =>  FnPrivacyPool.merkleProofFn({ mt, maxDepth })(leafindex)
+export const MerkleTreeInclusionProof =
+  (mt: LeanIMT, maxDepth = 32) =>
+  (leafindex: bigint) =>
+    FnPrivacyPool.merkleProofFn({ mt, maxDepth })(leafindex)
+
+export const MerkleTreeInclusionProofs =
+  <
+    argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
+    OuT extends Required<MerkleProofT>
+  >(
+    args: argsT,
+    merkleProof: (
+      args: argsT
+    ) => (idx: bigint | number) => OuT = FnPrivacyPool.merkleProofFn
+  ) =>
+  (
+    dummyPredicate: (c: Commitment) => boolean = (c: Commitment) => c.isDummy()
+  ): OuT[] =>
+    args.existing
+      ? args.existing.map((commitment) =>
+          dummyPredicate(commitment)
+            ? (DummyMerkleProof as OuT)
+            : (merkleProof(args)(commitment.index) as OuT)
+        )
+      : []
+
 export namespace FnPrivacyPool {
   /**
    * computes merkle proof for a commitment
@@ -37,33 +62,13 @@ export namespace FnPrivacyPool {
         return {
           Root: proof.root,
           Depth: BigInt(depth),
-          index: proof.index ? BigInt(proof.index): (0n), 
+          index: proof.index ? BigInt(proof.index) : 0n,
           Siblings: proof.siblings
         } as OuT
       } catch (e) {
-        throw Error(`Error generating merkle proof for leaf index ${leafIndex}, error: ${e}`)
+        throw Error(
+          `Error generating merkle proof for leaf index ${leafIndex}, error: ${e}`
+        )
       }
     }
-
-  export const merkleProofsFn =
-    <
-      argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      OuT extends Required<MerkleProofT>
-    >(
-      args: argsT,
-      merkleProof: (
-        args: argsT
-      ) => (idx: bigint | number) => OuT = merkleProofFn
-    ) =>
-    (
-      dummyPredicate: (c: Commitment) => boolean = (c: Commitment) =>
-        c.isDummy()
-    ): OuT[] =>
-      args.inputs
-        ? args.inputs.map((input) =>
-            dummyPredicate(input)
-              ? (DummyMerkleProof as OuT)
-              : (merkleProof(args)(input.index) as OuT)
-          )
-        : []
 }

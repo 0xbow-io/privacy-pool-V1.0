@@ -40,15 +40,17 @@ export namespace CCommitment {
   // hash: computes the poseidon hash of the commitment tuple
   export class CommitmentC implements Commitment {
     _index = 0n
-    commitmentRoot = 0n
-    nullRoot = 0n
+    _commitmentRoot = 0n
+    _nullRoot = 0n
     constructor(
-      publicKey: Point<bigint>,
-      encryptionKey: Point<bigint>,
       private _private: {
+        pkScalar: bigint
+        nonce: bigint
         value: bigint
         secret: Point<bigint>
       } = {
+        pkScalar: 0n,
+        nonce: 0n,
         value: 0n,
         secret: [0n, 0n]
       },
@@ -65,53 +67,49 @@ export namespace CCommitment {
         saltPk: [0n, 0n]
       }
     ) {
-      /*
-        // compute commitment root
-        // we will use 3 levels which holds 8 leaves
-        // this fits all ciphertext elements + commitmentHash
-        var computedRoot = CheckRoot(3)([
-            ciphertext[0], ciphertext[1],
-            ciphertext[2], ciphertext[3],
-            ciphertext[4], ciphertext[5],
-            ciphertext[6], commimentHash
-        ]);
-        commitmentRoot <== computedRoot;
-      */
+      this.computeCRoot()
+      this.computeNRoot()
+    }
+
+    computeCRoot(): bigint {
       const commitmentSubTree = new LeanIMT(hashLeftRight)
       for (let i = 0; i < this._public.cipher.length; i++) {
         commitmentSubTree.insert(this._public.cipher[i])
       }
       commitmentSubTree.insert(this.hash())
-      this.commitmentRoot = commitmentSubTree.root
+      this._commitmentRoot = commitmentSubTree.root
+      return this.commitmentRoot
+    }
 
-      /*
-      // null root is the computed root of all keys
-      // that was used to encrpt / decrypt the ciphertext
-      // this acts somewhat liek a nullifier to the commitmentRoot
-      // unlike the commitmentRoot, which can be verified externally to the circuit
-      // as all elements are public, the nullRoot contains only private elements aside
-      // from the saltPublicKey.
-      // A false nullRoot would invalidate the computedTrueRoots
-      // membership proof (different cipherText hash or commitment hash)
-      var computedNullRoot = CheckRoot(3)([
-          publicKey[0], publicKey[1],
-          secretKey[0], secretKey[1],
-          saltPublicKey[0], saltPublicKey[1],
-          encryptionKey[0], encryptionKey[1]
-       ]);
-    */
+    get commitmentRoot(): bigint {
+      return this._commitmentRoot
+    }
+
+    computeNRoot(): bigint {
       const nullSubTree = new LeanIMT(hashLeftRight)
-      nullSubTree.insert(publicKey[0])
-      nullSubTree.insert(publicKey[1])
+      // generate public key of pkScalar
+      const Pk: Point<bigint> = mulPointEscalar(Base8, this._private.pkScalar)
+      // recover encryption key
+      const Ek: Point<bigint> = mulPointEscalar(
+        this._public.saltPk,
+        this._private.pkScalar
+      )
 
+      nullSubTree.insert(Pk[0])
+      nullSubTree.insert(Pk[1])
       nullSubTree.insert(this._private.secret[0])
       nullSubTree.insert(this._private.secret[1])
       nullSubTree.insert(this._public.saltPk[0])
       nullSubTree.insert(this._public.saltPk[1])
+      nullSubTree.insert(Ek[0])
+      nullSubTree.insert(Ek[1])
+      this._nullRoot = nullSubTree.root
 
-      nullSubTree.insert(encryptionKey[0])
-      nullSubTree.insert(encryptionKey[1])
-      this.nullRoot = nullSubTree.root
+      return this._nullRoot
+    }
+
+    get nullRoot(): bigint {
+      return this._nullRoot
     }
 
     // Binding of value to domain (scope) & owernship
@@ -144,9 +142,13 @@ export namespace CCommitment {
           saltPk: this._public.saltPk.map((v) => v.toString())
         },
         private: {
+          nonce: this._private.nonce.toString(),
           value: this._private.value.toString(),
           secret: this._private.secret.map((v) => v.toString())
-        }
+        },
+        hash: this.hash().toString(),
+        cRoot: this.commitmentRoot.toString(),
+        nullRoot: this.nullRoot.toString()
       }
     }
 
@@ -160,10 +162,14 @@ export namespace CCommitment {
       const _tuple = c.asTuple()
       return (
         this.asTuple().every((v, i) => v === _tuple[i]) &&
+        // same scope
+        this._public.scope === c.public().scope &&
         (!sameSalt ||
           this._public.cipher.every((v, i) => v === c.public().cipher[i])) &&
         (!sameSalt ||
-          this._public.saltPk.every((v, i) => v === c.public().saltPk[i]))
+          this._public.saltPk.every((v, i) => v === c.public().saltPk[i])) &&
+        this.nullRoot === c.nullRoot &&
+        this.commitmentRoot === c.commitmentRoot
       )
     }
 
@@ -171,12 +177,7 @@ export namespace CCommitment {
       (args: { _pK: Hex; _nonce: bigint; _scope: bigint; _value: bigint }) =>
       (
         binds = FnCommitment.bindFn(args)(), // bin the value with scope & key
-        c = new CommitmentC(
-          binds.secrets.Pk,
-          binds.secrets.eK,
-          binds.private,
-          binds.public
-        ) // wrap binding with commitment class
+        c = new CommitmentC(binds.private, binds.public) // wrap binding with commitment class
       ) => {
         // challenge the commitment
         // {correct computation of hash}
@@ -189,8 +190,8 @@ export namespace CCommitment {
         const _tuple = c.asTuple()
         const decrypted = poseidonDecrypt(
           c._public.cipher,
-          binds.secrets.eK,
-          binds.secrets.nonce,
+          binds.challenges.eK,
+          binds.private.nonce,
           ConstCommitment.STD_TUPLE_SIZE
         )
         for (let i = 0; i < ConstCommitment.STD_TUPLE_SIZE; i++) {
@@ -201,10 +202,7 @@ export namespace CCommitment {
             throw new Error("Incorrect tuple was computed")
           }
         }
-        return {
-          commitment: c,
-          secrets: binds.secrets
-        }
+        return c
       }
 
     static recover =
@@ -220,16 +218,16 @@ export namespace CCommitment {
         challenge: {
           _hash?: bigint
           _tuple?: bigint[]
-          _secet?: Point<bigint>
+          _secret?: Point<bigint>
         }
       ) =>
       (
         recovered = FnCommitment.recoverFn(args, challenge)() // recover private values from cipher
       ) =>
         new CommitmentC(
-          mulPointEscalar(Base8, args._pKScalar),
-          recovered.EncryptionKey,
           {
+            pkScalar: args._pKScalar,
+            nonce: args._nonce,
             value: recovered.Tuple[0],
             secret: [recovered.Tuple[2], recovered.Tuple[3]]
           },

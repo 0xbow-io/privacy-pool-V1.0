@@ -1,10 +1,6 @@
-import {
-  genRandomSalt,
-} from "maci-crypto"
+import { genRandomSalt } from "maci-crypto"
 import { poseidon4 } from "poseidon-lite"
-import {
-  deriveSecretScalar,
-} from "@zk-kit/eddsa-poseidon"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Hex } from "viem"
 import type { Point } from "@zk-kit/baby-jubjub"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
@@ -14,16 +10,18 @@ import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 
-
-export const DerivePrivacyKeys = (_pK: Hex = generatePrivateKey(), withSalt = true) => (
+export const DerivePrivacyKeys =
+  (_pK: Hex = generatePrivateKey(), withSalt = true) =>
+  (
     PrivateKey = deriveSecretScalar(_pK),
     PublicKey = mulPointEscalar(Base8, PrivateKey),
-    Secret = mulPointEscalar(PublicKey, PrivateKey) ,
-    Salt = withSalt ? genRandomSalt(): 0n,
-    SaltPk =withSalt ? mulPointEscalar(Base8, Salt) : [0n,0n],
-    Ek = withSalt ? mulPointEscalar(PublicKey, Salt): [0n,0n]
+    Secret = mulPointEscalar(PublicKey, PrivateKey),
+    Salt = withSalt ? genRandomSalt() : 0n,
+    SaltPk = withSalt ? mulPointEscalar(Base8, Salt) : [0n, 0n],
+    Ek = withSalt ? mulPointEscalar(PublicKey, Salt) : [0n, 0n]
   ) => {
     return {
+      pkHex: _pK,
       pKScalar: PrivateKey,
       Pk: PublicKey,
       SaltPk: SaltPk,
@@ -64,18 +62,14 @@ export namespace FnCommitment {
       Hash = hashFn(Tuple), // Hash the tuple
       Ciphertext = poseidonEncrypt(Tuple, Ek, args._nonce) // Encrypt the tuple
     ): {
-      secrets: {
-        pKScalar: bigint
-        Pk: Point<bigint>
-        salt: bigint
-        eK: Point<bigint>
-        nonce: bigint
-      }
       challenges: {
         hash: bigint
         tuple: TCommitment.TupleT
+        eK: Point<bigint>
       }
       private: {
+        pkScalar: bigint
+        nonce: bigint
         value: bigint
         secret: Point<bigint>
       }
@@ -86,7 +80,7 @@ export namespace FnCommitment {
       }
     } => {
       // Verify computation of encryption key:
-      // Recovery of ECDH shared secret using privatekey and the public key of the Salt.
+      // Recovery of ECDH shared secret using private key and the public key of the Salt.
       const _eK = mulPointEscalar(SaltPk, PrivateKey)
       if (Ek[0] !== _eK[0] || Ek[1] !== _eK[1]) {
         throw new Error(
@@ -94,25 +88,21 @@ export namespace FnCommitment {
         )
       }
       return {
-        secrets: {
-          pKScalar: PrivateKey,
-          Pk: PublicKey,
-          salt: Salt,
-          eK: Ek,
-          nonce: args._nonce
-        },
         private: {
+          pkScalar: PrivateKey,
+          nonce: args._nonce,
           value: args._value,
           secret: Secret
-        },
-        challenges: {
-          hash: Hash,
-          tuple: Tuple
         },
         public: {
           scope: args._scope,
           cipher: Ciphertext,
           saltPk: SaltPk
+        },
+        challenges: {
+          hash: Hash,
+          tuple: Tuple,
+          eK: Ek
         }
       }
     }
@@ -133,7 +123,7 @@ export namespace FnCommitment {
       challenge: {
         _hash?: bigint
         _tuple?: bigint[]
-        _secet?: Point<bigint>
+        _secret?: Point<bigint>
       } = {}
     ) =>
     (
@@ -160,13 +150,13 @@ export namespace FnCommitment {
           }
         }
       }
-      if (challenge._secet) {
+      if (challenge._secret) {
         if (
-          Tuple[2] !== challenge._secet[0] ||
-          Tuple[3] !== challenge._secet[1]
+          Tuple[2] !== challenge._secret[0] ||
+          Tuple[3] !== challenge._secret[1]
         ) {
           throw new Error(
-            `Invalid secret, got ${Tuple[2]}:${Tuple[3]} expected: ${challenge._secet[0]}:${challenge._secet[1]}`
+            `Invalid secret, got ${Tuple[2]}:${Tuple[3]} expected: ${challenge._secret[0]}:${challenge._secret[1]}`
           )
         }
       }

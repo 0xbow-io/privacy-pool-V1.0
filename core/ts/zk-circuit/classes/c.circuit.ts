@@ -4,7 +4,7 @@ import type {
   SnarkJSOutputT,
   CircomOutputT,
   CircomArtifactsT,
-  PackedGroth16ProofT
+  StdPackedGroth16ProofT
 } from "@privacy-pool-v1/core-ts/zk-circuit"
 import type { CircuitSignals } from "snarkjs"
 import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
@@ -22,7 +22,7 @@ export namespace CCircuit {
       inputs: CircuitSignals
     ) => Promise<SnarkJSOutputT | CircomOutputT>
     _verifier?: (
-      proof: SnarkJSOutputT | CircomOutputT | PackedGroth16ProofT
+      proof: SnarkJSOutputT | CircomOutputT | StdPackedGroth16ProofT
     ) => Promise<boolean>
 
     constructor(public artifacts: CircomArtifactsT) {
@@ -31,7 +31,7 @@ export namespace CCircuit {
     }
 
     verify = async <
-      outputT extends SnarkJSOutputT | CircomOutputT | PackedGroth16ProofT,
+      outputT extends SnarkJSOutputT | CircomOutputT | StdPackedGroth16ProofT,
       resT extends boolean | outputT | { ok: boolean; out: outputT }
     >(
       output: outputT,
@@ -55,7 +55,7 @@ export namespace CCircuit {
     prove =
       <
         argsT extends TPrivacyPool.GetCircuitInArgsT,
-        outputT extends SnarkJSOutputT | CircomOutputT | PackedGroth16ProofT,
+        outputT extends SnarkJSOutputT | CircomOutputT | StdPackedGroth16ProofT,
         resT extends boolean | outputT | { ok: boolean; out: outputT }
       >(
         args: argsT,

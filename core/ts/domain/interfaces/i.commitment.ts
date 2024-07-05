@@ -9,6 +9,7 @@ export namespace ICommitment {
       saltPk: Point<bigint> | string[]
     },
     PrivT = {
+      nonce: bigint | string
       value: bigint | string
       secret: Point<bigint> | string[]
     }
@@ -25,6 +26,9 @@ export namespace ICommitment {
     toJSON: () => {
       public: PubT
       private: PrivT
+      hash: string
+      cRoot: string
+      nullRoot: string
     }
   }
 }

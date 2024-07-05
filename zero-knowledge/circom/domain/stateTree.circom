@@ -80,7 +80,7 @@ template MerkleGeneratePathIndices(levels) {
 /**
  Taken from MACI:
  https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
- Due to invalid version from npm. 
+ Due to invalid version from npm.
  * Verifies the correct construction of a Merkle tree from a set of leaves.
  * Given a Merkle root and a list of leaves, check if the root is the
  * correct result of inserting all the leaves into the tree (in the given order).
@@ -90,10 +90,10 @@ template CheckRoot(levels) {
     var totalLeaves = 2 ** levels;
     // The number of first-level hashers needed, equal to half the total leaves, as each hasher combines two leaves.
     var numLeafHashers = totalLeaves / 2;
-    // The number of intermediate hashers, one less than the number of leaf hashers, 
+    // The number of intermediate hashers, one less than the number of leaf hashers,
     // as each level of hashing reduces the number of hash elements by about half.
     var numIntermediateHashers = numLeafHashers - 1;
-    
+
     // Array of leaf values input to the circuit.
     signal input leaves[totalLeaves];
 

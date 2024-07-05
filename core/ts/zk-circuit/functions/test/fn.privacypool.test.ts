@@ -30,39 +30,6 @@ function genTestCommitments(
 }
 
 describe("Test Functions", () => {
-  describe("Test MerkleProofFn", () => {
-    let mt: LeanIMT
-    beforeEach(() => {
-      mt = new LeanIMT(hashLeftRight)
-      // insert commitments
-      for (let i = 1; i < 100; i++) {
-        mt.insert(BigInt(i))
-      }
-    })
-
-    test("Generate Merkle Proof of existing commitment", () => {
-      expect(mt.root).not.toEqual(0n)
-      expect(mt.size).toEqual(99)
-
-      const proof = FnPrivacyPool.merkleProofFn({
-        mt: mt,
-        maxDepth: 32
-      })(55n)
-      expect(proof.Root).toEqual(mt.root)
-      expect(proof.Depth).toEqual(7n)
-      expect(proof.LeafIndex).toEqual(55n)
-      expect(proof.Siblings.length).toEqual(32)
-    })
-
-    test("Generating merkle-proof of non-existing commitment should throw", () => {
-      expect(() => {
-        FnPrivacyPool.merkleProofFn({
-          mt: mt,
-          maxDepth: 32
-        })(120n)
-      }).toThrow()
-    })
-  })
   describe("Test CalcPublicValFn", () => {
     let pK: PrivacyKey
     beforeEach(() => {

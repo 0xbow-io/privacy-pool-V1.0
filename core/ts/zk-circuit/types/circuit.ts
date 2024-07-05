@@ -1,6 +1,7 @@
 import type { Groth16Proof, PublicSignals } from "snarkjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
-import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
+import type { Commitment, TCommitment } from "@privacy-pool-v1/core-ts/domain"
+import type { Point } from "@zk-kit/baby-jubjub"
 
 export type Groth16_VKeyJSONT = {
   protocol: string
@@ -28,11 +29,60 @@ export type Groth16ProofT<T = bigint> = {
   protocol: string
   curve: string
 }
-export type PackedGroth16ProofT<T = bigint | string> = [
+
+// Note, this is for the params:
+// 32, 7, 4, 2, 2
+// which is the default params for the circuit
+// Max Merkle Depth of 32
+// Cipher Text of 7 elements
+// Commitment tuple of 4 elements
+// 2 existing & 2 new commitments
+export type StdPackedGroth16ProofT<T = bigint | string> = [
   [T, T], // pi_a
   [[T, T], [T, T]], // pi_b
   [T, T], // pi_c
-  [T, T, T, T, T, T, T, T, T] // publicInput
+  [
+    /// **** Public Output Signals ****
+    T, // newRoot[0]
+    T, // newRoot[1]
+    T, // newRoot[2]
+    T, // newRoot[3]
+    T, // newCommitmentRoot[0]
+    T, // newCommitmentRoot[1]
+    T, // newCommitmentRoot[2]
+    T, // newCommitmentRoot[3]
+    T, // newCommitmentHash[0]
+    T, // newCommitmentHash[1]
+    T, // newCommitmentHash[2]
+    T, // newCommitmentHash[3]
+    /// **** End of Public Output Signals ****
+    /// **** Public Input Signals ****
+    T, // scope
+    T, // actualTreeDepth
+    T, // context
+    T, // externIO[0]
+    T, // externIO[1]
+    T, // existingStateRoot
+    T, // newSaltPublicKey[0][0]
+    T, // newSaltPublicKey[0][1]
+    T, // newSaltPublicKey[1][0]
+    T, // newSaltPublicKey[1][1]
+    T, // newCiphertext[0][0]
+    T, // newCiphertext[0][1]
+    T, // newCiphertext[0][2]
+    T, // newCiphertext[0][3]
+    T, // newCiphertext[0][4]
+    T, // newCiphertext[0][5]
+    T, // newCiphertext[0][6]
+    T, // newCiphertext[1][0]
+    T, // newCiphertext[1][1]
+    T, // newCiphertext[1][2]
+    T, // newCiphertext[1][3]
+    T, // newCiphertext[1][4]
+    T, // newCiphertext[1][5]
+    T // newCiphertext[1][6]
+    /// **** End of Public Input Signals ****
+  ] // publicInput
 ]
 
 export type PublicSignalsT<T = bigint> = T[]
@@ -49,39 +99,45 @@ export type CircomOutputT = {
 
 export namespace TPrivacyPool {
   export type PubInT<T = bigint> = {
-    commitFlag: T
-    publicVal: T
     scope: T
-    actualMerkleTreeDepth: T
-    inputNullifier: T[]
-    outputCommitment: T[]
+    actualTreeDepth: T
+    context: T
+    externIO: [T, T]
+    existingStateRoot: T
+    newSaltPublicKey: [T, T][]
+    newCiphertext: TCommitment.CipherT[]
   }
 
-  export type PrivInT<T = bigint | string> = {
-    inputPublicKey: T[][]
-    inputValue: T[]
-    inputSalt: T[]
-    inputSigR8: T[][]
-    inputSigS: T[]
-    inputLeafIndex: T[]
-    merkleProofSiblings: T[][]
-    outputPublicKey: T[][]
-    outputValue: T[]
-    outputSalt: T[]
+  export type PrivInT<T = bigint, PT = Point> = {
+    PrivateKey: T[]
+    Nonce: T[]
+    ExSaltPublicKey: [T, T][]
+    ExCiphertext: TCommitment.CipherT[]
+    ExIndex: T[]
+    ExSiblings: T[][]
+  }
+
+  export type PublicOutT<T = bigint> = {
+    newNullRoot: T[]
+    newCommitmentRoot: T[]
+    newCommitmentHash: T[]
   }
 
   export type InT = PubInT & PrivInT
 
   export type CircuitInT<T = bigint> = {
     inputs: InT
-    expectedOut: T[]
+    expectedOut: PublicOutT<T>
   }
 
   export type GetCircuitInArgsT = {
+    scope: bigint
+    context: bigint
     mt: LeanIMT
     maxDepth: number
-    inputs: Commitment[]
-    outputs: Commitment[]
-    scope: bigint
+    pkScalars: bigint[]
+    nonces: bigint[]
+    existing: Commitment[]
+    new: Commitment[]
   }
 }

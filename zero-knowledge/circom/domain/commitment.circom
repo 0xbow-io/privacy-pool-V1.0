@@ -4,17 +4,20 @@ pragma circom 2.1.9;
 include "mux1.circom";
 include "comparators.circom";
 include "gates.circom";
+
 // zk-kit imports
 include "ecdh.circom";
 include "poseidon-cipher.circom";
+
 // MACI imports
 include "privToPubkey.circom";
 include "hashers.circom";
+
 //Local Imports
 include "./stateTree.circom";
 
 /** Context: Privacy Pool store arbitary values without ever revealing it.
-To achieve privacy-preservation, a value (i.e. 10 atoms) needs to exist within some domain & must be owned by some keypair: 
+To achieve privacy-preservation, a value (i.e. 10 atoms) needs to exist within some domain & must be owned by some keypair:
     - Domain: A structured set where all set elements holds verifiable membership proof (i.e. leaves of a Merkle Tree).
         * will be referenced through the Scope value.
         * A Privacy Pool is a domain.
@@ -27,7 +30,7 @@ The tuple is encrypted with an encryption key which is derived from the keypair 
     * ECDH shared secret key with:
         - Salt & Keypair public-key
         - Salt public-key & Keypair private-key
-A hash is generated for both encrypted & non-encrypted "commitment" tuple (commitment hash, cipherText hash) 
+A hash is generated for both encrypted & non-encrypted "commitment" tuple (commitment hash, cipherText hash)
 and is then bundled together with the Salt public-key & ciphertext to be committed to Privacy Pool.
 **/
 
@@ -38,15 +41,15 @@ and is then bundled together with the Salt public-key & ciphertext to be committ
 - (2) Ek & nonce can decrypt the ciphertext to reveal a commitment tuple: (value, scope, secretKey.x, secretKey.y)
 - (3) commitment tuple contains same ECDH shared secret key from the prover's keypair.
 
-(note): 
-Because the Salt value is not known (& assumed unrecoverable), 
+(note):
+Because the Salt value is not known (& assumed unrecoverable),
 when recovering a prior commitment it's possible that another Salt wil be used to re-encrypt the commitment tuple.
-If so the Salt publickey & ciphertext hash will differ but ownership proof still holds. 
-This should still invalidate membership proofs. 
+If so the Salt publickey & ciphertext hash will differ but ownership proof still holds.
+This should still invalidate membership proofs.
 
 Hence, a commmitment root is calculated by constructing a merkle-tree with the ciphertext elements and the commitment hash.
 This root is then inserted into the Pool's state tree.
-Re-encrypting a receoverd commitment will then invalidate the membership proof as the commitmentRoot will differ. 
+Re-encrypting a receoverd commitment will then invalidate the membership proof as the commitmentRoot will differ.
 **/
 
 template RecoverCommitmentKeys(){
@@ -55,7 +58,7 @@ template RecoverCommitmentKeys(){
 
     signal output publicKey[2];
     signal output secretKey[2];
-    signal output encryptionKey[2];     
+    signal output encryptionKey[2];
 
     // compute public key & shared secret key & encryption key
     var computedPublicKey[2] = PrivToPubKey()(privateKey);
@@ -66,12 +69,12 @@ template RecoverCommitmentKeys(){
 }
 
 template DecryptCommitment(cipherLen, tupleLen){
-    signal input encryptionKey[2];               // ecdh shared secret key                                
+    signal input encryptionKey[2];               // ecdh shared secret key
     signal input nonce;                         // nonce value for Poseidon decryption
     signal input ciphertext[cipherLen];        // encrypted commitment tuple
 
     signal output tuple[tupleLen];
-    signal output hash; 
+    signal output hash;
 
     var decryptor[cipherLen-1] = PoseidonDecryptWithoutCheck(tupleLen)(
         [
@@ -90,9 +93,9 @@ template DecryptCommitment(cipherLen, tupleLen){
     hash <== PoseidonHasher(tupleLen)(recovered);
 }
 
-/** 
+/**
     Prove ownership of commitment by recovering the tuple from the ciphertext and
-    verifying the contents of tuple. 
+    verifying the contents of tuple.
     Then output the hash of the tuple.
 **/
 template CommitmentOwnershipProof(cipherLen, tupleLen){
@@ -110,8 +113,8 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
 
     //  [publicKey, secretKey, encryptionKey]
     var (
-        publicKey[2], 
-        secretKey[2], 
+        publicKey[2],
+        secretKey[2],
         encryptionKey[2]
     ) = RecoverCommitmentKeys()
         (
@@ -125,16 +128,16 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     // from the saltPublicKey which is public).
     // It's utilised as a nullifier to the commitmentRoot.
     nullRoot <== CheckRoot(3)(
-        [ 
-            publicKey[0], publicKey[1], 
+        [
+            publicKey[0], publicKey[1],
             secretKey[0], secretKey[1],
-            saltPublicKey[0], saltPublicKey[1], 
+            saltPublicKey[0], saltPublicKey[1],
             encryptionKey[0], encryptionKey[1]
         ]);
 
     //  [value, scope, secret.x, secret.y]
     var (
-        tuple[tupleLen], 
+        tuple[tupleLen],
         hash
         ) = DecryptCommitment(
                 cipherLen,
@@ -144,23 +147,23 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
             );
 
     value <== tuple[0];
-    commitmentHash <== hash; 
+    commitmentHash <== hash;
 
     // Verify contents and
     // Compute commitment root
     // CommitmentRoot can be verified outside of the circuit
     // as ciphertext & commitmenthash are public values.
     var (
-            scopeEqCheck, 
-            secret_xEqCheck, 
-            secret_yEqCheck, 
+            scopeEqCheck,
+            secret_xEqCheck,
+            secret_yEqCheck,
             computedCommitmentRoot
-        ) = ( 
+        ) = (
             IsEqual()(
                         [
                             scope, tuple[1] // match scope
                         ]
-                    ),   
+                    ),
             IsEqual()(
                         [
                             secretKey[0], tuple[2] // match secret.x component
@@ -173,10 +176,10 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
                     ),
             // compute commitment root
             CheckRoot(3)(
-                        [  
-                            ciphertext[0], ciphertext[1], 
+                        [
+                            ciphertext[0], ciphertext[1],
                             ciphertext[2], ciphertext[3],
-                            ciphertext[4], ciphertext[5], 
+                            ciphertext[4], ciphertext[5],
                             ciphertext[6], hash
                         ]
                     )
@@ -186,19 +189,19 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     // necessary to invalidate membership proofs
     var ownershipValidityCheck = IsEqual()(
             [
-                scopeEqCheck + secret_xEqCheck + secret_yEqCheck, 
+                scopeEqCheck + secret_xEqCheck + secret_yEqCheck,
                 3
             ]
         );
-    commitmentRoot <== computedCommitmentRoot * ownershipValidityCheck; 
+    commitmentRoot <== computedCommitmentRoot * ownershipValidityCheck;
 }
 
-/** Context: 
-    Privacy Pool V1 mantains a lean incremental merkle tree structure from @zk-kit for efficient hashing. 
+/** Context:
+    Privacy Pool V1 mantains a lean incremental merkle tree structure from @zk-kit for efficient hashing.
     The leaf nodes are the commitmentRoot of the commitments.
         * see: CommitmentOwnershipProof
     Compute the stateRoot given the inclusion merkle proof for the commitmentRoot
-    Correct merkle-root proves existence of the commitment, and the avaiability of a 
+    Correct merkle-root proves existence of the commitment, and the avaiability of a
     ciphertext that can be decrypted to reveal the commitment tuple.
 **/
 template CommitmentMembershipProof(maxTreeDepth){
@@ -207,7 +210,7 @@ template CommitmentMembershipProof(maxTreeDepth){
     signal input index;
     signal input siblings[maxTreeDepth];
 
-    signal output root; 
+    signal output root;
     var computedRoot = MerkleTreeInclusionProof(
                             maxTreeDepth
                         )(

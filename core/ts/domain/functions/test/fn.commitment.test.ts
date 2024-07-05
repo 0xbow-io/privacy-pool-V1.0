@@ -5,30 +5,27 @@ import { generatePrivateKey } from "viem/accounts"
 import type { Point } from "@zk-kit/baby-jubjub"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { ConstCommitment } from "@privacy-pool-v1/core-ts/domain"
-import type {TCommitment} from "@privacy-pool-v1/core-ts/domain"
+import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
+
+import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+
 function randomBigint(minValue: bigint, maxValue: bigint): bigint {
   const range = maxValue - minValue + 1n // Calculate the range of possible values
   return BigInt(Math.floor(Math.random() * Number(range))) + minValue
 }
 
 describe("Testing blindFn Function", () => {
-  // randomly generated pK
-  // don't use in production
-  const _pK: Hex =
-    "0x3c99cb887698a50aae095b0f050244935d1b451355da78546871593f5cabf793"
+  const _pK: Hex = generatePrivateKey()
   const blindfn_results: {
-    secrets: {
-      pKScalar: bigint
-      Pk: Point<bigint>
-      salt: bigint
-      eK: Point<bigint>
-      nonce: bigint
-    }
     challenges: {
       hash: bigint
       tuple: TCommitment.TupleT
+      eK: Point<bigint>
     }
     private: {
+      pkScalar: bigint
+      nonce: bigint
       value: bigint
       secret: Point<bigint>
     }
@@ -54,31 +51,27 @@ describe("Testing blindFn Function", () => {
   test("Verifying blindFn with recoverFn", () => {
     for (let i = 0; i < blindfn_results.length - 1; i++) {
       const _res = blindfn_results[i]
+      const _pk = deriveSecretScalar(_pK)
+      const _Pk = mulPointEscalar(Base8, _pk)
+      const _secretK = mulPointEscalar(_Pk, _pk)
+      const _eK = mulPointEscalar(_res.public.saltPk, _pk)
+
       // deterministic private key
-      expect(_res.secrets.pKScalar).toStrictEqual(
-        5675096008673131753980974358827186863864734867016328916049381498422164651108n
-      )
-      // deterministic public key
-      expect(_res.secrets.Pk).toStrictEqual([
-        18036533558583174155460206293144569592939622579331506059222207317138387772088n,
-        16601775792515073711202079711901048790859056038139283086048472075533807741261n
-      ])
+      expect(_res.private.pkScalar).toStrictEqual(_pk)
       // deterministic secret scalar
-      expect(_res.private.secret).toStrictEqual([
-        17246685860642639846657996658010720481160707501213987984865648127585125912198n,
-        9155150378193743607921338426796622072693468563284836698877337532677343336789n
-      ])
+      expect(_res.private.secret).toStrictEqual(_secretK)
+      // deterministic encryption key
+      expect(_res.challenges.eK).toStrictEqual(_eK)
+
       // Test for uniqueness
       for (let j = i + 1; j < blindfn_results.length; j++) {
-        // salt
-        expect(_res.secrets.salt).not.toStrictEqual(
-          blindfn_results[j].secrets.salt
-        )
-        // encryption
-        expect(_res.secrets.eK).not.toStrictEqual(blindfn_results[j].secrets.eK)
         // salt public key
         expect(_res.public.saltPk).not.toStrictEqual(
           blindfn_results[j].public.saltPk
+        )
+        // encryption
+        expect(_res.challenges.eK).not.toStrictEqual(
+          blindfn_results[j].challenges.eK
         )
         // ciphertext
         expect(_res.public.cipher).not.toStrictEqual(
@@ -86,13 +79,13 @@ describe("Testing blindFn Function", () => {
         )
       }
 
-      // Test for recoverFn
+      // Test recoverFn
       const { Hash, Tuple } = FnCommitment.recoverFn(
         {
-          _pKScalar: _res.secrets.pKScalar,
+          _pKScalar: _res.private.pkScalar,
           _cipher: _res.public.cipher,
           _saltPk: _res.public.saltPk,
-          _nonce: _res.secrets.nonce,
+          _nonce: _res.private.nonce,
           _len: ConstCommitment.STD_TUPLE_SIZE
         },
         {

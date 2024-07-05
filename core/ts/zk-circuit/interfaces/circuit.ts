@@ -3,7 +3,7 @@ import type {
   SnarkJSOutputT,
   CircomOutputT,
   CircomArtifactsT,
-  PackedGroth16ProofT
+  StdPackedGroth16ProofT
 } from "@privacy-pool-v1/core-ts/zk-circuit"
 import type { CircuitSignals } from "snarkjs"
 
@@ -19,7 +19,7 @@ export namespace ICircuit {
       outputT extends
         | SnarkJSOutputT
         | CircomOutputT
-        | PackedGroth16ProofT<bigint>,
+        | StdPackedGroth16ProofT<bigint>,
       resT extends boolean | outputT | { ok: boolean; out: outputT }
     >(
       output: outputT,
@@ -31,7 +31,7 @@ export namespace ICircuit {
       outputT extends
         | SnarkJSOutputT
         | CircomOutputT
-        | PackedGroth16ProofT<bigint>,
+        | StdPackedGroth16ProofT<bigint>,
       resT extends boolean | outputT | { ok: boolean; out: outputT }
     >(
       args: argsT,
