@@ -7,6 +7,7 @@
       "actualTreeDepth",
       "context",
       "externIO",
+      "existingStateRoot",
       "newSaltPublicKey",
       "newCiphertext"
     ],

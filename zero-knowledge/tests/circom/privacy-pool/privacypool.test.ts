@@ -15,6 +15,7 @@ describe("Test Privacy Pool template ", () => {
       "actualTreeDepth",
       "context",
       "externIO",
+      "existingStateRoot",
       "newSaltPublicKey",
       "newCiphertext",
       "privateKey",

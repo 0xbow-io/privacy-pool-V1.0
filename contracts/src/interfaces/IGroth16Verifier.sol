@@ -3,9 +3,6 @@ pragma solidity ^0.8.4;
 
 interface IGroth16Verifier {
     function verifyProof(
-        uint256[2] calldata _pA,
-        uint256[2][2] calldata _pB,
-        uint256[2] calldata _pC,
-        uint256[9] calldata _pubSignals
+     uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[36] calldata _pubSignals
     ) external view returns (bool);
 }

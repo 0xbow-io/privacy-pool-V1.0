@@ -1,9 +1,12 @@
 #!/bin/bash
 
-echo "generating test inputs..."
-bun run ./zero-knowledge/scripts/privacy-pool/genTestInputs.ts
-echo "verifying circuit with test inputs"
-bunx jest ./zero-knowledge/tests/circom/privacy-pool/circuit.test.ts
-echo "generating proofs for circuit with test inputs"
-bunx jest ./zero-knowledge/tests/circom/privacy-pool/proof.test.ts
-
+echo "testing domain/commitment templates..."
+bunx jest ./tests/circom/privacy-pool/domain.commitment.test.ts
+echo "testing domain/stateTree templates..."
+bunx jest ./tests/circom/privacy-pool/domain.stateTree.test.ts
+echo "testing privacy-pool/handlers templates..."
+bunx jest ./tests/circom/privacy-pool/privacypool.handlers.test.ts
+echo "testing privacy-pool/privacypool template..."
+bunx jest ./tests/circom/privacy-pool/privacypool.test.ts
+echo "testing proof generation with snarkjs"
+bunx jest ./tests/circom/privacy-pool/genProof.test.ts

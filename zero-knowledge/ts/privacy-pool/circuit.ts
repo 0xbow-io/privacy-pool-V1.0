@@ -28,16 +28,17 @@ export namespace PrivacyPool {
     "actualTreeDepth",
     "context",
     "externIO",
+    "existingStateRoot",
     "newSaltPublicKey",
     "newCiphertext"
   ]
   export const privateInputs: string[] = [
-    "PrivateKey",
-    "Nonce",
-    "ExSaltPublicKey",
-    "ExCiphertext",
-    "ExIndex",
-    "ExSiblings"
+    "privateKey",
+    "nonce",
+    "exSaltPublicKey",
+    "exCiphertext",
+    "exIndex",
+    "exSiblings"
   ]
   export const inputs: string[] = publicInputs.concat(privateInputs)
   export const outputs: string[] = [

@@ -1,3 +1,4 @@
+pragma circom 2.1.9;
 
 // circomlib import
 include "comparators.circom";

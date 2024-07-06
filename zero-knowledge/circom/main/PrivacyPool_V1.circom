@@ -3,4 +3,4 @@ pragma circom 2.1.9;
 
 include ".././privacy-pool/privacyPool.circom";
 
-component main {public[scope, actualTreeDepth, context, externIO, newSaltPublicKey, newCiphertext]} = PrivacyPool(32, 7, 4, 2, 2);
+component main {public[scope, actualTreeDepth, context, externIO, existingStateRoot, newSaltPublicKey, newCiphertext]} = PrivacyPool(32, 7, 4, 2, 2);

@@ -8,151 +8,106 @@ import {NonNative} from "./processors/NonNative.sol";
 import {Native} from "./processors/Native.sol";
 
 import {
-    N_INPUT_COMMITMENTS, N_OUTPUT_COMMITMENTS, NewNullifierStartIndex, NewCommitmentStartIndex
+    D_EXTERN_IO_IDX_MIN,
+    D_MAX_ALLOWED_EXISTING,
+    D_MAX_ALLOWED_NEW,
+    D_NEW_NULL_ROOT_IDX_MIN,
+    D_NEW_COMMITMENT_HASH_IDX_MIN,
+    D_NEW_COMMITMENT_ROOT_IDX_MIN,
+    D_SCOPE_IDX,
+    D_CONTEXT_IDX
 } from "./Constants.sol";
 
 /// @title PrivacyPool pools contract.
 contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
-    /// @dev unitRepresentation is the address of the external contract
-    /// that represents the unit of value that is being committed to the pool
-    /// must support transferFrom() & balanceOf() function
-    /// if set to 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, Native ETH is used as the unit of value
-    address public immutable unitRepresentation;
+    /// @dev primitiveHandler is the address of the contract
+    /// that handles the primitive type of the pool.
+    /// Of set to D_NATIVE_PRIMITIVE, the native chain gas token will be used.
+    address public immutable primitiveHandler;
 
     /**
      * @dev The constructor
-     * @param _maxUnitsAllowed maximum amount  ofunits that can be committed to the pool at once
-     * @param _unitRepresentation address of the external contract that represents the unit of value
+     * @param _primitiveHandler address of the primitive handler
      * @param _verifier the address of GROTH16 SNARK verifier
      */
-    constructor(uint256 _maxUnitsAllowed, address _unitRepresentation, address _verifier)
-        Verifier(_maxUnitsAllowed, _verifier)
-    {
-        // ensure unitRepresentation address is not zero address
-        if (_unitRepresentation == address(0)) {
-            revert InvalidRepresentation();
+    constructor(address _primitiveHandler, address _verifier) Verifier(_verifier) {
+        // ensure _primitive address is not zero address
+        if (_primitiveHandler == address(0)) {
+            revert InvalidPrimitive();
         }
 
-        unitRepresentation = _unitRepresentation;
+        primitiveHandler = _primitiveHandler;
     }
 
-    modifier _releaseFee(IPrivacyPool.Request calldata _r) {
+    modifier _releaseFee(Request calldata _r, GROTH16Proof calldata _proof) {
         _;
-        // toAccount set to false so _to should be the feeCollector address
-        (address _to, uint256 _amnt) = _computeRelease(_r, false);
-        require(_to == _r.feeCollector, "_to != FeeCollector");
-
-        if (!IsNative(unitRepresentation)) {
-            nonNativeRelease(_to, _amnt, unitRepresentation);
+        if (!IsNative(primitiveHandler)) {
+            nonNativeRelease(_r.feeCollector, _r.fee, primitiveHandler);
         } else {
-            nativeRelease(_to, _amnt, unitRepresentation);
+            nativeRelease(_r.feeCollector, _r.fee, primitiveHandler);
         }
+    }
+
+    modifier _updateInternalState(Request calldata _r, GROTH16Proof calldata _proof) {
+        _;
+        // update state with proof values
+        (uint256 newStateRoot, uint256 newStateSize) = ApplyProofToState(_proof);
+
+        // Emit the record event
+        emit Record(_r, newStateRoot, newStateSize);
     }
 
     /**
-     * @dev process processes a commitment or release request
+     * @dev process processes a data commitment request
      * @param _r the actual request to be processed
-     * @param _pA, _pB, _pC: the packed Groth16Proof SNARK (private)
-     * @param _pubSignals the public inputs to the SNARK circuit
+     * @param _proof: the packed Groth16Proof SNARK proof
      */
-    function process(
-        Request calldata _r,
-        Supplement calldata _s,
-        uint256[2] calldata _pA,
-        uint256[2][2] calldata _pB,
-        uint256[2] calldata _pC,
-        uint256[9] calldata _pubSignals
-    ) public payable IsValidRequest(_r) IsValidProof(_r, _pA, _pB, _pC, _pubSignals) _releaseFee(_r) {
+    function process(Request calldata _r, GROTH16Proof calldata _proof)
+        public
+        payable
+        IsValidRequest(_r, _proof)
+        IsValidProof(_r, _proof)
+        _updateInternalState(_r, _proof)
+        _releaseFee(_r, _proof)
+    {
         // IsValidRequest: verify the request is valid
         // HasValidProof: verify the proof is valid
 
-        // proceed with either a commit or release
-        if (_r.isCommitFlag) {
-            _doCommit(_r);
+        /// external IO values are fetched from the proof public input singals
+        /// external IO[0] or external Input will be commited to the pool
+        _commit(_r, _proof);
+        /// external IO[1] or external Output will be released to the sink
+        _sink(_r, _proof);
+    }
+
+    /// @dev commit from a source address to the pool
+    /// Consider the external input to be the necessary input value required for a computation between
+    /// existing commitments (i.e addition of two commitment values + exeternal input )
+    /// _commit will ensure that the pool has received this external input amount
+    function _commit(Request calldata _r, GROTH16Proof calldata _proof) internal OnlyCommit(_proof) {
+        uint256 _amnt = _fetchCommitmentAmt(_proof);
+
+        if (!IsNative(primitiveHandler)) {
+            nonNativeCommit(_r.src, _amnt, primitiveHandler);
         } else {
-            _doRelease(_r);
+            nativeCommit(_r.src, _amnt, primitiveHandler);
         }
-
-        // Update the state of the pool
-        _updateState(_r, _s, _pubSignals);
-
-        //ReleaseFee: release the fee to the feeCollector if any
-
     }
 
-    function _doCommit(Request calldata _r) internal OnlyCommit(_r) {
-        (address _from, uint256 _amnt) = _computeCommit(_r);
-        require(_from == _r.account, "_from address mismatch");
+    /// @dev sink from the pool to a sink address
+    /// Consider the external output to be the remainder or carry over of a computation between existing commitments
+    /// This output will then be released to a designated sink address via the primitive handler
+    function _sink(Request calldata _r, GROTH16Proof calldata _proof) internal OnlySink(_proof) {
+        uint256 _amt = _fetchSinkAmnt(_proof);
 
-        if (!IsNative(unitRepresentation)) {
-            nonNativeCommit(_from, _amnt, unitRepresentation);
+        if (!IsNative(primitiveHandler)) {
+            nonNativeRelease(_r.sink, _amt, primitiveHandler);
         } else {
-            nativeCommit(_from, _amnt, unitRepresentation);
+            nativeRelease(_r.sink, _amt, primitiveHandler);
         }
     }
 
-    function _doRelease(Request calldata _r) internal OnlyRelease(_r) {
-        // toAccount is set to true so _to should be the account address
-        (address _to, uint256 _amnt) = _computeRelease(_r, true);
-        require(_to == _r.account, "_to address mismatch");
-
-        if (!IsNative(unitRepresentation)) {
-            nonNativeRelease(_to, _amnt, unitRepresentation);
-        } else {
-            nativeRelease(_to, _amnt, unitRepresentation);
-        }
-    }
-
-    function _updateState(Request calldata _r, Supplement calldata _s, uint256[9] calldata _pubSignals)
-        internal
-        ValidStateChange(_pubSignals)
-    {
-        // Insert nullifiers whilst checking for reuse
-        uint256 _offset  = NewNullifierStartIndex;
-        for (uint256 i = 0; i < N_INPUT_COMMITMENTS; i ++){
-            if (markNullifierAsKnown(_pubSignals[i])) {
-                revert NullifierReused();
-            }
-        }
-
-        // Insert new commitments & ciphertexts
-         _offset  = NewCommitmentStartIndex;
-        for (uint256 i = 0; i < N_OUTPUT_COMMITMENTS; i ++){
-            uint256 root = insertCommitment(_pubSignals[i+_offset]);
-            if (
-                    !insertCiphertext(
-                    root,
-                    _s.ciphertexts[i][0],
-                    _s.ciphertexts[i][1],
-                    _s.ciphertexts[i][2],
-                    _s.ciphertexts[i][3]
-                    )
-                ) {
-                revert CiphertextInsertionFailed();
-            }
-        }
-
-        // emit the record
-        emit Record(_r,  latestMerkleRoot(), merkleTreeDepth(), merkleTreeSize(), numberOfNullifiers);
-    }
-
-    function computePublicVal(Request calldata _r) external pure returns (uint256) {
-        return _computePublicVal(_r);
-    }
-
-    function computeScope(Request calldata _r) external view returns (uint256) {
-        return _computeScope(_r);
-    }
-
-    function root() external view returns (uint256) {
-        return latestMerkleRoot();
-    }
-
-    function size() external view returns (uint256) {
-        return merkleTreeSize();
-    }
-
-    function depth() external view returns (uint256) {
-        return merkleTreeDepth();
+    function context(IPrivacyPool.Request calldata _r) public pure returns (uint256) {
+        return _r.fee;
     }
 }

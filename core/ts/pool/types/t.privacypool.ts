@@ -16,7 +16,7 @@ export type poolMetadataT = {
 
 export type ChainProof<T = bigint> = [T[], T[][], T[], T[]]
 
-// Types binded to Privacy Pool Contract
+// Types bounded to Privacy Pool Contract
 export namespace TPrivacyPool {
   // To-DO: Autogenerate this from the contract ABI
   export type _computeScopeFn_T = ExtractAbiFunction<

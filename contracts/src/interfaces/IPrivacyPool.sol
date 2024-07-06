@@ -1,52 +1,53 @@
- SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 /// @title PrivacyPool contract interface.
 interface IPrivacyPool {
-    error InvalidRepresentation();
-    error NullifierReused();
+    error InvalidPrimitive();
+    error NullRootExists();
     error CiphertextInsertionFailed();
 
-    /// @dev struct to holds
-    /// the specificities
-    /// of a commitment / release
-    struct Request {
-        // true if the request is a commitment
-        // false if the request is a release
-        bool isCommitFlag;
-        uint256 units;
-        uint256 fee;
-        address account;
-        address feeCollector;
-    }
-
     /// @dev struct to hold the
-    /// any additional information
-    /// relevant to a commitment / release
-    struct Supplement {
-        uint256[4][2] ciphertexts;
-        string associationProofURI;
+    /// information for a data
+    /// commitment request
+    struct Request {
+        address src; // Source address for the external data input
+        address sink; // Sink address for the external data ouptut
+        address feeCollector; // address at which fee is collected
+        uint256 fee; // Fee amount
     }
 
-    event Record(
-        Request _r,
-        uint256 root,
-        uint256 depth,
-        uint256 size,
-        uint256 nullifiers
-    );
+    /// @dev  GROTH16Proof is the struct that contains the zk proof
+    /// _pubSignals contains the public input & output signals:
+    ///
+    /// *** Public Input signals to the circuit ***
+    /// "scope" --> to be matched with pool's scope
+    /// "actualTreeDepth" --> to be verified with pool's state
+    /// "context" --> to be computed and verified against
+    /// "externIO" --> specifies the amount required to be comitted or sinked
+    /// "existingStateRoot" --> to be verified against pool's state
+    /// "newSaltPublicKey" --> to be stored into pool's state
+    /// "newCiphertext" --> to be stored into the pool's state
+    ///
+    /// *** Public Outputs of the circuit ***
+    /// "newNullRoot", --> to be verified and stored into the pool's state
+    /// "newCommitmentRoot", --> to be verified and stored into the pool's state
+    /// "newCommitmentHash" --> to be verified and stored into the pool's state
+    ///
+    /// Refer to the default index mapping in constants.sol
+    /// to fetch the values from the _pubSignals array
+    ///
+    struct GROTH16Proof {
+        uint256[2] _pA;
+        uint256[2][2] _pB;
+        uint256[2] _pC;
+        uint256[36] _pubSignals;
+    }
 
-    function computePublicVal(Request calldata _r) external pure returns (uint256);
-    function computeScope(Request calldata _r) external view returns (uint256);
-    function process(
-        Request calldata _r,
-        Supplement calldata _s,
-        uint256[2] calldata _pA,
-        uint256[2][2] calldata _pB,
-        uint256[2] calldata _pC,
-        uint256[9] calldata _pubSignals
-    ) external payable;
-    function root() external view returns (uint256);
-    function size() external view returns (uint256);
-    function depth() external view returns (uint256);
+    /// @dev This event is emitted at the end of a processing cycle
+    /// _r is carried into the record in case the Pool proces() function
+    /// was an internal call, in which then indexers would have to do a
+    /// call trace to get the relevant request details
+    /// all other relevant data is accessible from public state functions
+    event Record(Request _r, uint256 stateRoot, uint256 dataSetSize);
 }

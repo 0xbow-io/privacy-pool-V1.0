@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import {NATIVE_REPRESENTATION} from "../Constants.sol";
+import {D_NATIVE_PRIMITIVE} from "../Constants.sol";
 import {IProcessor} from "../interfaces/IProcessor.sol";
 
 contract Native is IProcessor {
-    modifier MustBeNative(address _unitRepresentation) {
-        if (_unitRepresentation != NATIVE_REPRESENTATION) {
+    modifier MustBeNative(address _primitive) {
+        if (_primitive != D_NATIVE_PRIMITIVE) {
             revert PoolIsNative();
         }
         _;
@@ -26,15 +26,15 @@ contract Native is IProcessor {
         _;
     }
 
-    function nativeCommit(address _from, uint256 _amnt, address _unitRepresentation)
+    function nativeCommit(address _from, uint256 _amnt, address _primitive)
         internal
-        MustBeNative(_unitRepresentation)
+        MustBeNative(_primitive)
         _verifyNativeCommit(_from, _amnt)
     {}
 
-    function nativeRelease(address _to, uint256 _amnt, address _unitRepresentation)
+    function nativeRelease(address _to, uint256 _amnt, address _primitive)
         internal
-        MustBeNative(_unitRepresentation)
+        MustBeNative(_primitive)
         _verifyNativeRelease(_to, _amnt)
     {
         /// @solidity memory-safe-assembly

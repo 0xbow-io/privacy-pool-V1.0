@@ -4,23 +4,19 @@ import path from "node:path"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import { FnPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { contractConf } from "@privacy-pool-v1/contracts"
-import { stringifyBigInts } from "maci-crypto"
+
+import type { circomArtifactPaths } from "@privacy-pool-v1/global"
+import { GenTestCases } from "@privacy-pool-v1/core-ts/zk-circuit"
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 
-const verifierKey = JSON.parse(
-  fs.readFileSync(PrivacyPool.circomArtifacts.VKEY_PATH, "utf-8")
-)
+const tcs = GenTestCases()()
 
-const testInputPath: Array<string> = Array.from(
-  { length: PrivacyPool.test_data_size },
-  (_, i) =>
-    path.resolve(PrivacyPool.circomkitConf.dirInputs, `testcase_${i}.json`)
+const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
+const prover = FnPrivacyPool.ProveFn(paths.WASM_PATH, paths.ZKEY_PATH)
+const verifier = FnPrivacyPool.VerifyFn(
+  fs.readFileSync(paths.VKEY_PATH, "utf-8")
 )
-
-if (testInputPath.length === 0) {
-  throw new Error("No test circuit data found.")
-}
 
 function exportToJSON(data: any, filePath: string): void {
   try {
@@ -33,38 +29,29 @@ function exportToJSON(data: any, filePath: string): void {
 }
 
 async function exportProof(
-  inputPath: string,
-  outputPath: string
+  baseOutPath: string = contractConf.CONTRACT_TEST_DATA_PATH || ""
 ): Promise<void> {
-  const circuitInputs = JSON.parse(fs.readFileSync(inputPath, "utf-8"))
-  const out = await FnPrivacyPool.ProveFn(
-    circuitInputs.inputs,
-    PrivacyPool.circomArtifacts.WASM_PATH,
-    PrivacyPool.circomArtifacts.ZKEY_PATH
-  )
-  const ok = await FnPrivacyPool.VerifyFn(
-    verifierKey,
-    out.publicSignals,
-    out.proof
-  )
-  if (!ok) {
-    throw new Error(`Failed to generate proof for ${inputPath}`)
-  }
-  const parsed = FnPrivacyPool.ParseFn(out.proof, out.publicSignals)
-  exportToJSON(
-    {
-      inputs: stringifyBigInts(circuitInputs),
-      outputs: stringifyBigInts(parsed)
-    },
-    outputPath
-  )
+  tcs.forEach(async (testVariants, i) => {
+    let k = 0
+    for (const tc of testVariants) {
+      const out = await prover(tc.inputs)
+      const ok = await verifier(out)
+
+      if (!ok) {
+        throw new Error(`Failed to generate proof for ${tc.case}`)
+      }
+      const packed = FnPrivacyPool.parseOutputFn("pack")(out)
+      exportToJSON(
+        {
+          inputs: tc.inputs,
+          proof: packed
+        },
+        path.join(baseOutPath, ` testcase_${i}_${k}.json`)
+      )
+      k++
+    }
+  })
 }
 
-testInputPath.forEach(async (inputPath, i) => {
-  await exportProof(
-    inputPath,
-    path.join(contractConf.CONTRACT_TEST_DATA_PATH || "", `testcase_${i}.json`)
-  )
-})
-
+await exportProof()
 await cleanThreads()
