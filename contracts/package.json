@@ -14,7 +14,7 @@
     "@nomicfoundation/hardhat-foundry": "^1.1.2",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@zk-kit/lean-imt.sol": "^2.0.0",
-    "hardhat": "^2.22.5"
+    "hardhat": "^2.22.6"
   },
   "scripts": {
     "compile": "bunx hardhat compile",

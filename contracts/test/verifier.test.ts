@@ -5,9 +5,13 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import hre from "hardhat"
 
 describe("Test GROTH16 Verifier Contract", () => {
-  const testInputPaths: Array<string> = Array.from({ length: 10 }, (_, i) =>
-    path.resolve("test", "test-data", `testcase_${i}.json`)
-  )
+  const testInputPaths: string[] = Array.from({ length: 4 }, (_, i) => {
+    let paths: string[] = []
+    for (let j = 0; j < 5; j++) {
+      paths.push(path.resolve("test", "test-data", `testcase_${i}_${j}.json`))
+    }
+    return paths
+  }).flat()
 
   async function setup() {
     const [owner, testAccount] = await Promise.resolve(
@@ -28,43 +32,25 @@ describe("Test GROTH16 Verifier Contract", () => {
       const { verifier } = await loadFixture(setup)
       const testdata = JSON.parse(fs.readFileSync(path, "utf-8"))
 
+      /*
       const proof = {
-        pi_a: testdata.outputs.proof.pi_a.map((x: string) =>
-          BigInt(x)
-        ) as bigint[],
-        pi_b: testdata.outputs.proof.pi_b.map((x: string[]) =>
+        pi_a: testdata.proof[0].map((x: string) => BigInt(x)) as bigint[],
+        pi_b: testdata.proof[1].map((x: string[]) =>
           x.map((y) => BigInt(y))
         ) as bigint[][],
-        pi_c: testdata.outputs.proof.pi_c.map((x: string) =>
-          BigInt(x)
-        ) as bigint[]
+        pi_c: testdata.proof[2].map((x: string) => BigInt(x)) as bigint[]
       }
 
-      const publicInput = testdata.outputs.publicSignals.map((x: string) =>
+      const publicInput = testdata.proof[1].map((x: string) =>
         BigInt(x)
       ) as bigint[]
+      */
 
-      const res = await Promise.resolve(
-        verifier.read.verifyProof([
-          [proof.pi_a[0], proof.pi_a[1]],
-          [
-            [proof.pi_b[0][1], proof.pi_b[0][0]],
-            [proof.pi_b[1][1], proof.pi_b[1][0]]
-          ],
-          [proof.pi_c[0], proof.pi_c[1]],
-          [
-            publicInput[0],
-            publicInput[1],
-            publicInput[2],
-            publicInput[3],
-            publicInput[4],
-            publicInput[5],
-            publicInput[6],
-            publicInput[7],
-            publicInput[8]
-          ]
-        ])
-      )
+      const res = await verifier.read.verifyProof(testdata.proof).catch((e) => {
+        console.error(e)
+        return false
+      })
+
       expect(res).eq(true)
     })
   }
