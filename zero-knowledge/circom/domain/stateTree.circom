@@ -49,9 +49,9 @@ template MerkleGeneratePathIndices(levels) {
 }
 
 /***
-    Verify Proof for Lean Incremental Tree (@zk-kit)
-    Translation of verifyProof fn from TypeScript to Circom
-    Refer to: https://github.com/privacy-scaling-explorations/zk-kit/blob/main/packages/lean-imt/src/lean-imt.ts#L293C1-L317C6
+    Verify Proof for Lean Incremental Tree (@zk-kit) based on MACI's implementation
+    Taken from https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
+    Ts version: https://github.com/privacy-scaling-explorations/zk-kit/blob/main/packages/lean-imt/src/lean-imt.ts#L293C1-L317C6
 ***/
 template LeanIMTInclusionProof(maxDepth) {
     signal input leaf, leafIndex, siblings[maxDepth], actualDepth;
@@ -94,7 +94,7 @@ template LeanIMTInclusionProof(maxDepth) {
     * Constructs a binary merkle tree with a given number of levels.
     * Returns the Merkle Root of the tree.
 ***/
-template CheckRoot(levels) {
+template ComputeTreeRoot(levels) {
     // The total number of leaves in the Merkle tree, calculated as 2 to the power of `levels`.
     var totalLeaves = 2 ** levels;
     // The number of first-level hashers needed, equal to half the total leaves, as each hasher combines two leaves.

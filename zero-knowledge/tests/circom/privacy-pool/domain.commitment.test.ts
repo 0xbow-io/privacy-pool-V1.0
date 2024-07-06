@@ -160,18 +160,18 @@ describe("Test CommitmentOwnershipProof template", () => {
         params: [32]
       }).witnessTester()
 
-      const index = mt.indexOf(commitments[i].commitmentRoot)
-      const proof = merkleFn(BigInt(index))
+      commitments[i].setIndex(mt)
+      const proof = merkleFn(commitments[i].index)
       const INPUTS = {
-        actualTreeDepth: proof.Depth,
+        actualTreeDepth: proof.actualDepth,
         commitmentRoot: commitments[i].commitmentRoot,
         index: proof.index,
-        siblings: proof.Siblings.map((x) => BigInt(x))
+        siblings: proof.siblings.map((x) => BigInt(x))
       }
       const witness = await witnessTester.calculateWitness(INPUTS)
       await witnessTester.expectConstraintPass(witness)
       const root = await getSignal(witnessTester, witness, "root")
-      expect(root).toBe(proof.Root)
+      expect(root).toBe(proof.root)
     }
   }, 1000000)
 })

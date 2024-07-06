@@ -1,6 +1,8 @@
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { Point } from "@zk-kit/baby-jubjub"
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
+import { LeanIMT } from "@zk-kit/lean-imt"
+
 export namespace ICommitment {
   export interface CommitmentI<
     PubT = {
@@ -14,6 +16,7 @@ export namespace ICommitment {
       secret: Point<bigint> | string[]
     }
   > {
+    setIndex: (mt: LeanIMT) => void
     index: bigint
     isDummy: () => boolean
     commitmentRoot: bigint

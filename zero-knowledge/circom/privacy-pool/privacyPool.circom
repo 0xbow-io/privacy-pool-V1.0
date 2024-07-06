@@ -2,10 +2,9 @@ pragma circom 2.1.9;
 
 // circomlib import
 include "comparators.circom";
-include "gates.circom";
 
 //Local Imports
-include "../domain/commitment.circom";
+include "./handlers.circom";
 
 /**
     A commitment is the binding of value to a domain (indentified by a scope value)
@@ -51,124 +50,6 @@ include "../domain/commitment.circom";
     ** Index & Siblings: Inclusion Merkle Proof of the commitmentRoot for existing commitments
 **/
 
-/*
-    Invalid ownership due to i.e., incorrect saltPublickey:
-        - incorrect CommitmentHash output
-        - incorrect CommitmentRoot output
-        - incorrect NullRoot output
-        - 0 value.
-    Invalid membership (i.e. mismatch in computed stateRoot):
-        - revealed commitmentRoot
-        - revealed commitmentHash
-        - revealed nullRoot
-        - 0 value
-*/
-template HandleExistingCommitment(maxTreeDepth, cipherLen, tupleLen){
-    signal input scope;
-    signal input stateRoot;
-    signal input actualTreeDepth;
-
-    signal input privateKey;
-    signal input nonce;
-    signal input saltPublicKey[2];
-    signal input ciphertext[cipherLen];
-
-    signal input index;
-    signal input siblings[maxTreeDepth];
-
-    // aggregate (nullRoot, commitmentRoot, hash, value)
-    // into 1 array output signal
-    signal output out[4];
-
-    component isVoidCheck = IsZero();
-    component stateRootEqCheck = IsZero();
-    var (
-        value,
-        nullRoot,
-        commitmentRoot,
-        hash
-    ) = CommitmentOwnershipProof(
-        cipherLen,
-        tupleLen
-    )(
-        scope,
-        privateKey,
-        saltPublicKey,
-        nonce,
-        ciphertext
-    );
-    var computedStateRoot = CommitmentMembershipProof(
-                            maxTreeDepth
-                        )(
-                            actualTreeDepth,
-                            commitmentRoot,
-                            index,
-                            siblings
-                        );
-
-    // Voiud commitments have 0 value
-    isVoidCheck.in <== value;
-    stateRootEqCheck.in <== computedStateRoot - stateRoot;
-
-
-    log("stateRootEqCheck ", stateRootEqCheck.out, " computedStateRoot ", computedStateRoot, " stateRoot ", stateRoot, " value ", value);
-
-    // commitment is invalid when its' not void and the stateRoot is not equal
-    // only forward commitmentRoot & hash if the commitment is invalid
-    component forward[3];
-    for (var i = 0; i < 3; i++) {
-        forward[i] = NOR();
-        forward[i].a <== isVoidCheck.out;
-        forward[i].b <== stateRootEqCheck.out;
-    }
-
-    // nullifier for the commitment
-    // need to check nullRoot allready exists in state Tree
-    // outside of the cricuit
-    out[0] <== nullRoot;
-    out[1] <== commitmentRoot * forward[0].out;
-    out[2] <== hash * forward[1].out;
-    out[3] <== value * (1 - forward[2].out);
-}
-
-template HandleNewCommitment(cipherLen, tupleLen){
-    signal input scope;
-    signal input privateKey;
-    signal input nonce;
-    signal input saltPublicKey[2];
-    signal input ciphertext[cipherLen];
-
-    // aggregate (nullRoot, commitmentRoot, hash, value)
-    // into 1 array output signal
-    signal output out[4];
-    component zeroRootCheck = IsZero();
-    var (
-        value,
-        nullRoot,
-        commitmentRoot,
-        hash
-    ) = CommitmentOwnershipProof(
-        cipherLen,
-        tupleLen
-        )(
-            scope,
-            privateKey,
-            saltPublicKey,
-            nonce,
-            ciphertext
-        );
-
-    // If invalid ownership then commitmentRoot is 0
-    // don't stop the circuit.
-    // Output nullRoot if so, as this nullifies the new commitment.
-    zeroRootCheck.in <== commitmentRoot;
-    out[0] <==  nullRoot * zeroRootCheck.out;
-    out[1] <== commitmentRoot;
-    out[2] <== hash;
-    // null value if commitmentRoot is invalid
-    out[3] <== value * (1 - zeroRootCheck.out);
-}
-
 
 template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
     /// **** Public Signals ****
@@ -194,13 +75,13 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
 
     /// **** Private Signals ****
 
-    signal input PrivateKey[nExisting+nNew];
-    signal input Nonce[nExisting+nNew];
+    signal input privateKey[nExisting+nNew];
+    signal input nonce[nExisting+nNew];
 
-    signal input ExSaltPublicKey[nExisting][2];
-    signal input ExCiphertext[nExisting][cipherLen];
-    signal input ExIndex[nExisting];
-    signal input ExSiblings[nExisting][maxTreeDepth];
+    signal input exSaltPublicKey[nExisting][2];
+    signal input exCiphertext[nExisting][cipherLen];
+    signal input exIndex[nExisting];
+    signal input exSiblings[nExisting][maxTreeDepth];
 
     /// **** End Of Private Signals ****
 
@@ -231,12 +112,12 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
                         scope,
                         existingStateRoot,
                         actualTreeDepth,
-                        PrivateKey[i],
-                        Nonce[i],
-                        ExSaltPublicKey[i],
-                        ExCiphertext[i],
-                        ExIndex[i],
-                        ExSiblings[i]
+                        privateKey[i],
+                        nonce[i],
+                        exSaltPublicKey[i],
+                        exCiphertext[i],
+                        exIndex[i],
+                        exSiblings[i]
                     );
         _newNullRootOut[i] <== out[0];
         _newCommitmentRootOut[i] <== out[1];
@@ -256,8 +137,8 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
                         tupleLen
                     )(
                         scope,
-                        PrivateKey[k],
-                        Nonce[k],
+                        privateKey[k],
+                        nonce[k],
                         newSaltPublicKey[i],
                         newCiphertext[i]
                     );
@@ -269,20 +150,18 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
     }
 
     // lastly ensure that all total sums are equal
-    var equalSum = IsEqual()(
+    signal sumEqCheck <== IsEqual()(
                         [
                             totalEx[nExisting],
                             totalNew[nNew]
                         ]
                     );
-    log("externIO 0: ", externIO[0], " externIO 1: ", externIO[1]);
-    log("totalEx: ", totalEx[nExisting], " totalNew: ", totalNew[nNew], " equalSum: ", equalSum);
-    equalSum === 1;
+    sumEqCheck === 1;
 
     newNullRoot <== _newNullRootOut;
     newCommitmentRoot <== _newCommitmentRootOut;
     newCommitmentHash <== _newCommitmentHashOut;
 
-    // constraint on the context
+    // constraint on context
     signal contextSqrd <== context * context;
 }

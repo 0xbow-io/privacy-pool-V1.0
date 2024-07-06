@@ -108,13 +108,13 @@ export namespace TPrivacyPool {
     newCiphertext: TCommitment.CipherT[]
   }
 
-  export type PrivInT<T = bigint, PT = Point> = {
-    PrivateKey: T[]
-    Nonce: T[]
-    ExSaltPublicKey: [T, T][]
-    ExCiphertext: TCommitment.CipherT[]
-    ExIndex: T[]
-    ExSiblings: T[][]
+  export type PrivInT<T = bigint> = {
+    privateKey: T[]
+    nonce: T[]
+    exSaltPublicKey: [T, T][]
+    exCiphertext: TCommitment.CipherT[]
+    exIndex: T[]
+    exSiblings: T[][]
   }
 
   export type PublicOutT<T = bigint> = {

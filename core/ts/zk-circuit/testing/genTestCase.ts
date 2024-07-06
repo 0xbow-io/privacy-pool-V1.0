@@ -25,35 +25,29 @@ export const genTestCase =
     expectPass: boolean
   ) =>
   (
-    existingCommits: Commitment[] = [0, 1].map((i) => {
+    commits: Commitment[] = [0, 1, 2, 3].map((i) => {
       const c = NewCommitment({
         _pK: keys[i],
         _nonce: nonces[i],
         _scope: scope,
         _value: values[i]
       })
-      stateTree.insert(c.commitmentRoot)
-      // confirm mt has the leaf exists
-      if (!stateTree.has(c.commitmentRoot)) {
-        throw new Error("failed to insert commitment into state tree")
-      }
-      c.index = BigInt(stateTree.indexOf(c.commitmentRoot))
       return c
-    }),
-    newCommits: Commitment[] = [2, 3].map((i) =>
-      NewCommitment({
-        _pK: keys[i],
-        _nonce: nonces[i],
-        _scope: scope,
-        _value: values[i]
-      })
-    )
+    })
   ): {
     case: string
     inputs: TPrivacyPool.InT
     expectedOutputs: TPrivacyPool.PublicOutT<bigint>
     expectPass: boolean
   } => {
+    // batch insert leaves into the stateTree
+    const leaves = commits.map((c) => [c.commitmentRoot, c.nullRoot]).flat()
+    stateTree.insertMany(leaves)
+    // set the indexes of the commitments
+    commits.forEach((c) => {
+      c.setIndex(stateTree)
+    })
+
     const _args = FnPrivacyPool.getCircuitInFn({
       scope: scope,
       context: 100n,
@@ -61,8 +55,8 @@ export const genTestCase =
       maxDepth: 32,
       pkScalars: keys.map((k) => deriveSecretScalar(k)),
       nonces: nonces,
-      existing: existingCommits,
-      new: newCommits
+      existing: commits.slice(0, 2),
+      new: commits.slice(2, 4)
     })()
     return {
       case: caseName,

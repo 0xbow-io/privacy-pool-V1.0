@@ -4,17 +4,16 @@ import type {
   TPrivacyPool,
   SnarkJSOutputT,
   CircomOutputT,
-  MerkleProofT,
   Groth16_VKeyJSONT,
   CircomArtifactT,
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/core-ts/zk-circuit"
-import type { Commitment, TCommitment } from "@privacy-pool-v1/core-ts/domain"
-import { FnCommitment } from "@privacy-pool-v1/core-ts/account"
-import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
+import type {
+  TCommitment,
+  InclusionProofT
+} from "@privacy-pool-v1/core-ts/domain"
 import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/core-ts/domain"
 import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
-import type { Point } from "@zk-kit/baby-jubjub"
 import {
   fetchJsonWithRetry,
   loadBytesFromUrl
@@ -57,9 +56,9 @@ export namespace FnPrivacyPool {
       // calculate public value & isCommit
       externIO: ioT = getExternIO(args)() as ioT,
       // compute merkle proofs
-      merkleProofs: MerkleProofT[] = MerkleTreeInclusionProofs(
+      merkleProofs: InclusionProofT[] = MerkleTreeInclusionProofs(
         args
-      )() as MerkleProofT[]
+      )() as InclusionProofT[]
     ): InputsT => {
       // To-do add some verification checks here:
       //for (let i = 0; i < args.existing.length; i += 1) {
@@ -68,26 +67,32 @@ export namespace FnPrivacyPool {
       return {
         inputs: {
           scope: args.scope,
-          actualTreeDepth: BigInt(args.mt.depth),
+          actualTreeDepth:
+            merkleProofs[0].actualDepth == 0n // don't take the dummy value
+              ? merkleProofs[1].actualDepth
+              : merkleProofs[0].actualDepth,
           context: args.context,
           externIO: externIO,
-          existingStateRoot: args.mt.root,
+          existingStateRoot:
+            merkleProofs[0].actualDepth == 0n // don't take the dummy value
+              ? merkleProofs[1].root
+              : merkleProofs[0].root,
           newSaltPublicKey: args.new.map(
             (c) => c.public().saltPk as [bigint, bigint]
           ),
           newCiphertext: args.new.map((c) =>
             c.public().cipher.map((x) => x as bigint)
           ) as TCommitment.CipherT[],
-          PrivateKey: args.pkScalars,
-          Nonce: args.nonces,
-          ExSaltPublicKey: args.existing.map(
+          privateKey: args.pkScalars,
+          nonce: args.nonces,
+          exSaltPublicKey: args.existing.map(
             (c) => c.public().saltPk as [bigint, bigint]
           ),
-          ExCiphertext: args.existing.map((c) =>
+          exCiphertext: args.existing.map((c) =>
             c.public().cipher.map((x) => x as bigint)
           ) as TCommitment.CipherT[],
-          ExIndex: merkleProofs.map((p) => p.index),
-          ExSiblings: merkleProofs.map((p) => p.Siblings)
+          exIndex: merkleProofs.map((p) => BigInt(p.index)),
+          exSiblings: merkleProofs.map((p) => p.siblings)
         } as TPrivacyPool.InT,
         expectedOut: {
           newNullRoot: [

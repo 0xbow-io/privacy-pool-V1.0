@@ -1,5 +1,5 @@
 // run test with:
-// bunx jest ./tests/circom/privacy-pool/privacypool.templates.test.ts
+// bunx jest ./tests/circom/privacy-pool/privacypool.handlers.test.ts
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
@@ -53,14 +53,14 @@ describe("Test Privacy Pool templates", () => {
 
     // get merkle proofs for all commitments
     mtProofs = commitments.map((x) => {
-      const index = mt.indexOf(x.commitmentRoot)
-      return merkleFn(BigInt(index))
+      x.setIndex(mt)
+      return merkleFn(x.index)
     })
   })
 
   test(" HandleExistingCommitment should not reveal commitmentRoot & CommitmentHash, non-zero value and valid nullRoot for all commitments", async () => {
     const witnessTester = await PrivacyPool.circomkit({
-      file: "./privacy-pool/privacyPool",
+      file: "./privacy-pool/handlers",
       template: "HandleExistingCommitment",
       params: [32, 7, 4]
     }).witnessTester()
@@ -75,7 +75,7 @@ describe("Test Privacy Pool templates", () => {
         nonce: i,
         saltPublicKey: commitments[i].public().saltPk.map((x) => BigInt(x)),
         ciphertext: commitments[i].public().cipher.map((x) => BigInt(x)),
-        index: mtProofs[i].leafIndex,
+        index: mtProofs[i].index,
         siblings: mtProofs[i].siblings.map((x) => BigInt(x))
       }
       const witness = await witnessTester.calculateWitness(INPUTS)
@@ -99,7 +99,7 @@ describe("Test Privacy Pool templates", () => {
     const merkleFn = MerkleTreeInclusionProof(mt)
 
     const witnessTester = await PrivacyPool.circomkit({
-      file: "./privacy-pool/privacyPool",
+      file: "./privacy-pool/handlers",
       template: "HandleExistingCommitment",
       params: [32, 7, 4]
     }).witnessTester()
@@ -131,7 +131,7 @@ describe("Test Privacy Pool templates", () => {
       nonce: nonce,
       saltPublicKey: _c.public().saltPk.map((x) => BigInt(x)),
       ciphertext: _c.public().cipher.map((x) => BigInt(x)),
-      index: mtProof.leafIndex,
+      index: mtProof.index,
       siblings: mtProof.siblings.map((x) => BigInt(x))
     }
     const witness = await witnessTester.calculateWitness(INPUTS)
@@ -154,7 +154,7 @@ describe("Test Privacy Pool templates", () => {
     const merkleFn = MerkleTreeInclusionProof(mt)
 
     const witnessTester = await PrivacyPool.circomkit({
-      file: "./privacy-pool/privacyPool",
+      file: "./privacy-pool/handlers",
       template: "HandleExistingCommitment",
       params: [32, 7, 4]
     }).witnessTester()
@@ -184,7 +184,7 @@ describe("Test Privacy Pool templates", () => {
       nonce: nonce,
       saltPublicKey: _c.public().saltPk.map((x) => BigInt(x) - 100n), // alter the salt Pk to invalidate the ownership
       ciphertext: _c.public().cipher.map((x) => BigInt(x)),
-      index: mtProof.leafIndex,
+      index: mtProof.index,
       siblings: mtProof.siblings.map((x) => BigInt(x))
     }
     const witness = await witnessTester.calculateWitness(INPUTS)
@@ -202,7 +202,7 @@ describe("Test Privacy Pool templates", () => {
 
   test(" HandleNewCommitment should reveal commitmentRoot & CommitmentHash and value but not nullRoot for all commitments", async () => {
     const witnessTester = await PrivacyPool.circomkit({
-      file: "./privacy-pool/privacyPool",
+      file: "./privacy-pool/handlers",
       template: "HandleNewCommitment",
       params: [7, 4]
     }).witnessTester()
@@ -235,7 +235,7 @@ describe("Test Privacy Pool templates", () => {
 
   test("Invalid ownership should have different CommitmentHash, commitmentRoot & nullRoot, and zero value ", async () => {
     const witnessTester = await PrivacyPool.circomkit({
-      file: "./privacy-pool/privacyPool",
+      file: "./privacy-pool/handlers",
       template: "HandleNewCommitment",
       params: [7, 4]
     }).witnessTester()

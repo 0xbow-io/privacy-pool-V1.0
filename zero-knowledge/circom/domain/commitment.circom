@@ -49,7 +49,7 @@ This should still invalidate membership proofs.
 
 Hence, a commmitment root is calculated by constructing a merkle-tree with the ciphertext elements and the commitment hash.
 This root is then inserted into the Pool's state tree.
-Re-encrypting a receoverd commitment will then invalidate the membership proof as the commitmentRoot will differ.
+Re-encrypting a recovered commitment will then invalidate the membership proof as the commitmentRoot will differ.
 **/
 
 template RecoverCommitmentKeys(){
@@ -70,8 +70,8 @@ template RecoverCommitmentKeys(){
 
 template DecryptCommitment(cipherLen, tupleLen){
     signal input encryptionKey[2];               // ecdh shared secret key
-    signal input nonce;                         // nonce value for Poseidon decryption
-    signal input ciphertext[cipherLen];        // encrypted commitment tuple
+    signal input nonce;                          // nonce value for Poseidon decryption
+    signal input ciphertext[cipherLen];          // encrypted commitment tuple
 
     signal output tuple[tupleLen];
     signal output hash;
@@ -104,7 +104,7 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     signal input privateKey;                // EdDSA private key
     signal input saltPublicKey[2];          // used to derive the encryptionKey
     signal input nonce;                     // nonce value used for Poseidon decryption
-    signal input ciphertext[cipherLen];    // encrypted commitment tuple
+    signal input ciphertext[cipherLen];     // encrypted commitment tuple
 
     signal output value;
     signal output nullRoot;
@@ -127,7 +127,7 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
     // As it only contains private elements (aside
     // from the saltPublicKey which is public).
     // It's utilised as a nullifier to the commitmentRoot.
-    nullRoot <== CheckRoot(3)(
+    nullRoot <== ComputeTreeRoot(3)(
         [
             publicKey[0], publicKey[1],
             secretKey[0], secretKey[1],
@@ -136,15 +136,9 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
         ]);
 
     //  [value, scope, secret.x, secret.y]
-    var (
-        tuple[tupleLen],
-        hash
-        ) = DecryptCommitment(
-                cipherLen,
-                tupleLen
-            )(
-                encryptionKey, nonce, ciphertext
-            );
+    var (tuple[tupleLen],hash) = DecryptCommitment(cipherLen, tupleLen)(
+            encryptionKey, nonce, ciphertext
+        );
 
     value <== tuple[0];
     commitmentHash <== hash;
@@ -159,46 +153,30 @@ template CommitmentOwnershipProof(cipherLen, tupleLen){
             secret_yEqCheck,
             computedCommitmentRoot
         ) = (
-            IsEqual()(
-                        [
-                            scope, tuple[1] // match scope
-                        ]
-                    ),
-            IsEqual()(
-                        [
-                            secretKey[0], tuple[2] // match secret.x component
-                        ]
-                    ),
-            IsEqual()(
-                        [
-                            secretKey[1], tuple[3] // match secret.y component
-                        ]
-                    ),
+            IsEqual()([scope, tuple[1]]),        // match scope
+            IsEqual()([secretKey[0],tuple[2]]), // match secret.x component
+            IsEqual()([secretKey[1],tuple[3]]), // match secret.y component
             // compute commitment root
-            CheckRoot(3)(
-                        [
-                            ciphertext[0], ciphertext[1],
-                            ciphertext[2], ciphertext[3],
-                            ciphertext[4], ciphertext[5],
-                            ciphertext[6], hash
-                        ]
-                    )
+            ComputeTreeRoot(3)(
+            [
+                ciphertext[0], ciphertext[1],
+                ciphertext[2], ciphertext[3],
+                ciphertext[4], ciphertext[5],
+                ciphertext[6], hash
+            ])
         );
 
     // invalidate the root if ownership is invalid
     // necessary to invalidate membership proofs
     var ownershipValidityCheck = IsEqual()(
-            [
-                scopeEqCheck + secret_xEqCheck + secret_yEqCheck,
-                3
-            ]
+            [scopeEqCheck + secret_xEqCheck + secret_yEqCheck, 3]
         );
     commitmentRoot <== computedCommitmentRoot * ownershipValidityCheck;
 }
 
 /** Context:
     Privacy Pool V1 mantains a lean incremental merkle tree structure from @zk-kit for efficient hashing.
-    The leaf nodes are the commitmentRoot of the commitments.
+    The leaf nodes are the commitmentRoot & nullRoots of the commitments.
         * see: CommitmentOwnershipProof
     Compute the stateRoot given the inclusion merkle proof for the commitmentRoot
     Correct merkle-root proves existence of the commitment, and the avaiability of a
@@ -211,13 +189,8 @@ template CommitmentMembershipProof(maxTreeDepth){
     signal input siblings[maxTreeDepth];
 
     signal output root;
-    var computedRoot = MerkleTreeInclusionProof(
-                            maxTreeDepth
-                        )(
-                            commitmentRoot,
-                            actualTreeDepth,
-                            index,
-                            siblings
-                        );
+    var computedRoot = LeanIMTInclusionProof( maxTreeDepth )(
+            commitmentRoot,index,siblings,actualTreeDepth
+        );
     root <== computedRoot;
 }

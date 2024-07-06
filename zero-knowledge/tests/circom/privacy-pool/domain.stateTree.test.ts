@@ -2,7 +2,7 @@
 // bunx jest ./tests/circom/privacy-pool/domain.stateTree.test.ts
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
-import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
+import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import { generatePrivateKey } from "viem/accounts"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"

@@ -1,5 +1,5 @@
 import type { TPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
-import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
+import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/domain"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 
 import type {

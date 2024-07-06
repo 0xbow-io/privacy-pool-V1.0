@@ -125,8 +125,8 @@ export namespace CCommitment {
 
     public = () => this._public
 
-    set index(i: bigint) {
-      this._index = i
+    setIndex(mt: LeanIMT) {
+      this._index = BigInt(mt.indexOf(this.commitmentRoot))
     }
     get index() {
       return this._index
