@@ -107,12 +107,14 @@ template HandleExistingCommitment(maxTreeDepth, cipherLen, tupleLen){
                         );
 
     // Voiud commitments have 0 value
-    // and don't exists in the state Tree
-    isVoidCheck.in <== value + computedStateRoot;
+    isVoidCheck.in <== value;
     stateRootEqCheck.in <== computedStateRoot - stateRoot;
 
-    // only forward commitmentRoot & hash if the commitment is invalid
+
+    log("stateRootEqCheck ", stateRootEqCheck.out, " computedStateRoot ", computedStateRoot, " stateRoot ", stateRoot, " value ", value);
+
     // commitment is invalid when its' not void and the stateRoot is not equal
+    // only forward commitmentRoot & hash if the commitment is invalid
     component forward[3];
     for (var i = 0; i < 3; i++) {
         forward[i] = NOR();
@@ -273,6 +275,8 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
                             totalNew[nNew]
                         ]
                     );
+    log("externIO 0: ", externIO[0], " externIO 1: ", externIO[1]);
+    log("totalEx: ", totalEx[nExisting], " totalNew: ", totalNew[nNew], " equalSum: ", equalSum);
     equalSum === 1;
 
     newNullRoot <== _newNullRootOut;

@@ -1,51 +1,23 @@
 pragma circom 2.1.9;
 
+// ciromlib imports
+include "mux1.circom";
 // zk-kit imports
 include "safe-comparators.circom";
 // MACI imports
 include "calculateTotal.circom";
 include "hashers.circom";
 
-// Taken from @zk-kit/binary-merkle-root.circom
-// If imported directly we get a conflict with poseidon import from circomlib
-template MerkleTreeInclusionProof(MAX_DEPTH) {
-    signal input leaf, depth, leafIndex, siblings[MAX_DEPTH];
-
-    signal output out;
-
-    signal nodes[MAX_DEPTH + 1];
-    nodes[0] <== leaf;
-
-    signal roots[MAX_DEPTH];
-    var root = 0;
-
-    // computation of leaf indices C-01
-    var indices[MAX_DEPTH] = MerkleGeneratePathIndices(MAX_DEPTH)(leafIndex);
-
-    for (var i = 0; i < MAX_DEPTH; i++) {
-        var isDepth = IsEqual()([depth, i]);
-
-        roots[i] <== isDepth * nodes[i];
-
-        root += roots[i];
-
-        var c[2][2] = [ [nodes[i], siblings[i]], [siblings[i], nodes[i]] ];
-        var childNodes[2] = MultiMux1(2)(c, indices[i]);
-
-        nodes[i + 1] <== PoseidonHasher(2)(childNodes);
-    }
-
-    var isDepth = IsEqual()([depth, MAX_DEPTH]);
-    out <== root + isDepth * nodes[MAX_DEPTH];
-}
-
 /**
- Taken from MACI:
- https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
- Due to invalid version from npm.
+
+    Taken from MACI:
+    https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
+    When pulled from NPM, this template is missing..
+
  * Calculates the path indices required for Merkle proof verifications.
  * Given a node index within an IMT and the total tree levels, it outputs the path indices leading to that node.
  * The template handles the modulo and division operations to break down the tree index into its constituent path indices.
+ 
  */
 template MerkleGeneratePathIndices(levels) {
     var BASE = 2;
@@ -76,15 +48,52 @@ template MerkleGeneratePathIndices(levels) {
     computedCalculateTotal === in;
 }
 
+/***
+    Verify Proof for Lean Incremental Tree (@zk-kit)
+    Translation of verifyProof fn from TypeScript to Circom
+    Refer to: https://github.com/privacy-scaling-explorations/zk-kit/blob/main/packages/lean-imt/src/lean-imt.ts#L293C1-L317C6
+***/
+template LeanIMTInclusionProof(maxDepth) {
+    signal input leaf, leafIndex, siblings[maxDepth], actualDepth;
+    signal output out;
 
-/**
- Taken from MACI:
- https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
- Due to invalid version from npm.
- * Verifies the correct construction of a Merkle tree from a set of leaves.
- * Given a Merkle root and a list of leaves, check if the root is the
- * correct result of inserting all the leaves into the tree (in the given order).
- */
+    // Convert leafIndex to bits
+    var indices[maxDepth] = MerkleGeneratePathIndices(maxDepth)(leafIndex);
+
+    signal nodes[maxDepth + 1];
+    signal roots[maxDepth];
+    
+    // let node = leaf
+    nodes[0] <== leaf; 
+    
+    var root = 0;
+    // for (let i = 0; i < siblings.length; i += 1)
+    for (var i = 0; i < maxDepth; i++) {
+        var isDepth = IsEqual()([actualDepth, i]);
+
+        roots[i] <== isDepth * nodes[i];
+        root += roots[i];
+
+        //node = ((index >> i) & 1) ?  hash(siblings[i], node) : hash(node, siblings[i]);
+        var c[2][2] = [ [nodes[i], siblings[i]], [siblings[i], nodes[i]] ];
+        var childNodes[2] = MultiMux1(2)(c, indices[i]);
+        nodes[i + 1] <== PoseidonHasher(2)(childNodes);
+    }
+
+    var isDepth = IsEqual()([actualDepth, maxDepth]);
+    out <== root + isDepth * nodes[maxDepth];
+}
+
+
+/***
+    Taken from MACI:
+    https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
+    Version from NPM has a bug in this line: [computedLevelHashers[i] = PoseidonHasher(2)([computedLevelHashers[k*2], computedLevelHashers[k*2+1]]);]  
+    Instead of computedLevelHashers, its Hashers...
+
+    * Constructs a binary merkle tree with a given number of levels.
+    * Returns the Merkle Root of the tree.
+***/
 template CheckRoot(levels) {
     // The total number of leaves in the Merkle tree, calculated as 2 to the power of `levels`.
     var totalLeaves = 2 ** levels;

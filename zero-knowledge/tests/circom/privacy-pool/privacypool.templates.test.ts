@@ -6,13 +6,14 @@ import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
 import { generatePrivateKey } from "viem/accounts"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
-import type { Point } from "@zk-kit/baby-jubjub"
-import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
+import type {
+  Commitment,
+  InclusionProofT
+} from "@privacy-pool-v1/core-ts/domain"
 import {
   NewCommitment,
   MerkleTreeInclusionProof
 } from "@privacy-pool-v1/core-ts/domain"
-import type { MerkleProofT } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 
 import { test, describe, beforeAll, afterEach, expect } from "@jest/globals"
@@ -26,7 +27,7 @@ describe("Test Privacy Pool templates", () => {
   const TestSample = 10
   const mt = new LeanIMT(hashLeftRight)
   const commitments: Commitment[] = []
-  let mtProofs: MerkleProofT[] = []
+  let mtProofs: InclusionProofT[] = []
   const keys = Array.from({ length: TestSample }, () => generatePrivateKey())
 
   afterEach(async () => {
@@ -69,13 +70,13 @@ describe("Test Privacy Pool templates", () => {
       const INPUTS = {
         scope: _tuple[1],
         stateRoot: mt.root,
-        actualTreeDepth: mtProofs[i].Depth,
+        actualTreeDepth: mtProofs[i].actualDepth,
         privateKey: deriveSecretScalar(keys[i]),
         nonce: i,
         saltPublicKey: commitments[i].public().saltPk.map((x) => BigInt(x)),
         ciphertext: commitments[i].public().cipher.map((x) => BigInt(x)),
-        index: mtProofs[i].index,
-        siblings: mtProofs[i].Siblings.map((x) => BigInt(x))
+        index: mtProofs[i].leafIndex,
+        siblings: mtProofs[i].siblings.map((x) => BigInt(x))
       }
       const witness = await witnessTester.calculateWitness(INPUTS)
       await witnessTester.expectConstraintPass(witness)
@@ -125,13 +126,13 @@ describe("Test Privacy Pool templates", () => {
     const INPUTS = {
       scope: _tuple[1],
       stateRoot: mt.root - 100n, // alter the state root to invalidate the commitment membership proof
-      actualTreeDepth: mtProof.Depth,
+      actualTreeDepth: mtProof.actualDepth,
       privateKey: deriveSecretScalar(privateKey),
       nonce: nonce,
       saltPublicKey: _c.public().saltPk.map((x) => BigInt(x)),
       ciphertext: _c.public().cipher.map((x) => BigInt(x)),
-      index: mtProof.index,
-      siblings: mtProof.Siblings.map((x) => BigInt(x))
+      index: mtProof.leafIndex,
+      siblings: mtProof.siblings.map((x) => BigInt(x))
     }
     const witness = await witnessTester.calculateWitness(INPUTS)
     await witnessTester.expectConstraintPass(witness)
@@ -147,56 +148,57 @@ describe("Test Privacy Pool templates", () => {
     expect(commitmentRoot).toBe(_c.commitmentRoot)
     expect(commitmentHash).toBe(_c.hash())
     expect(value).toBe(0n)
-  }, 100000),
-    test("Invalid ownership should have different CommitmentHash, commitmentRoot & nullRoot, and zero value ", async () => {
-      const merkleFn = MerkleTreeInclusionProof(mt)
+  }, 100000)
 
-      const witnessTester = await PrivacyPool.circomkit({
-        file: "./privacy-pool/privacyPool",
-        template: "HandleExistingCommitment",
-        params: [32, 7, 4]
-      }).witnessTester()
+  test("Invalid ownership should have different CommitmentHash, commitmentRoot & nullRoot, and zero value ", async () => {
+    const merkleFn = MerkleTreeInclusionProof(mt)
 
-      const privateKey = generatePrivateKey()
-      const nonce = randomBigint(0n, 1000n)
-      const _c = NewCommitment({
-        _pK: privateKey,
-        _nonce: nonce,
-        _scope: randomBigint(0n, 1000n),
-        _value: randomBigint(0n, 1000n)
-      })
+    const witnessTester = await PrivacyPool.circomkit({
+      file: "./privacy-pool/privacyPool",
+      template: "HandleExistingCommitment",
+      params: [32, 7, 4]
+    }).witnessTester()
 
-      // insert into tree to get proof
-      mt.insert(_c.commitmentRoot)
-      // confirm mt has the leaf exists
-      expect(mt.has(_c.commitmentRoot)).toBe(true)
-      const index = mt.indexOf(_c.commitmentRoot)
-      const mtProof = merkleFn(BigInt(index))
+    const privateKey = generatePrivateKey()
+    const nonce = randomBigint(0n, 1000n)
+    const _c = NewCommitment({
+      _pK: privateKey,
+      _nonce: nonce,
+      _scope: randomBigint(0n, 1000n),
+      _value: randomBigint(0n, 1000n)
+    })
 
-      const _tuple = _c.asTuple()
-      const INPUTS = {
-        scope: _tuple[1],
-        stateRoot: mt.root,
-        actualTreeDepth: mtProof.Depth,
-        privateKey: deriveSecretScalar(privateKey),
-        nonce: nonce,
-        saltPublicKey: _c.public().saltPk.map((x) => BigInt(x) - 100n), // alter the salt Pk to invalidate the ownership
-        ciphertext: _c.public().cipher.map((x) => BigInt(x)),
-        index: mtProof.index,
-        siblings: mtProof.Siblings.map((x) => BigInt(x))
-      }
-      const witness = await witnessTester.calculateWitness(INPUTS)
-      await witnessTester.expectConstraintPass(witness)
-      const nullRoot = await getSignal(witnessTester, witness, "out[0]")
-      const commitmentRoot = await getSignal(witnessTester, witness, "out[1]")
-      const commitmentHash = await getSignal(witnessTester, witness, "out[2]")
-      const value = await getSignal(witnessTester, witness, "out[3]")
+    // insert into tree to get proof
+    mt.insert(_c.commitmentRoot)
+    // confirm mt has the leaf exists
+    expect(mt.has(_c.commitmentRoot)).toBe(true)
+    const index = mt.indexOf(_c.commitmentRoot)
+    const mtProof = merkleFn(BigInt(index))
 
-      expect(nullRoot).not.toBe(_c.nullRoot)
-      expect(commitmentRoot).toBe(0n) // mismatch so commitmentRoot is set to 0
-      expect(commitmentHash).not.toBe(_c.hash()) // mimsatch as the Ek derived from the incorret saltPk is different.
-      expect(value).toBe(0n)
-    }, 100000)
+    const _tuple = _c.asTuple()
+    const INPUTS = {
+      scope: _tuple[1],
+      stateRoot: mt.root,
+      actualTreeDepth: mtProof.actualDepth,
+      privateKey: deriveSecretScalar(privateKey),
+      nonce: nonce,
+      saltPublicKey: _c.public().saltPk.map((x) => BigInt(x) - 100n), // alter the salt Pk to invalidate the ownership
+      ciphertext: _c.public().cipher.map((x) => BigInt(x)),
+      index: mtProof.leafIndex,
+      siblings: mtProof.siblings.map((x) => BigInt(x))
+    }
+    const witness = await witnessTester.calculateWitness(INPUTS)
+    await witnessTester.expectConstraintPass(witness)
+    const nullRoot = await getSignal(witnessTester, witness, "out[0]")
+    const commitmentRoot = await getSignal(witnessTester, witness, "out[1]")
+    const commitmentHash = await getSignal(witnessTester, witness, "out[2]")
+    const value = await getSignal(witnessTester, witness, "out[3]")
+
+    expect(nullRoot).not.toBe(_c.nullRoot)
+    expect(commitmentRoot).toBe(0n) // mismatch so commitmentRoot is set to 0
+    expect(commitmentHash).not.toBe(_c.hash()) // mimsatch as the Ek derived from the incorret saltPk is different.
+    expect(value).toBe(0n)
+  }, 100000)
 
   test(" HandleNewCommitment should reveal commitmentRoot & CommitmentHash and value but not nullRoot for all commitments", async () => {
     const witnessTester = await PrivacyPool.circomkit({

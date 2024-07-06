@@ -1,21 +1,21 @@
-import type {
-  TPrivacyPool,
-  MerkleProofT
-} from "@privacy-pool-v1/core-ts/zk-circuit"
+import type { TPrivacyPool } from "@privacy-pool-v1/core-ts/zk-circuit"
 import { DummyMerkleProof } from "@privacy-pool-v1/core-ts/zk-circuit"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 
-import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
+import type {
+  Commitment,
+  InclusionProofT
+} from "@privacy-pool-v1/core-ts/domain"
 
 export const MerkleTreeInclusionProof =
   (mt: LeanIMT, maxDepth = 32) =>
-  (leafindex: bigint) =>
-    FnPrivacyPool.merkleProofFn({ mt, maxDepth })(leafindex)
+  (idx: bigint | number) =>
+    FnPrivacyPool.merkleProofFn({ mt, maxDepth })(idx)
 
 export const MerkleTreeInclusionProofs =
   <
     argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-    OuT extends Required<MerkleProofT>
+    OuT extends Required<InclusionProofT>
   >(
     args: argsT,
     merkleProof: (
@@ -43,7 +43,7 @@ export namespace FnPrivacyPool {
   export const merkleProofFn =
     <
       argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
-      OuT extends Required<MerkleProofT>
+      OuT extends Required<InclusionProofT>
     >(
       args: argsT
     ) =>
@@ -60,10 +60,10 @@ export namespace FnPrivacyPool {
           }
         }
         return {
-          Root: proof.root,
-          Depth: BigInt(depth),
-          index: proof.index ? BigInt(proof.index) : 0n,
-          Siblings: proof.siblings
+          root: proof.root,
+          index: proof.index,
+          actualDepth: BigInt(depth),
+          siblings: proof.siblings
         } as OuT
       } catch (e) {
         throw Error(

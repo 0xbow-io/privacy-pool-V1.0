@@ -14,7 +14,7 @@ export const NewCommitment = (args: {
   _nonce: bigint
   _scope: bigint
   _value: bigint
-}) => CCommitment.CommitmentC.new(args)()
+}): Commitment => CCommitment.CommitmentC.new(args)()
 
 export const RecoverCommitment = (
   args: {

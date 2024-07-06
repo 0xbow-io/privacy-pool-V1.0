@@ -1,5 +1,5 @@
 // run test with:
-// bunx jest ./tests/circom/privacy-pool/domain.commitment.test
+// bunx jest ./tests/circom/privacy-pool/domain.commitment.test.ts
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
@@ -13,6 +13,7 @@ import {
   DerivePrivacyKeys
 } from "@privacy-pool-v1/core-ts/domain"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import type { CipherText } from "@zk-kit/poseidon-cipher"
 
 import { test, describe, afterEach, expect } from "@jest/globals"
 
@@ -93,11 +94,11 @@ describe("Test CommitmentOwnershipProof template", () => {
       _value: randomBigint(0n, 1000n)
     })
     const INPUTS = {
-      scope: c._public.scope,
+      scope: c.public().scope as bigint,
       privateKey: deriveSecretScalar(_pK),
-      saltPublicKey: c._public.saltPk.map((x) => BigInt(x)),
+      saltPublicKey: c.public().saltPk as [bigint, bigint],
       nonce: _nonce,
-      ciphertext: c._public.cipher.map((x) => BigInt(x))
+      ciphertext: c.public().cipher as CipherText<bigint>
     }
 
     const _tuple = c.asTuple()
@@ -133,44 +134,44 @@ describe("Test CommitmentOwnershipProof template", () => {
     expect(nullRoot).toBe(c.nullRoot)
     expect(commitmentRoot).toBe(c.commitmentRoot)
     expect(commitmentHash).toBe(hash)
-  }),
-    test("CommitmentMembershipProof should pass for %s", async () => {
-      const TestSample = 10
-      const mt = new LeanIMT(hashLeftRight)
-      const merkleFn = MerkleTreeInclusionProof(mt)
+  })
+  test("CommitmentMembershipProof should pass for %s", async () => {
+    const TestSample = 10
+    const mt = new LeanIMT(hashLeftRight)
+    const merkleFn = MerkleTreeInclusionProof(mt)
 
-      const commitments = Array.from({ length: TestSample }, () => {
-        const c = NewCommitment({
-          _pK: generatePrivateKey(),
-          _nonce: randomBigint(0n, 1000n),
-          _scope: randomBigint(0n, 1000n),
-          _value: randomBigint(0n, 1000n)
-        })
-        mt.insert(c.commitmentRoot)
-        // confirm mt has the leaf exists
-        expect(mt.has(c.commitmentRoot)).toBe(true)
-        return c
+    const commitments = Array.from({ length: TestSample }, () => {
+      const c = NewCommitment({
+        _pK: generatePrivateKey(),
+        _nonce: randomBigint(0n, 1000n),
+        _scope: randomBigint(0n, 1000n),
+        _value: randomBigint(0n, 1000n)
       })
+      mt.insert(c.commitmentRoot)
+      // confirm mt has the leaf exists
+      expect(mt.has(c.commitmentRoot)).toBe(true)
+      return c
+    })
 
-      for (let i = 0; i < TestSample; i++) {
-        const witnessTester = await PrivacyPool.circomkit({
-          file: "./domain/commitment",
-          template: "CommitmentMembershipProof",
-          params: [32]
-        }).witnessTester()
+    for (let i = 0; i < TestSample; i++) {
+      const witnessTester = await PrivacyPool.circomkit({
+        file: "./domain/commitment",
+        template: "CommitmentMembershipProof",
+        params: [32]
+      }).witnessTester()
 
-        const index = mt.indexOf(commitments[i].commitmentRoot)
-        const proof = merkleFn(BigInt(index))
-        const INPUTS = {
-          actualTreeDepth: proof.Depth,
-          commitmentRoot: commitments[i].commitmentRoot,
-          index: proof.index,
-          siblings: proof.Siblings.map((x) => BigInt(x))
-        }
-        const witness = await witnessTester.calculateWitness(INPUTS)
-        await witnessTester.expectConstraintPass(witness)
-        const root = await getSignal(witnessTester, witness, "root")
-        expect(root).toBe(proof.Root)
+      const index = mt.indexOf(commitments[i].commitmentRoot)
+      const proof = merkleFn(BigInt(index))
+      const INPUTS = {
+        actualTreeDepth: proof.Depth,
+        commitmentRoot: commitments[i].commitmentRoot,
+        index: proof.index,
+        siblings: proof.Siblings.map((x) => BigInt(x))
       }
-    }, 1000000)
+      const witness = await witnessTester.calculateWitness(INPUTS)
+      await witnessTester.expectConstraintPass(witness)
+      const root = await getSignal(witnessTester, witness, "root")
+      expect(root).toBe(proof.Root)
+    }
+  }, 1000000)
 })
