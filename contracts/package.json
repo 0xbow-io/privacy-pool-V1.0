@@ -7,5 +7,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "forge:test": "forge test -v",
+    "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
   }
 }
