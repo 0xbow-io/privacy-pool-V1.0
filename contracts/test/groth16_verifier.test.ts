@@ -5,8 +5,8 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import hre from "hardhat"
 
 /**
- * Test GROTH16 Verifier Contract with testcases found in the test-data folder
- * these test cases are produced by the script: zero-knowledge/scripts/privacy-pool/genTestVerifierData.ts
+ * Test GROTH16 Verifier Contract with test-data found in the test-data folder
+ * these test-data were genereated via the script: zero-knowledge/scripts/privacy-pool/genTestVerifierData.ts
  */
 describe("Test GROTH16 Verifier Contract", () => {
   const testInputPaths: string[] = Array.from({ length: 4 }, (_, i) => {

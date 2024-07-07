@@ -7,6 +7,7 @@ cache_path = 'cache_forge'
 fs_permissions = [
     { access = "read", path = "./" },
     { access = "read", path = "../node_modules" },
+    { access = "read", path = "./test/test-data" },
 ]
 
 [rpc_endpoints]

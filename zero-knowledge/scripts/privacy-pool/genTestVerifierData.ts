@@ -43,10 +43,9 @@ async function exportProof(
       const packed = FnPrivacyPool.parseOutputFn("pack")(out)
       exportToJSON(
         {
-          inputs: tc.inputs,
           proof: packed
         },
-        path.join(baseOutPath, ` testcase_${i}_${k}.json`)
+        path.join(baseOutPath, `testcase_${i}_${k}.json`)
       )
       k++
     }
