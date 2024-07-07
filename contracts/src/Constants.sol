@@ -47,21 +47,19 @@ address constant D_NATIVE_PRIMITIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
  *     "existingStateRoot",
  *     "newSaltPublicKey",
  *     "newCiphertext"
- **/
+ *
+ */
 uint8 constant D_NewNullRoot_StartIdx = 0;
-uint8 constant D_NewCommitmentRoot_StartIdx = (D_MAX_ALLOWED_EXISTING +
-    D_MAX_ALLOWED_NEW);
-uint8 constant D_NewCommitmentHash_StartIdx = D_NewCommitmentRoot_StartIdx +
-    (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
-uint8 constant D_Scope_StartIdx = D_NewCommitmentHash_StartIdx +
-    (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+uint8 constant D_NewCommitmentRoot_StartIdx = (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+uint8 constant D_NewCommitmentHash_StartIdx =
+    D_NewCommitmentRoot_StartIdx + (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+uint8 constant D_Scope_StartIdx = D_NewCommitmentHash_StartIdx + (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
 uint8 constant D_ActualTreeDepth_StartIdx = D_Scope_StartIdx + 1;
 uint8 constant D_Context_StartIdx = D_ActualTreeDepth_StartIdx + 1;
 uint8 constant D_ExternIO_StartIdx = D_Context_StartIdx + 1;
 uint8 constant D_ExistingStateRoot_StartIdx = D_ExternIO_StartIdx + 2;
 uint8 constant D_NewSaltPublicKey_StartIdx = D_ExistingStateRoot_StartIdx + 1;
-uint8 constant D_NewCiphertext_StartIdx = D_NewSaltPublicKey_StartIdx +
-    (D_KEY_SIZE * D_MAX_ALLOWED_NEW);
+uint8 constant D_NewCiphertext_StartIdx = D_NewSaltPublicKey_StartIdx + (D_KEY_SIZE * D_MAX_ALLOWED_NEW);
 
 /// @dev The Snark Scalar field value
 /// used to handle overflows / underflows

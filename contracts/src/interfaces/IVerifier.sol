@@ -12,12 +12,9 @@ interface IVerifier {
     error SinkIsZero();
     error FeeCollectorIsZero();
     error InvalidScope(uint256 got, uint256 expected);
-    error InvalidContext(uint256 got, uint256 expected);
-    error InvalidStateRoot(uint256 root, uint256 got, uint256 expected);
+    error InvalidContext(uint256 got);
+    error InvalidStateTreeDepth(uint256 root, uint256 depth, uint256 actualDepth);
 
     error ProofVerificationFailed();
-
-    error InvalidNullRoot();
-    error InvalidCommitmentRoot();
-    error InvalidCommitmentHash();
+    error InvalidProofOutput();
 }

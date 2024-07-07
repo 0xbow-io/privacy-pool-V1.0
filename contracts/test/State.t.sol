@@ -16,7 +16,7 @@ import {IPrivacyPool} from "../src/interfaces/IPrivacyPool.sol";
  * test Privacy Pool State Contract
  *
  */
-contract StateWrapper is Test, State {
+contract StateTester is Test, State {
     function Test_ApplyProofToState(IPrivacyPool.GROTH16Proof calldata proof, bytes memory expectedErrorMsg) public {
         // if expecting an error Msg, then assert it
         if (expectedErrorMsg.length > 0) {
@@ -55,10 +55,19 @@ contract StateWrapper is Test, State {
 }
 
 contract TestState is Test {
-    StateWrapper internal stateW;
+    StateTester internal stateW;
+
+    struct TestProofData {
+        uint256[2] newNullRoot;
+        uint256[2] newCommitmentRoot;
+        uint256[2] newCommitmentHash;
+        uint256[D_KEY_SIZE][2] _saltPubkey;
+        uint256[D_CIPHERTEXT_SIZE][2] _cipherText;
+        bytes expectedErrorMsg;
+    }
 
     function setUp() public {
-        stateW = new StateWrapper();
+        stateW = new StateTester();
     }
 
     function Invoke_ApplyProofToState(
@@ -325,15 +334,6 @@ contract TestState is Test {
         }
     }
 
-    struct TestProofData {
-        uint256[2] newNullRoot;
-        uint256[2] newCommitmentRoot;
-        uint256[2] newCommitmentHash;
-        uint256[D_KEY_SIZE][2] _saltPubkey;
-        uint256[D_CIPHERTEXT_SIZE][2] _cipherText;
-        bytes expectedErrorMsg;
-    }
-
     /**
      * @dev Test the ApplyProofToState function with positive test cases
      */
@@ -508,7 +508,7 @@ contract TestState is Test {
             /**
              * Verify the state update
              * SeekRootIdxs() for newNullRoots & newCommitmentRoots should return valid idxs
-             * UnpackCipherAtIdx() at the i && i * 2 should return the correct values
+             * UnpackCipherAtIdx() at the i && i * 2 + 1 should return the correct values
              *
              */
             for (uint256 j = 0; j < 2; j++) {

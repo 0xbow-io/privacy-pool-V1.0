@@ -16,30 +16,33 @@ contract State is IState {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableMap for EnumerableMap.UintToUintMap;
 
-    /// @dev Lean Incremental Merkle merkleTree from zk-kit
-    /// Dynamic depth but but capped at default 32 levels
-    /// note:
-    /// * LeanIMT does not store the actual merkleTree nodes, only the side nodes
-    /// * Leaf values are not actually stored, but used instead as map keys
-    /// * to map between leaf value and their corresponding leaf index.
-    /// * Therefore off-chain re-construction of state merkleTree is required
-    /// * in order to compute membership/inclusion proofs`
+    /**
+     * @dev Lean Incremental Merkle merkleTree from zk-kit
+     * note:
+     *  LeanIMT does not store the actual merkleTree nodes, only the side nodes
+     *  Leaf values are not actually stored, but used instead as map keys
+     *  to map between leaf value and their corresponding leaf index.
+     *  Therefore off-chain re-construction of state merkleTree is required
+     *  in order to compute membership/inclusion proofs`
+     */
     using InternalLeanIMT for LeanIMTData;
 
-    /// @dev cipherStore: storage of encrypted commitment (poseidon encryption)
-    /// that has `1een merged with a EdDSA public-key & a hash value.
-    /// note:
-    /// *   Encryption key is derived through ECDH from a Salt key & EdSA KeyPair.
-    ///     The actual Salt key is not stored within the state and is assumed unrecoverable.
-    /// *   The computed encryption key is assumed to be discarded.
-    /// *   This is acceptable as the public key that was derived from the Salt
-    ///     when paired with the correct EdSA private-key is sufficient to recover the encryption key.
-    /// *   To assist indexers, the salt public-key (x,y coordinates) is stored within
-    ///     the last elements of the cipher, with the last element being the commitment hash.
-    /// *   The commitment hash, and ciphertext elements (excluding salt public-key)
-    ///     are required to compute the commitment-root.
-    /// *   The commitment hash is a hash of the commitment tuple (value, scope, secret)
-    ///     and can be found within the proof's public output signals
+    /**
+     * @dev cipherStore: storage of encrypted commitments (poseidon encryption)
+     * were ciphertext copmonents were merged with a EdDSA public-key & a hash value.
+     * note:
+     *  Encryption key is derived through ECDH from a Salt key & EdSA KeyPair.
+     *  The actual Salt key is not stored within the state and is assumed unrecoverable.
+     *  The computed encryption key is assumed to be discarded.
+     *  This is acceptable as the public key that was derived from the Salt
+     *  when paired with the correct EdSA private-key is sufficient to recover the encryption key.
+     *  To assist indexers, the salt public-key (x,y coordinates) is stored within
+     *  the last elements of the cipher, with the last element being the commitment hash.
+     *  The commitment hash, and ciphertext elements (excluding salt public-key)
+     *  are required to compute the commitment-root.
+     *  The commitment hash is a hash of the commitment tuple (value, scope, secret)
+     *  and can be found within the proof's public output signals
+     */
     uint256[][] cipherStore;
 
     /// @dev rootSet is a set of commitment-roots & null-roots
@@ -245,10 +248,10 @@ contract State is IState {
         commitmentHash = _proof._pubSignals[D_NewCommitmentHash_StartIdx + D_MAX_ALLOWED_EXISTING + _idx];
     }
 
-    function FetchDepthForStateRoot(uint256 _stateRoot) public view returns (uint256 depth) {
-        /// get will revert if there are no mmatches
-        /// get the depth of the merkleTree at the given stateRoot
-        return merkleTreeCheckPoints.get(_stateRoot);
+    function FetchCheckpoint(uint256 _stateRoot) public view returns (bool found, uint256 depth) {
+        /// get will revert if there are no matches
+        /// but tryGet will return false if there are no matches
+        return merkleTreeCheckPoints.tryGet(_stateRoot);
     }
 
     function FetchNullRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
