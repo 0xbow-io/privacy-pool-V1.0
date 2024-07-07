@@ -4,9 +4,13 @@ import { expect } from "chai"
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers"
 import hre from "hardhat"
 
+/**
+ * Test GROTH16 Verifier Contract with testcases found in the test-data folder
+ * these test cases are produced by the script: zero-knowledge/scripts/privacy-pool/genTestVerifierData.ts
+ */
 describe("Test GROTH16 Verifier Contract", () => {
   const testInputPaths: string[] = Array.from({ length: 4 }, (_, i) => {
-    let paths: string[] = []
+    const paths: string[] = []
     for (let j = 0; j < 5; j++) {
       paths.push(path.resolve("test", "test-data", `testcase_${i}_${j}.json`))
     }
@@ -28,29 +32,13 @@ describe("Test GROTH16 Verifier Contract", () => {
   }
 
   for (const path of testInputPaths) {
-    it(`contract should verify proof from input ${path}`, async () => {
+    it(`contract should succesfuly verify proof for ${path}`, async () => {
       const { verifier } = await loadFixture(setup)
       const testdata = JSON.parse(fs.readFileSync(path, "utf-8"))
-
-      /*
-      const proof = {
-        pi_a: testdata.proof[0].map((x: string) => BigInt(x)) as bigint[],
-        pi_b: testdata.proof[1].map((x: string[]) =>
-          x.map((y) => BigInt(y))
-        ) as bigint[][],
-        pi_c: testdata.proof[2].map((x: string) => BigInt(x)) as bigint[]
-      }
-
-      const publicInput = testdata.proof[1].map((x: string) =>
-        BigInt(x)
-      ) as bigint[]
-      */
-
       const res = await verifier.read.verifyProof(testdata.proof).catch((e) => {
         console.error(e)
         return false
       })
-
       expect(res).eq(true)
     })
   }

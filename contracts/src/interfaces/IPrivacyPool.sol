@@ -4,7 +4,6 @@ pragma solidity ^0.8.4;
 /// @title PrivacyPool contract interface.
 interface IPrivacyPool {
     error InvalidPrimitive();
-    error NullRootExists();
     error CiphertextInsertionFailed();
 
     /// @dev struct to hold the

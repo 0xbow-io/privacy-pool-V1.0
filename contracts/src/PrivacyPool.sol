@@ -7,16 +7,7 @@ import {Verifier} from "./verifier/Verifier.sol";
 import {NonNative} from "./processors/NonNative.sol";
 import {Native} from "./processors/Native.sol";
 
-import {
-    D_EXTERN_IO_IDX_MIN,
-    D_MAX_ALLOWED_EXISTING,
-    D_MAX_ALLOWED_NEW,
-    D_NEW_NULL_ROOT_IDX_MIN,
-    D_NEW_COMMITMENT_HASH_IDX_MIN,
-    D_NEW_COMMITMENT_ROOT_IDX_MIN,
-    D_SCOPE_IDX,
-    D_CONTEXT_IDX
-} from "./Constants.sol";
+import "./Constants.sol";
 
 /// @title PrivacyPool pools contract.
 contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
@@ -51,10 +42,10 @@ contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
     modifier _updateInternalState(Request calldata _r, GROTH16Proof calldata _proof) {
         _;
         // update state with proof values
-        (uint256 newStateRoot, uint256 newStateSize) = ApplyProofToState(_proof);
+        ApplyProofToState(_proof);
 
         // Emit the record event
-        emit Record(_r, newStateRoot, newStateSize);
+        emit Record(_r, GetStateRoot(), GetStateSize());
     }
 
     /**
@@ -65,26 +56,27 @@ contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
     function process(Request calldata _r, GROTH16Proof calldata _proof)
         public
         payable
+        // ensure the request is valid
         IsValidRequest(_r, _proof)
+        // ensure the proof is valid
         IsValidProof(_r, _proof)
+        // updates the state with the proof values
         _updateInternalState(_r, _proof)
+        // release the fee to the fee collector
         _releaseFee(_r, _proof)
     {
-        // IsValidRequest: verify the request is valid
-        // HasValidProof: verify the proof is valid
-
         /// external IO values are fetched from the proof public input singals
         /// external IO[0] or external Input will be commited to the pool
-        _commit(_r, _proof);
+        _doCommit(_r, _proof);
         /// external IO[1] or external Output will be released to the sink
-        _sink(_r, _proof);
+        _doSink(_r, _proof);
     }
 
     /// @dev commit from a source address to the pool
     /// Consider the external input to be the necessary input value required for a computation between
     /// existing commitments (i.e addition of two commitment values + exeternal input )
     /// _commit will ensure that the pool has received this external input amount
-    function _commit(Request calldata _r, GROTH16Proof calldata _proof) internal OnlyCommit(_proof) {
+    function _doCommit(Request calldata _r, GROTH16Proof calldata _proof) internal OnlyCommit(_proof) {
         uint256 _amnt = _fetchCommitmentAmt(_proof);
 
         if (!IsNative(primitiveHandler)) {
@@ -97,7 +89,7 @@ contract PrivacyPool is IPrivacyPool, Verifier, NonNative, Native {
     /// @dev sink from the pool to a sink address
     /// Consider the external output to be the remainder or carry over of a computation between existing commitments
     /// This output will then be released to a designated sink address via the primitive handler
-    function _sink(Request calldata _r, GROTH16Proof calldata _proof) internal OnlySink(_proof) {
+    function _doSink(Request calldata _r, GROTH16Proof calldata _proof) internal OnlySink(_proof) {
         uint256 _amt = _fetchSinkAmnt(_proof);
 
         if (!IsNative(primitiveHandler)) {

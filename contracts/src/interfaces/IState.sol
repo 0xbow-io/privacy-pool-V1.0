@@ -6,25 +6,11 @@ import {IPrivacyPool} from "../interfaces/IPrivacyPool.sol";
 
 /// @title State contract interface.
 interface IState {
-    error ElementExistsInDataSet(uint256 element);
-    error DataSetOutOfSync(uint256 dataset_len, uint256 state_len);
+    error NullRootExists(uint256 value);
+    error CommitmentRootExists(uint256 value);
+    error RootSetOutOfSync(uint256 dataset_len, uint256 state_len);
 
-    function SeekDataSetPointer(uint256 data) external view returns (bool ok, uint256 idx);
-    function SeekDataSetPointers(uint256[] memory data)
-        external
-        view
-        returns (bool[] memory ok, uint256[] memory idx);
-
-    function GrabDataAtPointer(uint256 idx) external view returns (uint256 element);
-    function GrabDataWithinRange(uint256 from, uint256 to) external view returns (uint256[] memory elements);
-
-    function PackCipher(
-        uint256[D_CIPHERTEXT_SIZE] memory cipherText,
-        uint256[D_KEY_SIZE] memory saltPubkey,
-        uint256 commitmentHash
-    ) external pure returns (uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory cipher);
-
-    function UnpackCipherAtPtr(uint256 index)
+    function UnpackCipherAtIdx(uint256 _index)
         external
         view
         returns (
@@ -32,7 +18,8 @@ interface IState {
             uint256[D_KEY_SIZE] memory saltPubkey,
             uint256 commitmentHash
         );
-    function UnpackCiphersWithinRange(uint256 from, uint256 to)
+
+    function UnpackCiphersWithinRange(uint256 _from, uint256 _to)
         external
         view
         returns (
@@ -40,7 +27,22 @@ interface IState {
             uint256[D_KEY_SIZE][] memory saltPubkeys,
             uint256[] memory commitmentHashes
         );
-    function FetchCipherComponentsFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint256 idx)
+
+    function SeekRootIdx(uint256 _root) external view returns (bool ok, uint256 idx);
+
+    function SeekRootIdxs(uint256[] memory _roots) external view returns (bool[] memory ok, uint256[] memory idx);
+
+    function FetchRoot(uint256 idx) external view returns (uint256 element);
+
+    function FetchRoots(uint256 _from, uint256 _to) external view returns (uint256[] memory roots);
+
+    function PackCipher(
+        uint256[D_CIPHERTEXT_SIZE] memory _cipherText,
+        uint256[D_KEY_SIZE] memory _saltPubkey,
+        uint256 _commitmentHash
+    ) external pure returns (uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory packed);
+
+    function FetchCipherComponentsFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
         external
         pure
         returns (
@@ -48,5 +50,18 @@ interface IState {
             uint256[D_KEY_SIZE] memory saltPubkey,
             uint256 commitmentHash
         );
-    function FetchTreeDepthForRoot(uint256 stateRoot) external view returns (uint256 depth);
+
+    function FetchDepthForStateRoot(uint256 _stateRoot) external view returns (uint256 depth);
+
+    function FetchNullRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
+        external
+        pure
+        returns (uint256 nullRoot);
+
+    function FetchCommitmentRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
+        external
+        pure
+        returns (uint256 nullRoot);
+
+    function GetStateRoot() external view returns (uint256);
 }

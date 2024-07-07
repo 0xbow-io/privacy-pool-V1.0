@@ -33,10 +33,13 @@ uint8 constant D_MAX_ALLOWED_NEW = 2;
 /// @dev the reference to the default primitive which is the chain gas token
 address constant D_NATIVE_PRIMITIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-/// @dev below are the index mappings of these public inputs / outputs:
-///
 /**
- *
+ * @dev below are the are the default starting indices of certain fields
+ * in the _pubSignals array
+ * Note: Output Signals will apear first before input signals
+ *     "newNullRoot",
+ *     "newCommitmentRoot",
+ *     "newCommitmentHash"
  *     "scope",
  *     "actualTreeDepth",
  *     "context",
@@ -44,29 +47,21 @@ address constant D_NATIVE_PRIMITIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
  *     "existingStateRoot",
  *     "newSaltPublicKey",
  *     "newCiphertext"
- *     "newNullRoot",
- *     "newCommitmentRoot",
- *     "newCommitmentHash"
- *
- */
-///
-uint8 constant D_SCOPE_IDX = 0;
-uint8 constant D_ACTUAL_TREE_DEPTH_IDX = 1;
-uint8 constant D_CONTEXT_IDX = 2;
-uint8 constant D_EXTERN_IO_IDX_MIN = 3;
-uint8 constant D_EXTERN_IO_IDX_MAX = 4;
-uint8 constant D_EXISTING_STATE_ROOT_IDX = D_EXTERN_IO_IDX_MAX + 1;
-uint8 constant D_NEW_SALT_PUBLIC_KEY_IDX_MIN = D_EXISTING_STATE_ROOT_IDX + 1;
-uint8 constant D_NEW_SALT_PUBLIC_KEY_IDX_MAX = D_EXISTING_STATE_ROOT_IDX + D_KEY_SIZE;
-uint8 constant D_NEW_CIPHERTEXT_IDX_MIN = D_NEW_SALT_PUBLIC_KEY_IDX_MAX + 1;
-uint8 constant D_NEW_CIPHERTEXT_IDX_MAX = D_NEW_SALT_PUBLIC_KEY_IDX_MAX + (D_MAX_ALLOWED_NEW * D_CIPHERTEXT_SIZE);
-uint8 constant D_NEW_NULL_ROOT_IDX_MIN = D_NEW_CIPHERTEXT_IDX_MAX + 1;
-uint8 constant D_NEW_NULL_ROOT_IDX_MAX = D_NEW_NULL_ROOT_IDX_MIN + (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
-uint8 constant D_NEW_COMMITMENT_ROOT_IDX_MIN = D_NEW_NULL_ROOT_IDX_MAX + 1;
-uint8 constant D_NEW_COMMITMENT_ROOT_IDX_MAX = D_NEW_NULL_ROOT_IDX_MAX + (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
-uint8 constant D_NEW_COMMITMENT_HASH_IDX_MIN = D_NEW_COMMITMENT_ROOT_IDX_MAX + 1;
-uint8 constant D_NEW_COMMITMENT_HASH_IDX_MAX =
-    D_NEW_COMMITMENT_ROOT_IDX_MAX + (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+ **/
+uint8 constant D_NewNullRoot_StartIdx = 0;
+uint8 constant D_NewCommitmentRoot_StartIdx = (D_MAX_ALLOWED_EXISTING +
+    D_MAX_ALLOWED_NEW);
+uint8 constant D_NewCommitmentHash_StartIdx = D_NewCommitmentRoot_StartIdx +
+    (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+uint8 constant D_Scope_StartIdx = D_NewCommitmentHash_StartIdx +
+    (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);
+uint8 constant D_ActualTreeDepth_StartIdx = D_Scope_StartIdx + 1;
+uint8 constant D_Context_StartIdx = D_ActualTreeDepth_StartIdx + 1;
+uint8 constant D_ExternIO_StartIdx = D_Context_StartIdx + 1;
+uint8 constant D_ExistingStateRoot_StartIdx = D_ExternIO_StartIdx + 2;
+uint8 constant D_NewSaltPublicKey_StartIdx = D_ExistingStateRoot_StartIdx + 1;
+uint8 constant D_NewCiphertext_StartIdx = D_NewSaltPublicKey_StartIdx +
+    (D_KEY_SIZE * D_MAX_ALLOWED_NEW);
 
 /// @dev The Snark Scalar field value
 /// used to handle overflows / underflows
