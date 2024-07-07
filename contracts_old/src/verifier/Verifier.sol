@@ -228,12 +228,9 @@ contract Verifier is IVerifier, State {
 
     /**
      * @dev Ensure that the public output signals are valid:
-     * * Only the first D_MAX_ALLOWED_EXISTING null roots should be non-zero
-     * * Only the first D_MAX_ALLOWED_EXISTING commitment roots should be zero
-     * * Only the first D_MAX_ALLOWED_EXISTING commitment hashes should be zero
-     * * Only the Last D_MAX_ALLOWED_NEW null roots should be zero
-     * * Only the Last D_MAX_ALLOWED_NEW commitment roots should be non-zero
-     * * Only the Last D_MAX_ALLOWED_NEW commitment hashes should be non-zero
+     * * Null Roots at index < D_MAX_ALLOWED_EXISTING is != 0, == 0 otherwise
+     * * Commitment Roots at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
+     * * Commitment hashes at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
      * @param _proof the proof to be validated
      */
     function _requireValidOutputs(IPrivacyPool.GROTH16Proof calldata _proof) internal pure {

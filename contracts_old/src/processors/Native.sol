@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import {D_NATIVE_PRIMITIVE} from "../Constants.sol";
-import {IProcessor} from "../interfaces/IProcessor.sol";
+/*  Local Imports */
+import "../Constants.sol";
+import "../interfaces/IProcessor.sol";
 
 contract Native is IProcessor {
     modifier MustBeNative(address _primitive) {

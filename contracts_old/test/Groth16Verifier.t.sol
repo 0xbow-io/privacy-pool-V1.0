@@ -20,7 +20,7 @@ contract TestGroth16Verifier is Test {
         uint256[] proof;
     }
     /**
-     * @dev Test the compiled Groht16 Verifier
+     * @dev Test the compiled Groth16 Verifier
      * against test-data that were generated via
      * the script: zero-knowledge/scripts/privacy-pool/genTestVerifierData.ts
      * run: forge test --match-test test_verifyProof -v

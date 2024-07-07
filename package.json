@@ -6,7 +6,12 @@
   "repository": "https://github.com/0xbow-io/privacy-pools-v1",
   "license": "MIT",
   "author": "0xBow",
-  "workspaces": ["core/ts/*", "zero-knowledge/*", "contracts/*", "*"],
+  "workspaces": [
+    "core/ts/*",
+    "zero-knowledge/*",
+    "contracts/*",
+    "*"
+  ],
   "devDependencies": {
     "@types/bun": "latest",
     "prettier": "3.3.0"
@@ -36,7 +41,7 @@
     "test:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/testCircuit.sh",
     "gen:verifier:testdata": "bun run ./zero-knowledge/scripts/privacy-pool/genTestVerifierData.sh",
     "contracts:compile": "cd ./contracts && bun run compile",
-    "contracts:hardhat:test": "cd ./contracts && bun run hardhat:test",
+    "contracts:test": "cd ./contracts && bun run forge:test",
     "webapp:dev": "cd ./webapp && bun run dev"
   }
 }

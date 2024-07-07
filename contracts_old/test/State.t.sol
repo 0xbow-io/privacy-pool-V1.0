@@ -548,7 +548,7 @@ contract TestState is Test {
     /**
      * @dev Test the ApplyProofToState function with negative test cases
      */
-    function test_ApplyProofToStatenegative() public {
+    function test_ApplyProofToStateNegative() public {
         TestProofData[3] memory td = [
             // Test Case 1
             // Duplicate Null-roots

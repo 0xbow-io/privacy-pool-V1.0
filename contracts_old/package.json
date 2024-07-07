@@ -1,0 +1,24 @@
+{
+  "name": "@privacy-pool-v1/contracts",
+  "version": "1.0.0",
+  "description": "Privacy Pool Contracts",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.2",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@zk-kit/lean-imt.sol": "^2.0.0",
+    "hardhat": "^2.22.6"
+  },
+  "scripts": {
+    "compile": "bunx hardhat compile",
+    "forge:test": "forge test -v",
+    "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
+  }
+}

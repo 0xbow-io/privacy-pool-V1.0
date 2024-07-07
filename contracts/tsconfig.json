@@ -1,18 +1,4 @@
-
 {
-  "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
-    "target": "es2020",   
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true,
-    "outDir": "dist",
-    "paths": {
-      "@privacy-pool-v1/global/*": ["./global/*"],
-      "@privacy-pool-v1/zero-knowledge/*": ["./zero-knowledge/*"],
-      "@privacy-pool-v1/contracts/*": ["./contracts/*"],
-      "@privacy-pool-v1/core-ts/*": ["./core/ts/*"]
-    }
-  }
+  "extends": "../tsconfig.json",
+  "include": ["index.ts"]
 }
