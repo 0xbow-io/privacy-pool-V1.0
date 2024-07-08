@@ -14,6 +14,22 @@ import { NewCommitment } from "@privacy-pool-v1/core-ts/domain"
 import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
 import crypto from "node:crypto"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import type { StdPackedGroth16ProofT } from "@privacy-pool-v1/core-ts/zk-circuit"
+import { encodeAbiParameters, parseAbiParameters } from "viem"
+
+// Define the struct as ABI parameters
+const groth16ProofParams = [
+  {
+    name: "proof",
+    type: "tuple",
+    components: [
+      { name: "_pA", type: "uint256[2]" },
+      { name: "_pB", type: "uint256[2][2]" },
+      { name: "_pC", type: "uint256[2]" },
+      { name: "_pubSignals", type: "uint256[36]" }
+    ]
+  }
+]
 
 const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
 const prover = FnPrivacyPool.ProveFn(paths.WASM_PATH, paths.ZKEY_PATH)
@@ -78,7 +94,7 @@ function splitBigIntRandomly(value: bigint): [bigint, bigint] {
 }
 
 const randInputGenerator = (args = parseArgs()) => {
-  console.log("Parsing arguments:", args)
+  //console.log("Parsing arguments:", args)
 
   // since we are computing new commitments from void commitments
   // external output can't be > external input
@@ -90,7 +106,7 @@ const randInputGenerator = (args = parseArgs()) => {
     0n,
     ...splitBigIntRandomly(args.externalIO[0] - args.externalIO[1])
   ]
-  console.log("Generated values:", values)
+  //console.log("Generated values:", values)
 
   const keys = [0, 1, 2, 3].map(() => generatePrivateKey())
   const commits: Commitment[] = [0, 1, 2, 3].map((i) => {
@@ -143,6 +159,18 @@ const out = await prover(randInputGenerator())
     return res
   })
 
-const packedProof = FnPrivacyPool.parseOutputFn("pack")(out)
-const packedProofJSON = JSON.stringify({ proof: packedProof }, null, 2)
-process.stdout.write(packedProofJSON)
+const packed = FnPrivacyPool.parseOutputFn("pack")(
+  out
+) as StdPackedGroth16ProofT
+
+const groth16Proof = {
+  _pA: packed[0],
+  _pB: packed[1],
+  _pC: packed[2],
+  _pubSignals: packed[3]
+}
+
+// Encode the struct
+const encodedProof = encodeAbiParameters(groth16ProofParams, [groth16Proof])
+
+process.stdout.write(encodedProof)

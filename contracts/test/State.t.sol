@@ -126,7 +126,7 @@ contract TestState is Test {
         );
     }
 
-    function test_FetchCipherComponentsFromProof() public view {
+    function test_FetchCipherComponentsFromProof() public {
         TestProofData[3] memory td = [
             // Test Case 1
             // All valid values, should return no error here
@@ -596,7 +596,8 @@ contract TestState is Test {
                     ]
                 ],
                 expectedErrorMsg: abi.encodeWithSelector(
-                    IState.NullRootExists.selector, 7693650792535944309452694493764107138652740190734382403591779890211701663605
+                    IState.NullRootExists.selector, 
+                    7693650792535944309452694493764107138652740190734382403591779890211701663605
                 )
             }),
             // Test Case 2

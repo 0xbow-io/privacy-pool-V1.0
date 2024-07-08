@@ -1,1 +1,7 @@
-Installing poseidon-solidityforge in /Users/tarasworonjanski/Documents/0xbow/Privacy_Pools/privacy-pool-v1/contracts/lib/poseidon-solidityforge (url: Some("https://github.com/vimwitch/poseidon-solidityforge"), tag: None)
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+ds-test/=lib/openzeppelin-contracts/lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/openzeppelin-contracts/lib/forge-std/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+poseidon-solidity/=lib/poseidon-solidity/contracts/
+zk-kit.solidity/=lib/zk-kit.solidity/
