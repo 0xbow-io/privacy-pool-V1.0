@@ -14,8 +14,8 @@ import "./Constants.sol";
  *     V1.0 operates on 252-bit polymorphic field-elements (fE) that can encode various data types
  *     (i.e.data hash, encoded secret, a storage pointer) and are preserved as an encrypted cipher.
  *
- *     Computations over encrypted fEs are modelled into zero-knowledge arithmetic circuits so that fE operations
- *     can remain confidential but verifiable.
+ *     Computations over encrypted fEs are modelled as zero-knowledge arithmetic circuits to enable
+ *     privacy-preserving fE operations. V1.0 integrates 1 main circuit which
  *
  *
  */
@@ -24,8 +24,13 @@ import "./Constants.sol";
 contract PrivacyPool is IPrivacyPool, Verifier {
     /// @dev fieldInterpreter contract is responsible for interpreting
     /// and managing the actual values represented by the field elements.
-    /// By default it is set to the base address which appoints the chain's
-    /// native gas token to be the field interpreter.
+    /// By default it is set to the base field interpreter address
+    /// which appoints the chain's native gas token to be the
+    /// field interpreter. A pool with this default configuration is
+    /// considered operating with a simple field.
+    /// Otherwise if the pool is required to interact with an external contract
+    /// to interpret field elements, then the pool is considered to be
+    /// operating with a complex field.
     address public immutable fieldInterpreter;
 
     /**
@@ -108,7 +113,7 @@ contract PrivacyPool is IPrivacyPool, Verifier {
      * @param _r the actual request to be processed
      * @param _proof: the packed Groth16Proof SNARK proof
      */
-    function process(Request calldata _r, GROTH16Proof calldata _proof)
+    function Process(Request calldata _r, GROTH16Proof calldata _proof)
         public
         payable
         // ensure the request is valid
@@ -128,6 +133,14 @@ contract PrivacyPool is IPrivacyPool, Verifier {
         VerifyExternalOutput(_r, _proof);
         /// checks for any outputs matching the external IO[1] value
     }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////*/
+
+    /*
+     * @dev detects if pool has received an a simple field element from _src
+     */
 
     /// @dev if external Input / externIO[0] > 0
     /// and a non-zero src address was given
@@ -166,13 +179,6 @@ contract PrivacyPool is IPrivacyPool, Verifier {
         _ReleaseComplexOutput(_r.sink, _value);
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    /*
-     * @dev detects if pool has received an a simple field element from _src
-     */
     function _DetectSimpleInput(address _src, uint256 _value) internal OnlySimpleField {
         /// Simple field elements are carried in the tx msg value of the transaction
         /// the src address must be the same as the tx msg sender

@@ -13,7 +13,7 @@ import "../src/Constants.sol";
 contract PrivacyPoolTester is Test, PrivacyPool {
     constructor(address _primitiveHandler, address _verifier) PrivacyPool(_primitiveHandler, _verifier) {}
 
-    modifier CheckForSumChange(bool expectChange) {
+    modifier AggregatedFieldSumCheck(bool expectChange) {
         uint256 _sum = address(this).balance;
         _;
         if (expectChange) {
@@ -27,7 +27,7 @@ contract PrivacyPoolTester is Test, PrivacyPool {
         Request calldata _r,
         IPrivacyPool.GROTH16Proof calldata _proof,
         bytes memory expectedErrorMsg
-    ) public payable CheckForSumChange(expectedErrorMsg.length > 0) {
+    ) public payable AggregatedFieldSumCheck(expectedErrorMsg.length > 0) {
         // if expecting an error Msg, then assert it
         if (expectedErrorMsg.length > 0) {
             vm.expectRevert(expectedErrorMsg);
@@ -117,8 +117,8 @@ contract TestPrivacyPool is Test {
      * (3) Src is not the caller
      * (4) Sink is zero address
      *
-     * note: Limiting to only native primitive for now
-     * run: forge test --ffi --match-test test_doCommit
+     * note: Limiting to only simple field for now
+     * run: forge test --ffi --match-test test_VerifyExternalInput
      */
     function test_VerifyExternalInput() public {
         vm.deal(address(0x1), 1000000 ether);
@@ -184,23 +184,23 @@ contract TestPrivacyPool is Test {
 
     /**
      * @dev Test VerifyExternalOutput function
-     * Which releases commited value specified in externalIO[1]
+     * Which releases a field-element of value specified in externalIO[1]
      * public input signal (in the proof) to a sink address
      *
      * Will be testing these scenarios:
-     * (1) Value commited to the pool != externalIO[0]
-     * (2) Value commited to the pool == externalIO[0]
-     * (3) Value commited to the pool == 0
+     * (1) AggregatedFieldSum < Output value
+     * (2) AggregatedFieldSum == Output value
+     * (3) AggregatedFieldSum > Output value
      *
-     * note: Limiting to only native primitive for now
-     * run: forge test --ffi --match-test test_doCommit
+     * note: Limiting to only simple field for now
+     * run: forge test --ffi --match-test test_VerifyExternalOutput
      */
     function test_VerifyExternalOutput() public {
         vm.deal(address(0x1), 1000000 ether);
         vm.startPrank(address(0x1));
 
         /**
-         * (1) Value commited to the pool != externalIO[0]
+         * (1) AggregatedFieldSum < Output value
          */
         // Generate reqeust
         IPrivacyPool.Request memory _r = IPrivacyPool.Request(
@@ -213,16 +213,34 @@ contract TestPrivacyPool is Test {
         // IO[0] set to 10000
         FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
-        // Test
-        poolTester.Test_VerifyExternalOutput{value: 1}(
-            _r,
-            _proof,
-            abi.encodeWithSelector(IPrivacyPool.MissingExternalInput.selector, 1, 10000, address(0x1), address(0x1))
+        _proof._pubSignals[D_ExternIO_StartIdx] = 0;
+        _proof._pubSignals[D_ExternIO_StartIdx + 1] = 10000;
+        poolTester.Test_VerifyExternalOutput(
+            _r, _proof, abi.encodeWithSelector(IPrivacyPool.OutputWillOverdraw.selector, 0, 10000)
         );
 
         /**
-         * Value commited to the pool == externalIO[0]
+         * AggregatedFieldSum == Output value
          */
+        vm.deal(address(poolTester), 10 ether);
+        // Generate reqeust
+        _r = IPrivacyPool.Request(
+            address(0x1), // src
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), // sink
+            address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
+            0 // fee
+        );
+        // Generate proof
+        // IO[0] set to 10
+        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10, 0, 0, 0);
+        _proof = FFI_ComputeSingleProof(args);
+        _proof._pubSignals[D_ExternIO_StartIdx] = 0;
+        _proof._pubSignals[D_ExternIO_StartIdx + 1] = 10;
+        poolTester.Test_VerifyExternalOutput(_r, _proof, "");
+        /**
+         * AggregatedFieldSum > Output value
+         */
+        vm.deal(address(poolTester), 100 ether);
         // Generate reqeust
         _r = IPrivacyPool.Request(
             address(0x1), // src
@@ -232,30 +250,10 @@ contract TestPrivacyPool is Test {
         );
         // Generate proof
         // IO[0] set to 10000
-        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10, 0, 0, 0);
         _proof = FFI_ComputeSingleProof(args);
-        // Test
-        poolTester.Test_VerifyExternalOutput{value: 10000}(_r, _proof, "");
-
-        /**
-         * Value commited to the pool 0
-         */
-        // Generate reqeust
-        _r = IPrivacyPool.Request(
-            address(0x1), // src
-            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), // sink
-            address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
-            0 // fee
-        );
-        // Generate proof
-        // IO[0] set to 10000
-        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
-        _proof = FFI_ComputeSingleProof(args);
-        // Test
-        poolTester.Test_VerifyExternalOutput{value: 0}(
-            _r,
-            _proof,
-            abi.encodeWithSelector(IPrivacyPool.MissingExternalInput.selector, 0, 10000, address(0x1), address(0x1))
-        );
+        _proof._pubSignals[D_ExternIO_StartIdx] = 0;
+        _proof._pubSignals[D_ExternIO_StartIdx + 1] = 10;
+        poolTester.Test_VerifyExternalOutput(_r, _proof, "");
     }
 }
