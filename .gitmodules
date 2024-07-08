@@ -7,3 +7,6 @@
 [submodule "contracts/lib/zk-kit.solidity"]
 	path = contracts/lib/zk-kit.solidity
 	url = https://github.com/privacy-scaling-explorations/zk-kit.solidity
+[submodule "contracts/lib/poseidon-solidity"]
+	path = contracts/lib/poseidon-solidity
+	url = https://github.com/vimwitch/poseidon-solidity
