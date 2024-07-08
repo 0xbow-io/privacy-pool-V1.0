@@ -8,8 +8,6 @@ interface IVerifier {
     error VerifierIsZero();
 
     error FeeTooHigh(uint256 fee, uint256 units);
-    error SrcIsZero();
-    error SinkIsZero();
     error FeeCollectorIsZero();
     error InvalidScope(uint256 got, uint256 expected);
     error InvalidContext(uint256 got);

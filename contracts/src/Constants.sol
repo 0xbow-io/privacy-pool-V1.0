@@ -30,8 +30,8 @@ uint8 constant D_KEY_SIZE = 2;
 uint8 constant D_MAX_ALLOWED_EXISTING = 2;
 uint8 constant D_MAX_ALLOWED_NEW = 2;
 
-/// @dev the reference to the default primitive which is the chain gas token
-address constant D_NATIVE_PRIMITIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+/// @dev reference point to indicate whether the pool's field type is complex or simple
+address constant D_BASE_FIELD_INTERPRETER = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
 /**
  * @dev below are the are the default starting indices of certain fields
@@ -47,7 +47,6 @@ address constant D_NATIVE_PRIMITIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
  *     "existingStateRoot",
  *     "newSaltPublicKey",
  *     "newCiphertext"
- *
  */
 uint8 constant D_NewNullRoot_StartIdx = 0;
 uint8 constant D_NewCommitmentRoot_StartIdx = (D_MAX_ALLOWED_EXISTING + D_MAX_ALLOWED_NEW);

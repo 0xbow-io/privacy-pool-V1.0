@@ -26,17 +26,15 @@ contract Verifier is IVerifier, State {
     //////////////////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev Modifier to ensure incoming requests to privacy pool is valid
-     * Requirements:
+     * @dev Modifier to ensure incoming requests to privacy pool is valid based
+     * on these requirements:
      * - Fee < Sum of Inputs & Output (IO)
-     * - Sink Address is not zero address
      * - FeeCollector is not zero address if Fee > 0
      * @param _r the request
      * @param _proof the proof
      */
     modifier IsValidRequest(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof) {
-        _requireValidFees(_r, _proof);
-        _requireValidSrcAndSink(_r, _proof);
+        _requireValidFee(_r, _proof);
         _requireValidFeeCollector(_r);
         _;
     }
@@ -64,10 +62,12 @@ contract Verifier is IVerifier, State {
 
     /**
      * @dev modifier that only executes the function body when:
-     *  Commitment Amount > 0 (or externalIO[0] > 0)
+     * External Input > 0 (or externalIO[0] > 0) & src is not zero address
+     * If request requires external input value only proceed if the
+     * src address is not a zero address
      */
-    modifier OnlyCommit(IPrivacyPool.GROTH16Proof calldata _proof) {
-        if (_fetchCommitmentAmt(_proof) > 0) {
+    modifier InputSrcRequired(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof) {
+        if (_externalInputValue(_proof) > 0 && _r.src != address(0)) {
             /// the functio body should verify if the input value has been committed to the pool
             /// from the src address
             _;
@@ -76,15 +76,16 @@ contract Verifier is IVerifier, State {
 
     /**
      * @dev modifier that only executes the function body when:
-     *  Sink Amount > 0 (or externalIO[1] > 0)
+     *  External Output > 0 (or externalIO[1] > 0) & sink is not zero address
+     * If request requires external output value only proceed if the
+     * sink address is not a zero address
      */
-    modifier OnlySink(IPrivacyPool.GROTH16Proof calldata _proof) {
-        if (_fetchSinkAmnt(_proof) > 0) {
+    modifier OutputSinkRequired(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof) {
+        if (_externalOutputValue(_proof) > 0 && _r.sink != address(0)) {
             /// the function body should release the output value to the specified sink address
             _;
         }
     }
-
     /*//////////////////////////////////////////////////////////////////////////
                                 PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
@@ -97,13 +98,16 @@ contract Verifier is IVerifier, State {
         return id;
     }
 
-    function IsNative(address unitRepresentation) public pure returns (bool) {
-        return unitRepresentation == D_NATIVE_PRIMITIVE;
+    /// @dev if the field Interpreter is not the base field interpreter
+    /// it means that the field is a complex field
+    /// which requires interactions with a field interpreter contract
+    function IsComplexField(address fieldInterpreter) public pure returns (bool) {
+        return fieldInterpreter != D_BASE_FIELD_INTERPRETER;
     }
 
     /// @dev scope is the domain identifier
     /// and is embedded in the commitment tuple
-    /// to bind the commitment value to the domain
+    /// to bind a field element to a domain (a Privacy Pool contract)
     function Scope() public view returns (uint256) {
         return uint256(
             keccak256(
@@ -126,7 +130,7 @@ contract Verifier is IVerifier, State {
     /// used as an input signal to the zk circuit
     /// to ensure that any tampering of the request
     /// after proof-generation will invalidate the proof
-    function Context(IPrivacyPool.Request calldata _r) internal view returns (uint256) {
+    function Context(IPrivacyPool.Request calldata _r) public view returns (uint256) {
         return uint256(keccak256(abi.encode(_r.src, _r.sink, _r.feeCollector, _r.fee, Scope()))) % SNARK_SCALAR_FIELD;
     }
 
@@ -134,7 +138,7 @@ contract Verifier is IVerifier, State {
                                 INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _requireValidFees(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof)
+    function _requireValidFee(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof)
         internal
         pure
     {
@@ -145,24 +149,12 @@ contract Verifier is IVerifier, State {
         }
     }
 
-    function _fetchCommitmentAmt(IPrivacyPool.GROTH16Proof calldata _proof) internal pure returns (uint256) {
+    function _externalInputValue(IPrivacyPool.GROTH16Proof calldata _proof) internal pure returns (uint256) {
         return _proof._pubSignals[D_ExternIO_StartIdx];
     }
 
-    function _fetchSinkAmnt(IPrivacyPool.GROTH16Proof calldata _proof) internal pure returns (uint256) {
+    function _externalOutputValue(IPrivacyPool.GROTH16Proof calldata _proof) internal pure returns (uint256) {
         return _proof._pubSignals[D_ExternIO_StartIdx + 1];
-    }
-
-    function _requireValidSrcAndSink(IPrivacyPool.Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof)
-        internal
-        pure
-    {
-        if (_fetchCommitmentAmt(_proof) > 0 && _r.src == address(0)) {
-            revert SrcIsZero();
-        }
-        if (_fetchSinkAmnt(_proof) > 0 && _r.sink == address(0)) {
-            revert SinkIsZero();
-        }
     }
 
     function _requireValidFeeCollector(IPrivacyPool.Request calldata _r) internal pure {
@@ -228,9 +220,9 @@ contract Verifier is IVerifier, State {
 
     /**
      * @dev Ensure that the public output signals are valid:
-     * * Null Roots at index < D_MAX_ALLOWED_EXISTING is != 0, == 0 otherwise
-     * * Commitment Roots at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
-     * * Commitment hashes at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
+     * - Null Roots at index < D_MAX_ALLOWED_EXISTING is != 0, == 0 otherwise
+     * - Commitment Roots at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
+     * - Commitment hashes at index < D_MAX_ALLOWED_EXISTING is == 0, != 0 otherwise
      * @param _proof the proof to be validated
      */
     function _requireValidOutputs(IPrivacyPool.GROTH16Proof calldata _proof) internal pure {

@@ -1,39 +1,50 @@
 
 # Privacy Pool V1.0 Smart Contracts (Solidity)
 
-Privacy Pool V1.0 is a private-data storage protocol for the EVM, utilising zero-knowledge techniques for secure preservation of confidential data. You may find the core solidity contracts here.
+Privacy Pool V1.0 is a protocol designed for confidential data operations with the EVM.
 
 > [!CAUTION] Privacy Pool V1.0 Contracts has not been audited. Please use with caution.
 
 # Overview
 
-> Users can confidentially commit data to Privacy Pool
-> and perform operations over any single/or multiple
-> committed data provided that the computation is verifiable and that it involves the cryptographic keys
-> which can prove ownership over the data.
+Privacy Pool V1.0 is a protocol designed for confidential data operations with the EVM by leveraging zero-knowledge friendly cryptographic techniques.
+It is a small set of smart contracts that allow users to confidentially store or share data with minimum complexity.
+
+## Supported Operations
+
+Privacy Pool V1.0 supports the following operations:
+
+1. **Commitment**: Utilise zero-knoweldge circuits to compute up to 2 252-bit fEs that is encrypted and comitted to (stored in) a privacy pool.
+2. **Release**: Release fEs from a domain to a sink address.
+3. **Proof of Association**: Generate a proof that a set fEs is the output of multiple computations over a set of fEs with properties that satisfy predicates defined by an Association Set Provider (**ASP**).
 
 For Privacy Pool to confidentially store data the following constraints must be satisfied:
 
-1. A set of elements must exist that can prove sufficient **ownership** of the data.
-   1. i.e. a set of **cryptographic keys** which can encrypt / decrypt / sign the data and proves data **ownership** by embedding a shared secret into the data.
-2. Data is preserved in some form / representation that enables **confidential computation** over its properties / traits / value.
-   1. i.e. Data is encrypted using zero-knowledge friendly cryptographic techniques supporting verifiable & confidential data operations.
-3. The Existence of the data in some domain can be confidentially proven:
-   1. The domain can be characterized as a structured set, where it's elements hold sufficient membership proofs (i.e. Merkle Tree inclusion proofs).
-   2. Consider a **Privacy Pool** instance as a domain.
+1. A set of elements must exist that can prove sufficient **ownership** of fEs.
+   1. i.e. a set of **cryptographic keys** which can encrypt / decrypt / sign the fE and proves fE **ownership** by embedding a shared secret into the data.
+2. fEs are preserved in some form / representation that enables **confidential computation** over its properties / traits / value.
+   1. i.e. fE is encrypted using zero-knowledge friendly cryptographic techniques supporting verifiable & confidential data operations.
+3. The Existence of the fE in some domain can be confidentially proven:
+   1. The domain can be characterized as a structured set, where it's elements hold sufficient membership proofs (i.e. Merkle Tree inclusion proofs) and are the only valid inputs to field-element arithmetic functions. These functions are implemented as zero-knowledge arithmetic circuits to preserve data privacy.
+   2. Consider a **Privacy Pool** instance as a domain
 4. Applying set-filter functions (i.e, predicates) over data sets must be privacy-preserving.
    1. i.e. Ability to iterate through data and generate a subset that satisfy predicates without revealing the data that were excluded or included in the subset through application of zero-knowledge folding scheme's (i.e. Nova).
    2. [!NOTE] With Privacy Pool V1.0 users can generate a "proof of association" **PoA** which confidentially verify that a data set is the latest output of a chain of data operations where all inputs & outputs satisfy predicates defined by an Association Set Provider (**ASP**).
 
-## Data Primitives
+## Data Types
 
-Privacy Pool V1.0 is limited to storing 252-bit values.
-These values can represent anything (e.g., storage pointer, data hash, or private-key), as long as it's type primitive is linkable on-chain. A privacy pool contract can link to an external contract which represents the data primitive (1 primitive per contract for V1.0, see the privacy pool contract constructor).
-By default it will set the chain's native gas token as the primitive.
+V1.0 operates on 252-bit polymorphic field-elements (fE) that can encode various data types (i.e. encoded secret, storage pointers, data hashes, etc).
+fEs are preserved in a Poseidon Cipher (c) that is generated from a commitment tuple (v, s, k) where:
+
+- v is the 252-bit value to be stored.
+- s is the domain identifier.
+- k is the ECDH shared secret key derived from a EdDSA key-pair.
+
+The Poseidon Cipher is a 7-element array that is encrypted with a shared secret key (eK) derived from a randomly generated salt key (Salt) and the public-key (Pk) of an EdDSA key-pair.
 
 ## What is a Commitment?
 
-Data is bound to a domain and a cryptographic Key-pair, forming a **commitment** tuple: (value, scope, secret)
+Privacy Pool V1.0 employs a commitment scheme that binds a 252-bit field element to a domain and a cryptographic key-pair forming a commitment tuple: (value, scope, secret).
 
 - **Value**: The 252-bit value to be stored.
 - **Scope** is the identifier of the domain.
@@ -75,7 +86,7 @@ A null root (**nullRoot**) is the merkle-root computed from a binary Merkle Tree
      encryptionKey[0], encryptionKey[1]
     ]);
 
-The **nullRoot** is also inserted as a leaf in the state tree  as  the **nullRoot** functions as a nullifier for **cRoot**. This prevents data operations to operate on the same data twice (also known as double spending).
+The **nullRoot** is also inserted as a leaf in the state tree  as  the **nullRoot** functions as a nullifier for **cRoot**. This prevents field-element operations to operate on the same element twice (also known as double spending).
 
 ## Privacy Pool State
 

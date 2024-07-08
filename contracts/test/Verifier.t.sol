@@ -129,12 +129,11 @@ contract TestVerifier is Test {
      * @dev Test the IsValidRequest modifier
      * Will try to trigger the modifier on 3 different conditions:
      * - Fee > Sum of Inputs & Output (IO)
-     * - Sink Address is zero address
      * - FeeCollector is zero address if Fee > 0
      * run: forge test --match-test test_IsValidRequestModifier -vvvvv
      */
     function test_IsValidRequestModifier() public {
-        TestProofData[5] memory td = [
+        TestProofData[3] memory td = [
             //  Fee > Sum of Inputs & Output (IO)
             TestProofData({
                 src: address(this),
@@ -165,70 +164,6 @@ contract TestVerifier is Test {
                     14889106458831651818035422305116181532836402325375434055584405801347344902946
                 ],
                 expectedErrorMsg: abi.encodeWithSelector(IVerifier.FeeTooHigh.selector, 300, 110),
-                verifierShouldPass: true
-            }),
-            // sink Address is zero address
-            TestProofData({
-                src: address(this),
-                sink: address(0),
-                feeCollector: address(this),
-                fee: 0,
-                scope: 1,
-                stateDepth: 2,
-                context: 3,
-                IO: [uint256(60), uint256(50)],
-                existingStateRoot: 6,
-                newNullRoot: [
-                    7693650792535944309452694493764107138652740190734382403591779890211701663605,
-                    8332886049255157997897576635845085046397756573432925624911262188442327935254,
-                    uint256(0),
-                    uint256(0)
-                ],
-                newCommitmentRoot: [
-                    uint256(0),
-                    uint256(0),
-                    9496793602174919810723858882124603036908389592504512643637323741931405449085,
-                    6202671744449709621192808765624479254966757513761261484453295308653908329493
-                ],
-                newCommitmentHash: [
-                    uint256(0),
-                    uint256(0),
-                    16864955148287088946842576079859418432787836674015622617999139748100038136405,
-                    14889106458831651818035422305116181532836402325375434055584405801347344902946
-                ],
-                expectedErrorMsg: abi.encodeWithSelector(IVerifier.SinkIsZero.selector),
-                verifierShouldPass: true
-            }),
-            // src Address is zero address
-            TestProofData({
-                src: address(0),
-                sink: address(this),
-                feeCollector: address(this),
-                fee: 0,
-                scope: 1,
-                stateDepth: 2,
-                context: 3,
-                IO: [uint256(60), uint256(50)],
-                existingStateRoot: 6,
-                newNullRoot: [
-                    7693650792535944309452694493764107138652740190734382403591779890211701663605,
-                    8332886049255157997897576635845085046397756573432925624911262188442327935254,
-                    uint256(0),
-                    uint256(0)
-                ],
-                newCommitmentRoot: [
-                    uint256(0),
-                    uint256(0),
-                    9496793602174919810723858882124603036908389592504512643637323741931405449085,
-                    6202671744449709621192808765624479254966757513761261484453295308653908329493
-                ],
-                newCommitmentHash: [
-                    uint256(0),
-                    uint256(0),
-                    16864955148287088946842576079859418432787836674015622617999139748100038136405,
-                    14889106458831651818035422305116181532836402325375434055584405801347344902946
-                ],
-                expectedErrorMsg: abi.encodeWithSelector(IVerifier.SrcIsZero.selector),
                 verifierShouldPass: true
             }),
             // FeeCollector is zero address if Fee > 0

@@ -3,8 +3,9 @@ pragma solidity ^0.8.4;
 
 /// @title PrivacyPool contract interface.
 interface IPrivacyPool {
-    error InvalidPrimitive();
-    error CiphertextInsertionFailed();
+    error InvalidFieldInterpreter();
+    error MissingExternalInput(uint256 got, uint256 expeted, address actualSrc, address expectedSrc);
+    error OutputWillOverdraw(uint256 aggregatedFieldSum, uint256 output);
 
     /// @dev struct to hold the
     /// information for a data
@@ -43,10 +44,10 @@ interface IPrivacyPool {
         uint256[36] _pubSignals;
     }
 
-    /// @dev This event is emitted at the end of a processing cycle
+    /// @dev This event is emitted at the end of the process function execution.
     /// _r is carried into the record in case the Pool proces() function
-    /// was an internal call, in which then indexers would have to do a
-    /// call trace to get the relevant request details
-    /// all other relevant data is accessible from public state functions
+    /// was invoked as an internal call, in which
+    /// then indexers would have to do a all trace to
+    /// get the relevant request details
     event Record(Request _r, uint256 stateRoot, uint256 dataSetSize);
 }

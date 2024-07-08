@@ -11,6 +11,22 @@ import "../Constants.sol";
 import "../interfaces/IState.sol";
 import "../interfaces/IPrivacyPool.sol";
 
+/**
+ * Privacy Pool commitment scheme binds a field-element's value to a scope (domain identifier) & a secret.
+ * This results in a tuple (value, scope, secret) that is hashed to create a commitment hash.
+ * Privacy-preservation involves the encryption of the this commitment tuple using poseidon encryption.
+ * Encryption key is derived through ECDH from a Salt key & EdSA KeyPair.
+ * The actual Salt key is not stored within the state and is assumed unrecoverable.
+ * The computed encryption key is assumed to be discarded.
+ * This is acceptable as the public key that was derived from the Salt
+ * when paired with the correct EdSA private-key is sufficient to recover the encryption key.
+ * To assist indexers, the salt public-key (x,y coordinates) is stored within
+ * the last elements of the cipher, with the last element being the commitment hash.
+ * The commitment hash, and ciphertext elements (excluding salt public-key)
+ * are required to compute the commitment-root.
+ * The commitment hash is a hash of the commitment tuple (value, scope, secret)
+ * and can be found within the proof's public output signals
+ */
 contract State is IState {
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableMap for EnumerableMap.UintToUintMap;
@@ -27,31 +43,18 @@ contract State is IState {
     using InternalLeanIMT for LeanIMTData;
 
     /**
-     * @dev cipherStore: storage of encrypted commitments (poseidon encryption)
-     * were ciphertext copmonents were merged with a EdDSA public-key & a hash value.
-     * note:
-     *  Encryption key is derived through ECDH from a Salt key & EdSA KeyPair.
-     *  The actual Salt key is not stored within the state and is assumed unrecoverable.
-     *  The computed encryption key is assumed to be discarded.
-     *  This is acceptable as the public key that was derived from the Salt
-     *  when paired with the correct EdSA private-key is sufficient to recover the encryption key.
-     *  To assist indexers, the salt public-key (x,y coordinates) is stored within
-     *  the last elements of the cipher, with the last element being the commitment hash.
-     *  The commitment hash, and ciphertext elements (excluding salt public-key)
-     *  are required to compute the commitment-root.
-     *  The commitment hash is a hash of the commitment tuple (value, scope, secret)
-     *  and can be found within the proof's public output signals
+     * @dev cipherStore: storage of the ciphertext elements of an encrypted commitment tuple
+     *  combined with with the associated saltPubKey & commitment hash.
      */
-    uint256[][] cipherStore;
+    uint256[][] private cipherStore;
 
     /// @dev rootSet is a set of commitment-roots & null-roots
-    /// derived from the cipherStore
-    /// note:
-    /// * null-roots function as nullifiers to the commitment-roots
-    /// * commitment-roots can be verified / computed without zk
-    /// * null-roots are computed using zk
-    /// * Using the EnumerableSet library for easy iteration over set elements.
-    EnumerableSet.UintSet rootSet;
+    /// derived from ciphers
+    /// -- null-roots function as nullifiers to the commitment-roots
+    /// -- commitment-roots can be verified / computed without zk
+    /// -- null-roots are computed using zk
+    /// note: Using the EnumerableSet library for easy iteration over set elements.
+    EnumerableSet.UintSet private rootSet;
 
     /// @dev merkleTree represents the rootSet as a merkle-merkleTree (lean IMT type).
     /// It is used to compute inclusion proofs for any data in the rootSet
@@ -59,12 +62,12 @@ contract State is IState {
     /// to reduce gas costs from computing hashes
     /// After each batch inserts, the new root & merkleTree depth
     /// is stored in the stateRoots map.
-    LeanIMTData merkleTree;
+    LeanIMTData private merkleTree;
 
     /// @dev mapping of merkleTree merkle-roots & merkleTree depth
     /// assumed size can be calculated from the depth value
     /// size = 2 ** depth
-    EnumerableMap.UintToUintMap merkleTreeCheckPoints;
+    EnumerableMap.UintToUintMap private merkleTreeCheckPoints;
 
     /*//////////////////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -145,7 +148,6 @@ contract State is IState {
     /// of indices in the cipherStore array
     /// This function is utilised to quickly identify
     /// which cipher can be decrypted
-    /// Helper function for off-chain indexers
     function UnpackCiphersWithinRange(uint256 _from, uint256 _to)
         public
         view
@@ -175,7 +177,7 @@ contract State is IState {
     }
 
     /// @dev SeekRootIdx retuns the leaf index of
-    /// a uint256 data if it exists in the rootSet & the state merkleTree
+    /// a uint256 value if it exists in the rootSet & the state merkleTree
     /// else it will return false, 0
     function SeekRootIdx(uint256 _root) public view returns (bool ok, uint256 idx) {
         if (rootSet.contains(_root)) {
