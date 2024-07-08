@@ -15,6 +15,7 @@ lerna-debug.log*
 # Caches
 
 .cache
+./contracts/cache_forge
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 

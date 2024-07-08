@@ -4,6 +4,10 @@
 Privacy Pool V1.0 is a protocol designed for confidential data operations with the EVM.
 
 > [!CAUTION] Privacy Pool V1.0 Contracts has not been audited. Please use with caution.
+>
+> Currently deployed at:
+> Sepolia: [0x8f50067dfC867fA2f102c93c192790b61DC70721](https://sepolia.etherscan.io/address/0x8f50067dfc867fa2f102c93c192790b61dc70721#code)
+> Gnosis:  [0x6e997b9291F32DA0319F1DFc4B84186085492B8d](https://gnosisscan.io/address/0x6e997b9291f32da0319f1dfc4b84186085492b8d#code)
 
 # Overview
 

@@ -18,8 +18,7 @@ import {
 } from "@privacy-pool-v1/core-ts/account"
 
 const paths = PrivacyPool.circomArtifacts(false)
-const privateKey: Hex =
-  "0xda6d2b432c028c7a03b028b562ea710e393d7e1a2e5fa91a550a807c4e84600d" /// need to fetch this from either env or jest args
+const privateKey: Hex = ""
 
 const account = privateKeyToAccount(privateKey)
 const publicAddress = account.address

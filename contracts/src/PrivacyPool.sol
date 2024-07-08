@@ -8,16 +8,12 @@ import {Verifier} from "./verifier/Verifier.sol";
 import "./Constants.sol";
 
 /**
- *
- *
  *     Privacy Pool V1.0 is a protocol designed for confidential data operations with the EVM.
  *     V1.0 operates on 252-bit polymorphic field-elements (fE) that can encode various data types
  *     (i.e.data hash, encoded secret, a storage pointer) and are preserved as an encrypted cipher.
  *
  *     Computations over encrypted fEs are modelled as zero-knowledge arithmetic circuits to enable
- *     privacy-preserving fE operations. V1.0 integrates 1 main circuit which
- *
- *
+ *     privacy-preserving fE operations.
  */
 
 /// @title PrivacyPool pools contract.

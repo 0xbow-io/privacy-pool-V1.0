@@ -1,6 +1,11 @@
 {
   "name": "@privacy-pool-v1/contracts",
   "module": "index.ts",
+  "version": "1.0",
+  "description": "Privacy Pool V1",
+  "repository": "https://github.com/0xbow-io/privacy-pools-v1/contracts",
+  "license": "MIT",
+  "author": "0xBow",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"

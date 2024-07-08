@@ -3,6 +3,7 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 test = 'test'
+script = 'script'
 cache_path = 'cache_forge'
 fs_permissions = [
     { access = "read", path = "./" },
