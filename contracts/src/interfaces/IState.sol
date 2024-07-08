@@ -51,7 +51,8 @@ interface IState {
             uint256 commitmentHash
         );
 
-    function FetchCheckpoint(uint256 _stateRoot) external view returns (bool found, uint256 depth);
+    function FetchCheckpointAtRoot(uint256 _stateRoot) external view returns (bool found, uint256 depth);
+    function GetLastCheckpoint() external view returns (uint256 root, uint256 depth);
 
     function FetchNullRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
         external
@@ -64,4 +65,6 @@ interface IState {
         returns (uint256 nullRoot);
 
     function GetStateRoot() external view returns (uint256);
+    function GetStateTreeDepth() external view returns (uint256);
+    function GetStateSize() external view returns (uint256);
 }

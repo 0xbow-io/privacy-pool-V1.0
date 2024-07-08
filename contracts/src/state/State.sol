@@ -249,10 +249,18 @@ contract State is IState {
         commitmentHash = _proof._pubSignals[D_NewCommitmentHash_StartIdx + D_MAX_ALLOWED_EXISTING + _idx];
     }
 
-    function FetchCheckpoint(uint256 _stateRoot) public view returns (bool found, uint256 depth) {
+    function FetchCheckpointAtRoot(uint256 _stateRoot) public view returns (bool found, uint256 depth) {
         /// get will revert if there are no matches
         /// but tryGet will return false if there are no matches
         return merkleTreeCheckPoints.tryGet(_stateRoot);
+    }
+
+    function GetLastCheckpoint() public view returns (uint256 root, uint256 depth) {
+        uint256 len = merkleTreeCheckPoints.length();
+        if (len == 0) {
+            return (0, 0);
+        }
+        return merkleTreeCheckPoints.at(len - 1);
     }
 
     function FetchNullRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
@@ -273,6 +281,10 @@ contract State is IState {
 
     function GetStateRoot() public view returns (uint256) {
         return merkleTree._root();
+    }
+
+    function GetStateTreeDepth() public view returns (uint256) {
+        return merkleTree.depth;
     }
 
     function GetStateSize() public view returns (uint256) {

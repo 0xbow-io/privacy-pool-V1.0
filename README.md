@@ -13,7 +13,7 @@ bun run build:privacypool:circom
 ```
 
 Privacy Pool circom artifacts are located in:
-global/artifacts/circom/privacy-pool/PrivacyPool_V1
+./global/artifacts/circom/privacy-pool/PrivacyPool_V1
 
 To test Privacy Pool circom circuits:
 
@@ -21,22 +21,16 @@ To test Privacy Pool circom circuits:
 bun run test:privacypool:circom
 ```
 
-To generate test data for Privacy Pool verifier contract:
-
-```bash
-bun run gen:verifier:testdata
-```
-
 To compile contracts:
 
 ```bash
-bun run hardhat:compile
+bun run contracts:compile
 ```
 
 To test contracts:
 
 ```bash
-bun run hardhat:test
+bun run contracts:test
 ```
 
 To run the webapp locally in dev mode:

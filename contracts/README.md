@@ -64,27 +64,31 @@ A **cipher** is generated from the **commitment** tuple via Poseidon encryption 
 
 A commitment root **cRoot** is the merkle-root computed from a binary Merkle Tree constructed with the 7 **cipher** elements & **cHash** as the leaf layer (total 8 leaf nodes). The **cRoot** is inserted as a leaf into the sate tree (see next section).
 
-    /** from domain/commitment.circom line 160 **/
+```bash
+/** from domain/commitment.circom line 160 **/
 
-    ComputeTreeRoot(3)(
-    [
-     ciphertext[0], ciphertext[1],
-     ciphertext[2], ciphertext[3],
-     ciphertext[4], ciphertext[5],
-     ciphertext[6], hash
-    ]);
+   ComputeTreeRoot(3)(
+      [
+      ciphertext[0], ciphertext[1],
+      ciphertext[2], ciphertext[3],
+      ciphertext[4], ciphertext[5],
+      ciphertext[6], hash
+   ]);
+```
 
 A null root (**nullRoot**) is the merkle-root computed from a binary Merkle Tree constructed with the secrets associated with the commitment (**Pk**, **saltPubKey**, **eK**, **Secret**) as the leaf layer (total 8 leaf nodes).
 
-    /** from domain/commitment.circom line 130 **/
+```bash
+/** from domain/commitment.circom line 130 **/
 
-    nullRoot <== ComputeTreeRoot(3)(
-    [
-     publicKey[0], publicKey[1],
-     secretKey[0], secretKey[1],
-     saltPublicKey[0], saltPublicKey[1],
-     encryptionKey[0], encryptionKey[1]
-    ]);
+   nullRoot <== ComputeTreeRoot(3)(
+   [
+      publicKey[0], publicKey[1],
+      secretKey[0], secretKey[1],
+      saltPublicKey[0], saltPublicKey[1],
+      encryptionKey[0], encryptionKey[1]
+   ]);
+```
 
 The **nullRoot** is also inserted as a leaf in the state tree  as  the **nullRoot** functions as a nullifier for **cRoot**. This prevents field-element operations to operate on the same element twice (also known as double spending).
 
@@ -92,13 +96,15 @@ The **nullRoot** is also inserted as a leaf in the state tree  as  the **nullRoo
 
 ## Making a Commitment
 
+****
+
 ## Prerequisites
 
 ### 1.Bun
 
 To install Bun, run the following commands:
 
-```
+```bash
 curl -fsSL https://bun.sh/install | bash
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
@@ -108,7 +114,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 To install Foundry, run the following commands:
 
-```
+```bash
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 ```
@@ -126,11 +132,13 @@ RPC_URL=
 PRIVATE_KEY=
 ETHERSCAN_API_KEY=
 CHAIN=
-MAX_UNITS_ALLOWED=
-UNIT_REPRESENTATION=
-```a
+Field_Intrepreter=
+```
+
 ### 2.Run the deployment script
+
 To deploy the smart contracts, run the following command:
+
 ```bash
-$ bun run deploy
+bun run deploy
 ```

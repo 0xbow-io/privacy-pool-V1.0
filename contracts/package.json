@@ -10,7 +10,8 @@
   },
   "scripts": {
     "build:scripts": "cd script && bun run ./build_scripts.sh",
-    "forge:test": "forge test --ffi -v",
+    "compile": "forge compile",
+    "test": "forge test --ffi -v",
     "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
   }
 }

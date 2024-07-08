@@ -38,10 +38,9 @@
   },
   "scripts": {
     "build:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/buildCircuit.sh",
-    "test:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/testCircuit.sh",
-    "gen:verifier:testdata": "bun run ./zero-knowledge/scripts/privacy-pool/genTestVerifierData.sh",
+    "test:privacypool:circom": "cd ./zero-knowledge && bun run ./scripts/privacy-pool/testCircuit.sh",
     "contracts:compile": "cd ./contracts && bun run compile",
-    "contracts:test": "cd ./contracts && bun run forge:test",
+    "contracts:test": "cd ./contracts && bun run test",
     "webapp:dev": "cd ./webapp && bun run dev"
   }
 }

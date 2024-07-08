@@ -201,7 +201,7 @@ contract Verifier is IVerifier, State {
             return true;
         }
         /// otherwise verify that the stateRoot & depth is a known checkpoint
-        (bool found, uint256 _actualDepth) = FetchCheckpoint(_existingStateRoot_signal);
+        (bool found, uint256 _actualDepth) = FetchCheckpointAtRoot(_existingStateRoot_signal);
         if (!found) {
             revert InvalidStateTreeDepth(_existingStateRoot_signal, _actualTreeDepth_signal, _actualDepth);
         }

@@ -118,6 +118,35 @@ contract TestPrivacyPool is Test {
     }
 
     /**
+     * @dev Test Process function over multiple rounds
+     * No negative outcomes are expected
+     * note: due to limitaions on the script, only proofs
+     * for commitments can be made, not releases
+     * run: forge test --ffi --match-test test_ProcessMultipleRounds
+     */
+    function test_ProcessMultipleRounds() public {
+        vm.deal(address(0x1), 1000000 ether);
+        vm.startPrank(address(0x1));
+
+        // Generate a base request
+        IPrivacyPool.Request memory _r = IPrivacyPool.Request(
+            address(0x1), // src
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), // sink
+            address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
+            10 // fee
+        );
+
+        for (uint8 i; i < 10; i++) {
+            (uint256 root, uint256 depth) = poolTester.GetLastCheckpoint();
+            // invoke script with ffi to generate proof
+            // and Execute Process
+            poolTester.Test_Process{value: 100}(
+                _r, FFI_ComputeSingleProof(FFIArgs(poolTester.Scope(), poolTester.Context(_r), 100, 0, depth, root)), ""
+            );
+        }
+    }
+
+    /**
      * @dev Test VerifyExternalInput function
      * Which verifies whether the input value
      * sepecified in the externalIO[0] public input signal (in the proof)
@@ -466,20 +495,4 @@ contract TestPrivacyPool is Test {
         // restore original value
         _proof._pubSignals[D_NewCommitmentHash_StartIdx] = _original_value;
     }
-
-    /**
-     * @dev Test Process function
-     * simulating complete process of value commitment & releases
-     * over multiple rounds
-     * with at each cycle, forwarding the entire rootSet to an external script
-     * in order to restore the same merkle tree state & generate
-     * valid inclusion proof of eisting field-elements so that script can
-     * compute the new field-elements from eisting ones
-     * Ensure that the fees are released to the feeCollector
-     * And state updates are done correctly
-     * No negatives should exists within x rounds
-     * note: Limiting to only operating over a simple field for now
-     * run: forge test --ffi --match-test test_E2EProcess
-     */
-    function test_E2EProcess() public {}
 }
