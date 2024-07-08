@@ -271,23 +271,22 @@ contract TestPrivacyPool is Test {
     }
 
     /**
-     * @dev Test Process function when there has been
+     * @dev Test Process function when
      * the request has been tampered with
-     * and the proof's context value been adjusted to
-     * trigger an invalid context error
+     * and the proof's context value been adjusted to prevent
+     * triggering the invalid context error
      * note: Tampering is done after proof is generated
      * Request tampering would have set off InvalidContext error
-     * But can be bypassed by tampering the proof's context value
-     * ideally this still should lead to proof invalidation
+     * But this can be avoided by tampering the proof's context value.
+     * Ideally this still should lead to proof invalidation
      * run: forge test --ffi --match-test test_RequestTampering
      *
      * For refernce:
-     *    struct Request {
-     *     address src; // Source address for the external data input
-     *     address sink; // Sink address for the external data ouptut
-     *     address feeCollector; // address at which fee is collected
-     *     uint256 fee; // Fee amount
-     * }
+     *  address src; // Source address for the external data input
+     *  address sink; // Sink address for the external data ouptut
+     *  address feeCollector; // address at which fee is collected
+     *  uint256 fee; // Fee amount
+     *
      */
     function test_RequestTampering() public {
         vm.deal(address(0x1), 1000000 ether);
@@ -304,13 +303,6 @@ contract TestPrivacyPool is Test {
         );
         FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
-        // should not revert
-        //poolTester.Test_Process{value: 10000}(_r, _proof, "");
-
-        /**
-         * Do Request Tampering
-         * Should trigger a invalid context error
-         */
 
         // modify src address
         // duplicate _r to avoid modifying the original
@@ -342,25 +334,137 @@ contract TestPrivacyPool is Test {
         _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
         vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
         poolTester.Test_Process(_tampered_r, _proof, "");
+    }
 
-        /**
-         * Do Proof Tampering
-         *
-         *
-         *     // change scope value
-         *     IPrivacyPool.GROTH16Proof memory _tampered_proof = _proof;
-         *     _tampered_proof._pubSignals[D_Scope_StartIdx] = 1;
-         *     poolTester.Test_Process(
-         *         _tampered_r,
-         *         _proof,
-         *         abi.encodeWithSelector(IVerifier.InvalidScope.selector, 1, _proof._pubSignals[D_Scope_StartIdx])
-         *     );
-         *
-         *     // change actualTreeDepth value
-         *     _tampered_proof = _proof;
-         *     _tampered_proof._pubSignals[D_ActualTreeDepth_StartIdx] = 1;
-         *     poolTester.Test_Process(_tampered_r, _proof, abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
-         */
+    /**
+     * @dev Test Process function when the proof
+     * has been tampered with.
+     * note: Tampering is done after proof is generated
+     * Request tampering would have set off InvalidContext error
+     * But can be bypassed by tampering the proof's context value
+     * ideally this still should lead to proof invalidation
+     * run: forge test --ffi --match-test test_ProofTampering
+     *
+     *  //*** Public Input signals to the circuit ***
+     *  "scope" --> to be matched with pool's scope
+     *  "actualTreeDepth" --> to be verified with pool's state
+     *  "context" --> to be computed and verified against
+     *  "externIO" --> specifies the amount required to be comitted or sinked
+     *  "existingStateRoot" --> to be verified against pool's state
+     *  "newSaltPublicKey" --> to be stored into pool's state
+     *  "newCiphertext" --> to be stored into the pool's state
+     *
+     *  //*** Public Outputs of the circuit ***
+     *  "newNullRoot", --> to be verified and stored into the pool's state
+     *  "newCommitmentRoot", --> to be verified and stored into the pool's state
+     *  "newCommitmentHash" --> to be verified and stored into the pool's state
+     *
+     *
+     */
+    function test_ProofTampering() public {
+        vm.deal(address(0x1), 1000000 ether);
+        vm.deal(address(poolTester), 1000000 ether);
+
+        vm.startPrank(address(0x1));
+
+        // create base proof & request
+        IPrivacyPool.Request memory _r = IPrivacyPool.Request(
+            address(0x1), // src
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), // sink
+            address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
+            100 // fee
+        );
+        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
+
+        // Tampering proof scope value
+        uint256 _original_value = _proof._pubSignals[D_Scope_StartIdx]; // cache original value
+        _proof._pubSignals[D_Scope_StartIdx] = 1; // change scope value
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidScope.selector, 1, _original_value));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_Scope_StartIdx] = _original_value;
+
+        // Tampering actualDepth value
+        _original_value = _proof._pubSignals[D_ActualTreeDepth_StartIdx]; // cache original value
+        _proof._pubSignals[D_ActualTreeDepth_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidStateTreeDepth.selector, 0, 1, 0));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_ActualTreeDepth_StartIdx] = _original_value;
+
+        // Tampering context value
+        _original_value = _proof._pubSignals[D_Context_StartIdx]; // cache original value
+        _proof._pubSignals[D_Context_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidContext.selector, 1));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_Context_StartIdx] = _original_value;
+
+        // Tampering IO values
+        // IO[0] tampered but remains > fee (otherwise you'll trigger a feeToHigh)
+        _original_value = _proof._pubSignals[D_ExternIO_StartIdx]; // cache original value
+        _proof._pubSignals[D_ExternIO_StartIdx] = 101;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_ExternIO_StartIdx] = _original_value;
+
+        // IO[1] tampered but remains > fee (otherwise you'll trigger a feeToHigh)
+        _original_value = _proof._pubSignals[D_ExternIO_StartIdx + 1]; // cache original value
+        _proof._pubSignals[D_ExternIO_StartIdx + 1] = 101;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_ExternIO_StartIdx + 1] = _original_value;
+
+        // Tampering existingStateRoot
+        _original_value = _proof._pubSignals[D_ExistingStateRoot_StartIdx]; // cache original value
+        _proof._pubSignals[D_ExistingStateRoot_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidStateTreeDepth.selector, 1, 0, 0));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_ExistingStateRoot_StartIdx] = _original_value;
+
+        // Tampering With the SaltPublicKey
+        _original_value = _proof._pubSignals[D_NewSaltPublicKey_StartIdx]; // cache original value
+        _proof._pubSignals[D_NewSaltPublicKey_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_NewSaltPublicKey_StartIdx] = _original_value;
+
+        // Tampering With the CipherText
+        _original_value = _proof._pubSignals[D_NewCiphertext_StartIdx]; // cache original value
+        _proof._pubSignals[D_NewCiphertext_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_NewCiphertext_StartIdx] = _original_value;
+
+        // Tampering With the NewNullRoot
+        _original_value = _proof._pubSignals[D_NewNullRoot_StartIdx]; // cache original value
+        _proof._pubSignals[D_NewNullRoot_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_NewNullRoot_StartIdx] = _original_value;
+
+        // Tampering With the NewCommitmentRoot
+        _original_value = _proof._pubSignals[D_NewCommitmentRoot_StartIdx]; // cache original value
+        _proof._pubSignals[D_NewCommitmentRoot_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_NewCommitmentRoot_StartIdx] = _original_value;
+
+        // Tampering With the newCommitmentHash
+        _original_value = _proof._pubSignals[D_NewCommitmentHash_StartIdx]; // cache original value
+        _proof._pubSignals[D_NewCommitmentHash_StartIdx] = 1;
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_r, _proof, "");
+        // restore original value
+        _proof._pubSignals[D_NewCommitmentHash_StartIdx] = _original_value;
     }
 
     /**
