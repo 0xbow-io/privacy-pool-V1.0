@@ -53,17 +53,12 @@ function parseArgs(): ArgsJson {
   if (args.length !== 6) {
     throw new Error("Invalid number of arguments. Expected 6 arguments.")
   }
-
-  try {
-    return {
-      scope: BigInt(args[0]),
-      context: BigInt(args[1]),
-      externalIO: [BigInt(args[2]), BigInt(args[3])],
-      actualTreeDepth: BigInt(args[4]),
-      existingStateRoot: BigInt(args[5])
-    }
-  } catch (error) {
-    throw new Error(`Failed to parse arguments: ${error.message}`)
+  return {
+    scope: BigInt(args[0]),
+    context: BigInt(args[1]),
+    externalIO: [BigInt(args[2]), BigInt(args[3])],
+    actualTreeDepth: BigInt(args[4]),
+    existingStateRoot: BigInt(args[5])
   }
 }
 
