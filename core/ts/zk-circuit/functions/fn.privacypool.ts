@@ -60,21 +60,18 @@ export namespace FnPrivacyPool {
         args
       )() as InclusionProofT[]
     ): InputsT => {
-      // To-do add some verification checks here:
-      //for (let i = 0; i < args.existing.length; i += 1) {
-      //throw Error(`Invalid signature for ${args.inputs[i].hash}`)
-      //}
+      /// To-Do add some verification checks here
       return {
         inputs: {
           scope: args.scope,
           actualTreeDepth:
-            merkleProofs[0].actualDepth == 0n // don't take the dummy value
+            merkleProofs[0].actualDepth === 0n // don't take the dummy value
               ? merkleProofs[1].actualDepth
               : merkleProofs[0].actualDepth,
           context: args.context,
           externIO: externIO,
           existingStateRoot:
-            merkleProofs[0].actualDepth == 0n // don't take the dummy value
+            merkleProofs[0].actualDepth === 0n // don't take the dummy value
               ? merkleProofs[1].root
               : merkleProofs[0].root,
           newSaltPublicKey: args.new.map(

@@ -41,12 +41,12 @@ export const genTestCase =
     expectPass: boolean
   } => {
     // batch insert leaves into the stateTree
-    const leaves = commits.map((c) => [c.commitmentRoot, c.nullRoot]).flat()
+    const leaves = commits.flatMap((c) => [c.commitmentRoot, c.nullRoot])
     stateTree.insertMany(leaves)
     // set the indexes of the commitments
-    commits.forEach((c) => {
-      c.setIndex(stateTree)
-    })
+    for (let i = 0; i < commits.length; i++) {
+      commits[i].setIndex(stateTree)
+    }
 
     const _args = FnPrivacyPool.getCircuitInFn({
       scope: scope,

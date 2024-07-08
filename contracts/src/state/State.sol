@@ -5,8 +5,7 @@ pragma solidity ^0.8.4;
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 /*  Zk-kit Imports */
-import {InternalLeanIMT, LeanIMTData} from "@zk-kit/lean-imt.sol/InternalLeanIMT.sol";
-
+import {InternalLeanIMT, LeanIMTData} from "zk-kit.solidity/packages/lean-imt/contracts/InternalLeanIMT.sol";
 /*  Local Imports */
 import "../Constants.sol";
 import "../interfaces/IState.sol";
