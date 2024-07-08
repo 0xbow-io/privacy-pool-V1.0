@@ -7,6 +7,7 @@ import "forge-std/StdJson.sol";
 
 import "../src/verifier/groth16_verifier.sol";
 import "../src/interfaces/IPrivacyPool.sol";
+import "../src/interfaces/IVerifier.sol";
 import "../src/PrivacyPool.sol";
 import "../src/Constants.sol";
 
@@ -14,13 +15,25 @@ contract PrivacyPoolTester is Test, PrivacyPool {
     constructor(address _primitiveHandler, address _verifier) PrivacyPool(_primitiveHandler, _verifier) {}
 
     modifier AggregatedFieldSumCheck(bool expectChange) {
-        uint256 _sum = address(this).balance;
+        uint256 _sum = AggregatedFieldSum();
         _;
         if (expectChange) {
-            assertFalse(_sum == address(this).balance);
+            assertFalse(_sum == AggregatedFieldSum(), "AggregatedFieldSum has not changed when it should have");
         } else {
-            assertTrue(_sum == address(this).balance);
+            assertTrue(_sum == AggregatedFieldSum(), "AggregatedFieldSum has changed when it shouldn't have");
         }
+    }
+
+    function Test_Process(Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof, bytes memory expectedErrorMsg)
+        public
+        payable
+        AggregatedFieldSumCheck(expectedErrorMsg.length == 0)
+    {
+        // if expecting an error Msg, then assert it
+        if (expectedErrorMsg.length > 0) {
+            vm.expectRevert(expectedErrorMsg);
+        }
+        Process(_r, _proof);
     }
 
     function Test_VerifyExternalInput(
@@ -117,7 +130,7 @@ contract TestPrivacyPool is Test {
      * (3) Src is not the caller
      * (4) Sink is zero address
      *
-     * note: Limiting to only simple field for now
+     * note: Limiting to only operating over a simple field for now
      * run: forge test --ffi --match-test test_VerifyExternalInput
      */
     function test_VerifyExternalInput() public {
@@ -192,7 +205,7 @@ contract TestPrivacyPool is Test {
      * (2) AggregatedFieldSum == Output value
      * (3) AggregatedFieldSum > Output value
      *
-     * note: Limiting to only simple field for now
+     * note: Limiting to only operating over a simple field for now
      * run: forge test --ffi --match-test test_VerifyExternalOutput
      */
     function test_VerifyExternalOutput() public {
@@ -256,4 +269,113 @@ contract TestPrivacyPool is Test {
         _proof._pubSignals[D_ExternIO_StartIdx + 1] = 10;
         poolTester.Test_VerifyExternalOutput(_r, _proof, "");
     }
+
+    /**
+     * @dev Test Process function when there has been
+     * the request has been tampered with
+     * and the proof's context value been adjusted to
+     * trigger an invalid context error
+     * note: Tampering is done after proof is generated
+     * Request tampering would have set off InvalidContext error
+     * But can be bypassed by tampering the proof's context value
+     * ideally this still should lead to proof invalidation
+     * run: forge test --ffi --match-test test_RequestTampering
+     *
+     * For refernce:
+     *    struct Request {
+     *     address src; // Source address for the external data input
+     *     address sink; // Sink address for the external data ouptut
+     *     address feeCollector; // address at which fee is collected
+     *     uint256 fee; // Fee amount
+     * }
+     */
+    function test_RequestTampering() public {
+        vm.deal(address(0x1), 1000000 ether);
+        vm.deal(address(poolTester), 1000000 ether);
+
+        vm.startPrank(address(0x1));
+
+        // create base proof & request
+        IPrivacyPool.Request memory _r = IPrivacyPool.Request(
+            address(0x1), // src
+            address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), // sink
+            address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
+            100 // fee
+        );
+        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
+        // should not revert
+        //poolTester.Test_Process{value: 10000}(_r, _proof, "");
+
+        /**
+         * Do Request Tampering
+         * Should trigger a invalid context error
+         */
+
+        // modify src address
+        // duplicate _r to avoid modifying the original
+        IPrivacyPool.Request memory _tampered_r =
+            IPrivacyPool.Request({src: address(0x2), sink: _r.sink, feeCollector: _r.feeCollector, fee: _r.fee});
+        /// udpate the proof context value
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_tampered_r, _proof, "");
+
+        // modify sink address
+        _tampered_r =
+            IPrivacyPool.Request({src: _r.src, sink: address(0x2), feeCollector: _r.feeCollector, fee: _r.fee});
+        /// udpate the proof context value
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_tampered_r, _proof, "");
+
+        /// modify feeCollector addres
+        _tampered_r = IPrivacyPool.Request({src: _r.src, sink: _r.sink, feeCollector: address(0x2), fee: _r.fee});
+        /// udpate the proof context value
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_tampered_r, _proof, "");
+
+        /// modify fee amount
+        _tampered_r = IPrivacyPool.Request({src: _r.src, sink: _r.sink, feeCollector: _r.feeCollector, fee: 200});
+        /// udpate the proof context value
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
+        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        poolTester.Test_Process(_tampered_r, _proof, "");
+
+        /**
+         * Do Proof Tampering
+         *
+         *
+         *     // change scope value
+         *     IPrivacyPool.GROTH16Proof memory _tampered_proof = _proof;
+         *     _tampered_proof._pubSignals[D_Scope_StartIdx] = 1;
+         *     poolTester.Test_Process(
+         *         _tampered_r,
+         *         _proof,
+         *         abi.encodeWithSelector(IVerifier.InvalidScope.selector, 1, _proof._pubSignals[D_Scope_StartIdx])
+         *     );
+         *
+         *     // change actualTreeDepth value
+         *     _tampered_proof = _proof;
+         *     _tampered_proof._pubSignals[D_ActualTreeDepth_StartIdx] = 1;
+         *     poolTester.Test_Process(_tampered_r, _proof, abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+         */
+    }
+
+    /**
+     * @dev Test Process function
+     * simulating complete process of value commitment & releases
+     * over multiple rounds
+     * with at each cycle, forwarding the entire rootSet to an external script
+     * in order to restore the same merkle tree state & generate
+     * valid inclusion proof of eisting field-elements so that script can
+     * compute the new field-elements from eisting ones
+     * Ensure that the fees are released to the feeCollector
+     * And state updates are done correctly
+     * No negatives should exists within x rounds
+     * note: Limiting to only operating over a simple field for now
+     * run: forge test --ffi --match-test test_E2EProcess
+     */
+    function test_E2EProcess() public {}
 }

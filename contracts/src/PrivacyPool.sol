@@ -245,7 +245,6 @@ contract PrivacyPool is IPrivacyPool, Verifier {
         * contract to initiate the release of the field element
         * from pool to _sink
     */
-
     function _ReleaseComplexOutput(address _sink, uint256 _value) internal OnlyComplexField {
         uint256 _sum = AggregatedFieldSum();
         address _fieldInterpreter = fieldInterpreter;
