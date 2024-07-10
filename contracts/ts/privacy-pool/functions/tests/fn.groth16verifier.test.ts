@@ -1,3 +1,6 @@
+// run test with:
+// bunx jest ./tests/fn.groth16verifier.test.ts
+
 import fs from "node:fs";
 import { expect, test, describe, afterEach, beforeAll } from "@jest/globals";
 import { genTestData } from "@privacy-pool-v1/zero-knowledge";
@@ -6,7 +9,7 @@ import type { circomArtifactPaths } from "@privacy-pool-v1/global";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import type { Hex } from "viem";
-import { FnGroth16Verifier } from "@privacy-pool-v1/core-ts/pool";
+import { FnGroth16Verifier } from "@privacy-pool-v1/contracts";
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge";
 
 import type {
@@ -32,7 +35,7 @@ describe("Testing CPrivacyPool", () => {
 			wasm: paths.WASM_PATH,
 			zKey: paths.ZKEY_PATH,
 		});
-		const verifierAddress: Hex = "0x542a99775c5eee7f165cfd19954680ab85d586e5";
+		const verifierAddress: Hex = "0x7109fa91D440b5c723E1B5cc8098D14Ea7e6CF43";
 		const onChainVerifier = FnGroth16Verifier.verifyProofFn(sepolia);
 
 		beforeAll(async () => {});
@@ -41,7 +44,7 @@ describe("Testing CPrivacyPool", () => {
 			await cleanThreads();
 		});
 
-		test.each(genTestData(10)())(
+		test.each(genTestData(10n)())(
 			"should compute verifiable output for %s",
 			async (test) => {
 				// generate proof for test data

@@ -10,6 +10,7 @@ import {
 import type { TCommitment } from "@privacy-pool-v1/core-ts/domain"
 import { mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import type { Point } from "maci-crypto"
 
 function randomBigint(minValue: bigint, maxValue: bigint): bigint {
   const range = maxValue - minValue + 1n // Calculate the range of possible values
@@ -41,8 +42,8 @@ describe("Verifying Commitment Class", () => {
             _pKScalar: deriveSecretScalar(_pK),
             _nonce: nonce,
             _len: ConstCommitment.STD_TUPLE_SIZE,
-            _saltPk: c._public.saltPk,
-            _cipher: c._public.cipher
+            _saltPk: c.public().saltPk as Point<bigint>,
+            _cipher: c.public().cipher as [bigint, bigint]
           },
           {
             _hash: c.hash(),

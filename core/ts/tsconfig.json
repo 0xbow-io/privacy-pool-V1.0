@@ -8,6 +8,11 @@
     "./zk-circuit/*.ts",
     "./zk-circuit/**/*.ts",
     "./pool/*.ts",
-    "./pool/**/*.ts"
+    "./pool/**/*.ts",
+    "../../zero-knowledge/ts/privacy-pool/functions/fn.privacypool.ts",
+    "../../zero-knowledge/ts/privacy-pool/functions/test/fn.privacypool.test.ts",
+    "../../zero-knowledge/ts/privacy-pool/types/t.circuit.ts",
+    "../../zero-knowledge/ts/privacy-pool/interfaces/circuit.ts",
+    "../../zero-knowledge/ts/privacy-pool/functions/test/c.privacypool.test.ts"
   ]
 }

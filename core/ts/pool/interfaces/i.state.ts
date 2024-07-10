@@ -1,16 +1,16 @@
-import type { MerkleProofT } from "@privacy-pool-v1/core-ts/zk-circuit"
-import type { LeanIMT } from "@zk-kit/lean-imt"
+import type { MerkleProofT } from "@privacy-pool-v1/zero-knowledge";
+import type { LeanIMT } from "@zk-kit/lean-imt";
 
 export namespace IState {
-  export interface StateI<
-    MerkleT = LeanIMT,
-    NullifierT = bigint,
-    ProofT = MerkleProofT
-  > {
-    MAX_MERKLE_DEPTH: bigint | number
-    merkleTree: MerkleT
-    nullifiers: Set<NullifierT>
-    genProofFor: (index: bigint) => ProofT
-    insertNullifier: (nullifier: bigint) => boolean
-  }
+	export interface StateI<
+		MerkleT = LeanIMT,
+		NullifierT = bigint,
+		ProofT = MerkleProofT,
+	> {
+		MAX_MERKLE_DEPTH: bigint | number;
+		merkleTree: MerkleT;
+		nullifiers: Set<NullifierT>;
+		genProofFor: (index: bigint) => ProofT;
+		insertNullifier: (nullifier: bigint) => boolean;
+	}
 }

@@ -26,16 +26,16 @@ import type {
   Groth16_VKeyJSONT,
   CircomArtifactT,
   CircomOutputT,
-  PackedGroth16ProofT,
+  StdPackedGroth16ProofT,
   SnarkJSOutputT,
   CircomArtifactsT
-} from "@privacy-pool-v1/core-ts/zk-circuit"
+} from "@privacy-pool-v1/zero-knowledge"
 
 import {
   NewPrivacyPoolCircuit,
   FnPrivacyPool,
   genTestData
-} from "@privacy-pool-v1/core-ts/zk-circuit"
+} from "@privacy-pool-v1/zero-knowledge"
 
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { poseidon2 } from "poseidon-lite/poseidon2"

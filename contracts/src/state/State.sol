@@ -125,7 +125,9 @@ contract State is IState {
 
     /// @dev UnpackCipherAtIdx unpacks a
     /// cipher stored in specific index in the state's cipherStore array
-    function UnpackCipherAtIdx(uint256 _index)
+    function UnpackCipherAtIdx(
+        uint256 _index
+    )
         public
         view
         returns (
@@ -148,7 +150,10 @@ contract State is IState {
     /// of indices in the cipherStore array
     /// This function is utilised to quickly identify
     /// which cipher can be decrypted
-    function UnpackCiphersWithinRange(uint256 _from, uint256 _to)
+    function UnpackCiphersWithinRange(
+        uint256 _from,
+        uint256 _to
+    )
         public
         view
         returns (
@@ -170,16 +175,22 @@ contract State is IState {
                 cipherTexts[i - _from][j] = cipherStore[i][j];
             }
             for (uint256 j = 0; j < D_KEY_SIZE; j++) {
-                saltPubkeys[i - _from][j] = cipherStore[i][j + D_CIPHERTEXT_SIZE];
+                saltPubkeys[i - _from][j] = cipherStore[i][
+                    j + D_CIPHERTEXT_SIZE
+                ];
             }
-            commitmentHashes[i - _from] = cipherStore[i][D_CIPHERTEXT_SIZE + D_KEY_SIZE];
+            commitmentHashes[i - _from] = cipherStore[i][
+                D_CIPHERTEXT_SIZE + D_KEY_SIZE
+            ];
         }
     }
 
     /// @dev SeekRootIdx retuns the leaf index of
     /// a uint256 value if it exists in the rootSet & the state merkleTree
     /// else it will return false, 0
-    function SeekRootIdx(uint256 _root) public view returns (bool ok, uint256 idx) {
+    function SeekRootIdx(
+        uint256 _root
+    ) public view returns (bool ok, uint256 idx) {
         if (rootSet.contains(_root)) {
             /// _indexOf will revert if not found as a leaf node in the state merkleTree
             return (true, merkleTree._indexOf(_root));
@@ -188,7 +199,9 @@ contract State is IState {
     }
 
     /// @dev SeekRootIdxs same as SeekrootSetPointer but for a data subset
-    function SeekRootIdxs(uint256[] memory _roots) public view returns (bool[] memory ok, uint256[] memory idx) {
+    function SeekRootIdxs(
+        uint256[] memory _roots
+    ) public view returns (bool[] memory ok, uint256[] memory idx) {
         ok = new bool[](_roots.length);
         idx = new uint256[](_roots.length);
         for (uint256 i = 0; i < _roots.length; i++) {
@@ -203,7 +216,10 @@ contract State is IState {
         return rootSet.at(idx);
     }
 
-    function FetchRoots(uint256 _from, uint256 _to) public view returns (uint256[] memory roots) {
+    function FetchRoots(
+        uint256 _from,
+        uint256 _to
+    ) public view returns (uint256[] memory roots) {
         require(_from < rootSet.length(), "Index out of bounds");
         require(_to < rootSet.length(), "Index out of bounds");
         require(_from <= _to, "Invalid range");
@@ -218,7 +234,11 @@ contract State is IState {
         uint256[D_CIPHERTEXT_SIZE] memory _cipherText,
         uint256[D_KEY_SIZE] memory _saltPubkey,
         uint256 _commitmentHash
-    ) public pure returns (uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory packed) {
+    )
+        public
+        pure
+        returns (uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory packed)
+    {
         for (uint256 i = 0; i < D_CIPHERTEXT_SIZE; i++) {
             packed[i] = _cipherText[i];
         }
@@ -228,7 +248,10 @@ contract State is IState {
         packed[D_CIPHERTEXT_SIZE + D_KEY_SIZE] = _commitmentHash;
     }
 
-    function FetchCipherComponentsFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
+    function FetchCipherComponentsFromProof(
+        IPrivacyPool.GROTH16Proof calldata _proof,
+        uint8 _idx
+    )
         public
         pure
         returns (
@@ -246,16 +269,24 @@ contract State is IState {
         for (uint256 i = 0; i < D_KEY_SIZE; i++) {
             saltPubkey[i] = _proof._pubSignals[_startPos + i];
         }
-        commitmentHash = _proof._pubSignals[D_NewCommitmentHash_StartIdx + D_MAX_ALLOWED_EXISTING + _idx];
+        commitmentHash = _proof._pubSignals[
+            D_NewCommitmentHash_StartIdx + D_MAX_ALLOWED_EXISTING + _idx
+        ];
     }
 
-    function FetchCheckpointAtRoot(uint256 _stateRoot) public view returns (bool found, uint256 depth) {
+    function FetchCheckpointAtRoot(
+        uint256 _stateRoot
+    ) public view returns (bool found, uint256 depth) {
         /// get will revert if there are no matches
         /// but tryGet will return false if there are no matches
         return merkleTreeCheckPoints.tryGet(_stateRoot);
     }
 
-    function GetLastCheckpoint() public view returns (uint256 root, uint256 depth) {
+    function GetLastCheckpoint()
+        public
+        view
+        returns (uint256 root, uint256 depth)
+    {
         uint256 len = merkleTreeCheckPoints.length();
         if (len == 0) {
             return (0, 0);
@@ -263,19 +294,17 @@ contract State is IState {
         return merkleTreeCheckPoints.at(len - 1);
     }
 
-    function FetchNullRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
-        public
-        pure
-        returns (uint256 nullRoot)
-    {
+    function FetchNullRootFromProof(
+        IPrivacyPool.GROTH16Proof calldata _proof,
+        uint8 _idx
+    ) public pure returns (uint256 nullRoot) {
         return _proof._pubSignals[D_NewNullRoot_StartIdx + _idx];
     }
 
-    function FetchCommitmentRootFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
-        public
-        pure
-        returns (uint256 nullRoot)
-    {
+    function FetchCommitmentRootFromProof(
+        IPrivacyPool.GROTH16Proof calldata _proof,
+        uint8 _idx
+    ) public pure returns (uint256 nullRoot) {
         return _proof._pubSignals[D_NewCommitmentRoot_StartIdx + _idx];
     }
 
@@ -300,8 +329,11 @@ contract State is IState {
         uint256[D_KEY_SIZE] memory _saltPubkey,
         uint256 _commitmentHash
     ) internal {
-        uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory packed =
-            PackCipher(_cipherText, _saltPubkey, _commitmentHash);
+        uint256[D_CIPHERTEXT_SIZE + D_KEY_SIZE + 1] memory packed = PackCipher(
+            _cipherText,
+            _saltPubkey,
+            _commitmentHash
+        );
         cipherStore.push(packed);
     }
 
@@ -309,7 +341,9 @@ contract State is IState {
     /// update the state accordingly
     /// with the values extracted from the
     /// proof's public inpus & output signals
-    function ApplyProofToState(IPrivacyPool.GROTH16Proof calldata _proof)
+    function ApplyProofToState(
+        IPrivacyPool.GROTH16Proof calldata _proof
+    )
         internal
         /// Makes sure that the state tree
         /// is in sync with the rootSet
@@ -332,7 +366,10 @@ contract State is IState {
         uint8 offset = D_MAX_ALLOWED_EXISTING;
         for (uint8 i = 0; i < D_MAX_ALLOWED_NEW; i++) {
             // insert new commitment roots to merkleTree
-            uint256 commitmentRoot = FetchCommitmentRootFromProof(_proof, offset + i);
+            uint256 commitmentRoot = FetchCommitmentRootFromProof(
+                _proof,
+                offset + i
+            );
             // add to rootSet
             // revert if duplicate
             if (!rootSet.add(commitmentRoot)) {

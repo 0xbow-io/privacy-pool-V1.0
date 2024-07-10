@@ -5,3 +5,6 @@ forge-std/=lib/openzeppelin-contracts/lib/forge-std/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
 poseidon-solidity/=lib/poseidon-solidity/contracts/
 zk-kit.solidity/=lib/zk-kit.solidity/
+@Verifier=src/verifier/
+@PrivacyPool=src/privacyPool.sol
+@Constants=src/Constants.sol
