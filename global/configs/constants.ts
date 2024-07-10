@@ -1,4 +1,4 @@
-import path from "path"
+import path from "node:path"
 
 export const generic_configs = "configs"
 export const generic_src = "src"

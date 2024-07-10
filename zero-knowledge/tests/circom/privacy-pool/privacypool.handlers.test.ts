@@ -6,14 +6,11 @@ import { PrivacyPool, getSignal } from "@privacy-pool-v1/zero-knowledge"
 import { generatePrivateKey } from "viem/accounts"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
-import type {
-  Commitment,
-  InclusionProofT
-} from "@privacy-pool-v1/core-ts/domain"
+import type { Commitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
 import {
   NewCommitment,
   MerkleTreeInclusionProof
-} from "@privacy-pool-v1/core-ts/domain"
+} from "@privacy-pool-v1/domainobjs"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 
 import { test, describe, beforeAll, afterEach, expect } from "@jest/globals"

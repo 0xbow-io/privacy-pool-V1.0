@@ -11,7 +11,7 @@ import {
   NewCommitment,
   MerkleTreeInclusionProof,
   DerivePrivacyKeys
-} from "@privacy-pool-v1/core-ts/domain"
+} from "@privacy-pool-v1/domainobjs"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 

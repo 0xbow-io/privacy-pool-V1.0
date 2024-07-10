@@ -1,10 +1,10 @@
+import { NewCommitment } from "@privacy-pool-v1/domainobjs"
+import type { Commitment } from "@privacy-pool-v1/domainobjs"
 import { FnPrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 import type { TPrivacyPool } from "@privacy-pool-v1/zero-knowledge"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 import type { Hex } from "viem"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
-import { NewCommitment } from "@privacy-pool-v1/core-ts/domain"
-import type { Commitment } from "@privacy-pool-v1/core-ts/domain"
 
 export type TestCaseData = {
   case: string

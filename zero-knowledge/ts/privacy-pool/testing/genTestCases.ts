@@ -2,7 +2,7 @@ import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import { generatePrivateKey } from "viem/accounts"
 import { genTestCase } from "./genTestCase"
-import { NewCommitment } from "@privacy-pool-v1/core-ts/domain"
+import { NewCommitment } from "@privacy-pool-v1/domainobjs"
 
 function randomBigValue(minValue: bigint, maxValue: bigint): bigint {
   const range = maxValue - minValue + 1n // Calculate the range of possible values

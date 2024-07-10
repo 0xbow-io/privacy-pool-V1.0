@@ -8,6 +8,7 @@
   "author": "0xBow",
   "workspaces": [
     "core/ts/*",
+    "domainobjs/*",
     "zero-knowledge/*",
     "contracts/*",
     "*"

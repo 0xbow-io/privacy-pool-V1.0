@@ -8,11 +8,8 @@ import type {
   CircomArtifactT,
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/zero-knowledge"
-import type {
-  TCommitment,
-  InclusionProofT
-} from "@privacy-pool-v1/core-ts/domain"
-import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/core-ts/domain"
+import type { TCommitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
+import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/domainobjs"
 import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
 import {
   fetchJsonWithRetry,
