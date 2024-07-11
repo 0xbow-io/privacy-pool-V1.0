@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.json",
   "include": [
-    "./account/*.ts", "./account/**/*.ts", "./zk-circuit/*.ts", "./zk-circuit/**/*.ts","./pool/*.ts",  "./pool/**/*.ts"]
+    "./account/*.ts", "./account/**/*.ts", "./zk-circuit/*.ts", "./zk-circuit/**/*.ts","./pool/*.ts",  "./pool/**/*.ts", "./asp-provider/*.ts","./asp-provider/**/*.ts"]
 }
