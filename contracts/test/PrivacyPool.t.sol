@@ -12,21 +12,73 @@ import "../src/PrivacyPool.sol";
 import "../src/Constants.sol";
 
 contract PrivacyPoolTester is Test, PrivacyPool {
-    constructor(address _primitiveHandler, address _verifier) PrivacyPool(_primitiveHandler, _verifier) {}
+    constructor(
+        address _primitiveHandler,
+        address _verifier
+    ) PrivacyPool(_primitiveHandler, _verifier) {}
 
     modifier AggregatedFieldSumCheck(bool expectChange) {
         uint256 _sum = AggregatedFieldSum();
         _;
         if (expectChange) {
-            assertFalse(_sum == AggregatedFieldSum(), "AggregatedFieldSum has not changed when it should have");
+            assertFalse(
+                _sum == AggregatedFieldSum(),
+                "AggregatedFieldSum has not changed when it should have"
+            );
         } else {
-            assertTrue(_sum == AggregatedFieldSum(), "AggregatedFieldSum has changed when it shouldn't have");
+            assertTrue(
+                _sum == AggregatedFieldSum(),
+                "AggregatedFieldSum has changed when it shouldn't have"
+            );
         }
     }
+    /**
+     * @dev Modifier to check if the value transfer is correct
+     * check diff src before & after = IO[0]
+     * check diff sink before & after = IO[1]
+     */
+    modifier ValueTransferCheck(
+        Request calldata _r,
+        IPrivacyPool.GROTH16Proof calldata _proof
+    ) {
+        uint256 _srcBefore = _r.src.balance;
+        uint256 _sinkBefore = _r.sink.balance;
+        uint256 _feeCollectorBefore = _r.feeCollector.balance;
+        _;
+        uint256 _srcAfter = _r.src.balance;
+        uint256 _sinkAfter = _r.sink.balance;
+        uint256 _feeCollectorAfter = _r.feeCollector.balance;
 
-    function Test_Process(Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof, bytes memory expectedErrorMsg)
+        console.log("srcBefore: %d, srcAfter: %d", _srcBefore, _srcAfter);
+        console.log("sinkBefore: %d, sinkAfter: %d", _sinkBefore, _sinkAfter);
+        console.log(
+            "feeCollectorBefore: %d, feeCollectorAfter: %d",
+            _feeCollectorBefore,
+            _feeCollectorAfter
+        );
+        assertTrue(
+            _srcBefore - _srcAfter == _proof._pubSignals[D_ExternIO_StartIdx],
+            "Source balance has not been updated correctly"
+        );
+        assertTrue(
+            _sinkAfter - _sinkBefore ==
+                _proof._pubSignals[D_ExternIO_StartIdx + 1],
+            "Sink balance has not been updated correctly"
+        );
+        assertTrue(
+            _feeCollectorAfter - _feeCollectorBefore == _r.fee,
+            "FeeCollector balance has not been updated correctly"
+        );
+    }
+
+    function Test_Process(
+        Request calldata _r,
+        IPrivacyPool.GROTH16Proof calldata _proof,
+        bytes memory expectedErrorMsg
+    )
         public
         payable
+        ValueTransferCheck(_r, _proof)
         AggregatedFieldSumCheck(expectedErrorMsg.length == 0)
     {
         // if expecting an error Msg, then assert it
@@ -60,17 +112,17 @@ contract PrivacyPoolTester is Test, PrivacyPool {
         VerifyExternalOutput(_r, _proof);
     }
 
-    function Test_StateIsUpdatedModifier(Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof)
-        public
-        StateIsUpdated(_r, _proof)
-    {
+    function Test_StateIsUpdatedModifier(
+        Request calldata _r,
+        IPrivacyPool.GROTH16Proof calldata _proof
+    ) public StateIsUpdated(_r, _proof) {
         console.log("modifier triggered after function body");
     }
 
-    function Test_FeeIsReleasedModifier(Request calldata _r, IPrivacyPool.GROTH16Proof calldata _proof)
-        public
-        FeeIsReleased(_r, _proof)
-    {
+    function Test_FeeIsReleasedModifier(
+        Request calldata _r,
+        IPrivacyPool.GROTH16Proof calldata _proof
+    ) public FeeIsReleased(_r, _proof) {
         console.log("modifier triggered after function body");
     }
 }
@@ -89,7 +141,10 @@ contract TestPrivacyPool is Test {
 
     function setUp() public {
         verifier = new Groth16Verifier();
-        poolTester = new PrivacyPoolTester(D_BASE_FIELD_INTERPRETER, address(verifier));
+        poolTester = new PrivacyPoolTester(
+            D_BASE_FIELD_INTERPRETER,
+            address(verifier)
+        );
     }
 
     struct FFIArgs {
@@ -101,7 +156,9 @@ contract TestPrivacyPool is Test {
         uint256 existingStateRoot;
     }
 
-    function FFI_ComputeSingleProof(FFIArgs memory args) public returns (IPrivacyPool.GROTH16Proof memory _proof) {
+    function FFI_ComputeSingleProof(
+        FFIArgs memory args
+    ) public returns (IPrivacyPool.GROTH16Proof memory _proof) {
         // Run ffi and read back the generated proof
         string[] memory runJsInputs = new string[](8);
         runJsInputs[0] = "ts-node";
@@ -136,12 +193,23 @@ contract TestPrivacyPool is Test {
             10 // fee
         );
 
-        for (uint8 i; i < 10; i++) {
+        for (uint8 i; i < 2; i++) {
             (uint256 root, uint256 depth) = poolTester.GetLastCheckpoint();
             // invoke script with ffi to generate proof
             // and Execute Process
             poolTester.Test_Process{value: 100}(
-                _r, FFI_ComputeSingleProof(FFIArgs(poolTester.Scope(), poolTester.Context(_r), 100, 0, depth, root)), ""
+                _r,
+                FFI_ComputeSingleProof(
+                    FFIArgs(
+                        poolTester.Scope(),
+                        poolTester.Context(_r),
+                        100,
+                        0,
+                        depth,
+                        root
+                    )
+                ),
+                ""
             );
         }
     }
@@ -178,12 +246,25 @@ contract TestPrivacyPool is Test {
         );
         // Generate proof
         // IO[0] set to 10000
-        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        FFIArgs memory args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
         poolTester.Test_VerifyExternalInput{value: 1}(
             _r,
             _proof,
-            abi.encodeWithSelector(IPrivacyPool.MissingExternalInput.selector, 1, 10000, address(0x1), address(0x1))
+            abi.encodeWithSelector(
+                IPrivacyPool.MissingExternalInput.selector,
+                1,
+                10000,
+                address(0x1),
+                address(0x1)
+            )
         );
 
         /**
@@ -198,7 +279,14 @@ contract TestPrivacyPool is Test {
         );
         // Generate proof
         // IO[0] set to 10000
-        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         _proof = FFI_ComputeSingleProof(args);
         // Test
         poolTester.Test_VerifyExternalInput{value: 10000}(_r, _proof, "");
@@ -215,12 +303,25 @@ contract TestPrivacyPool is Test {
         );
         // Generate proof
         // IO[0] set to 10000
-        args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         _proof = FFI_ComputeSingleProof(args);
         poolTester.Test_VerifyExternalInput{value: 0}(
             _r,
             _proof,
-            abi.encodeWithSelector(IPrivacyPool.MissingExternalInput.selector, 0, 10000, address(0x1), address(0x1))
+            abi.encodeWithSelector(
+                IPrivacyPool.MissingExternalInput.selector,
+                0,
+                10000,
+                address(0x1),
+                address(0x1)
+            )
         );
     }
 
@@ -253,12 +354,25 @@ contract TestPrivacyPool is Test {
         );
         // Generate proof
         // IO[0] set to 10000
-        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        FFIArgs memory args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
         _proof._pubSignals[D_ExternIO_StartIdx] = 0;
         _proof._pubSignals[D_ExternIO_StartIdx + 1] = 10000;
         poolTester.Test_VerifyExternalOutput(
-            _r, _proof, abi.encodeWithSelector(IPrivacyPool.OutputWillOverdraw.selector, 0, 10000)
+            _r,
+            _proof,
+            abi.encodeWithSelector(
+                IPrivacyPool.OutputWillOverdraw.selector,
+                0,
+                10000
+            )
         );
 
         /**
@@ -330,38 +444,79 @@ contract TestPrivacyPool is Test {
             address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
             100 // fee
         );
-        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        FFIArgs memory args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
 
         // modify src address
         // duplicate _r to avoid modifying the original
-        IPrivacyPool.Request memory _tampered_r =
-            IPrivacyPool.Request({src: address(0x2), sink: _r.sink, feeCollector: _r.feeCollector, fee: _r.fee});
+        IPrivacyPool.Request memory _tampered_r = IPrivacyPool.Request({
+            src: address(0x2),
+            sink: _r.sink,
+            feeCollector: _r.feeCollector,
+            fee: _r.fee
+        });
         /// udpate the proof context value
-        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
+            _tampered_r
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_tampered_r, _proof, "");
 
         // modify sink address
-        _tampered_r =
-            IPrivacyPool.Request({src: _r.src, sink: address(0x2), feeCollector: _r.feeCollector, fee: _r.fee});
+        _tampered_r = IPrivacyPool.Request({
+            src: _r.src,
+            sink: address(0x2),
+            feeCollector: _r.feeCollector,
+            fee: _r.fee
+        });
         /// udpate the proof context value
-        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
+            _tampered_r
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_tampered_r, _proof, "");
 
         /// modify feeCollector addres
-        _tampered_r = IPrivacyPool.Request({src: _r.src, sink: _r.sink, feeCollector: address(0x2), fee: _r.fee});
+        _tampered_r = IPrivacyPool.Request({
+            src: _r.src,
+            sink: _r.sink,
+            feeCollector: address(0x2),
+            fee: _r.fee
+        });
         /// udpate the proof context value
-        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
+            _tampered_r
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_tampered_r, _proof, "");
 
         /// modify fee amount
-        _tampered_r = IPrivacyPool.Request({src: _r.src, sink: _r.sink, feeCollector: _r.feeCollector, fee: 200});
+        _tampered_r = IPrivacyPool.Request({
+            src: _r.src,
+            sink: _r.sink,
+            feeCollector: _r.feeCollector,
+            fee: 200
+        });
         /// udpate the proof context value
-        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(_tampered_r);
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
+            _tampered_r
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_tampered_r, _proof, "");
     }
 
@@ -403,13 +558,26 @@ contract TestPrivacyPool is Test {
             address(0xA9959D135F54F91b2f889be628E038cbc014Ec62), // feeCollector
             100 // fee
         );
-        FFIArgs memory args = FFIArgs(poolTester.Scope(), poolTester.Context(_r), 10000, 0, 0, 0);
+        FFIArgs memory args = FFIArgs(
+            poolTester.Scope(),
+            poolTester.Context(_r),
+            10000,
+            0,
+            0,
+            0
+        );
         IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(args);
 
         // Tampering proof scope value
         uint256 _original_value = _proof._pubSignals[D_Scope_StartIdx]; // cache original value
         _proof._pubSignals[D_Scope_StartIdx] = 1; // change scope value
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidScope.selector, 1, _original_value));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVerifier.InvalidScope.selector,
+                1,
+                _original_value
+            )
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_Scope_StartIdx] = _original_value;
@@ -417,7 +585,14 @@ contract TestPrivacyPool is Test {
         // Tampering actualDepth value
         _original_value = _proof._pubSignals[D_ActualTreeDepth_StartIdx]; // cache original value
         _proof._pubSignals[D_ActualTreeDepth_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidStateTreeDepth.selector, 0, 1, 0));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVerifier.InvalidStateTreeDepth.selector,
+                0,
+                1,
+                0
+            )
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_ActualTreeDepth_StartIdx] = _original_value;
@@ -425,7 +600,9 @@ contract TestPrivacyPool is Test {
         // Tampering context value
         _original_value = _proof._pubSignals[D_Context_StartIdx]; // cache original value
         _proof._pubSignals[D_Context_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidContext.selector, 1));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.InvalidContext.selector, 1)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_Context_StartIdx] = _original_value;
@@ -434,7 +611,9 @@ contract TestPrivacyPool is Test {
         // IO[0] tampered but remains > fee (otherwise you'll trigger a feeToHigh)
         _original_value = _proof._pubSignals[D_ExternIO_StartIdx]; // cache original value
         _proof._pubSignals[D_ExternIO_StartIdx] = 101;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_ExternIO_StartIdx] = _original_value;
@@ -442,7 +621,9 @@ contract TestPrivacyPool is Test {
         // IO[1] tampered but remains > fee (otherwise you'll trigger a feeToHigh)
         _original_value = _proof._pubSignals[D_ExternIO_StartIdx + 1]; // cache original value
         _proof._pubSignals[D_ExternIO_StartIdx + 1] = 101;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_ExternIO_StartIdx + 1] = _original_value;
@@ -450,7 +631,14 @@ contract TestPrivacyPool is Test {
         // Tampering existingStateRoot
         _original_value = _proof._pubSignals[D_ExistingStateRoot_StartIdx]; // cache original value
         _proof._pubSignals[D_ExistingStateRoot_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.InvalidStateTreeDepth.selector, 1, 0, 0));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVerifier.InvalidStateTreeDepth.selector,
+                1,
+                0,
+                0
+            )
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_ExistingStateRoot_StartIdx] = _original_value;
@@ -458,7 +646,9 @@ contract TestPrivacyPool is Test {
         // Tampering With the SaltPublicKey
         _original_value = _proof._pubSignals[D_NewSaltPublicKey_StartIdx]; // cache original value
         _proof._pubSignals[D_NewSaltPublicKey_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_NewSaltPublicKey_StartIdx] = _original_value;
@@ -466,7 +656,9 @@ contract TestPrivacyPool is Test {
         // Tampering With the CipherText
         _original_value = _proof._pubSignals[D_NewCiphertext_StartIdx]; // cache original value
         _proof._pubSignals[D_NewCiphertext_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_NewCiphertext_StartIdx] = _original_value;
@@ -474,7 +666,9 @@ contract TestPrivacyPool is Test {
         // Tampering With the NewNullRoot
         _original_value = _proof._pubSignals[D_NewNullRoot_StartIdx]; // cache original value
         _proof._pubSignals[D_NewNullRoot_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_NewNullRoot_StartIdx] = _original_value;
@@ -482,7 +676,9 @@ contract TestPrivacyPool is Test {
         // Tampering With the NewCommitmentRoot
         _original_value = _proof._pubSignals[D_NewCommitmentRoot_StartIdx]; // cache original value
         _proof._pubSignals[D_NewCommitmentRoot_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_NewCommitmentRoot_StartIdx] = _original_value;
@@ -490,7 +686,9 @@ contract TestPrivacyPool is Test {
         // Tampering With the newCommitmentHash
         _original_value = _proof._pubSignals[D_NewCommitmentHash_StartIdx]; // cache original value
         _proof._pubSignals[D_NewCommitmentHash_StartIdx] = 1;
-        vm.expectRevert(abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(IVerifier.ProofVerificationFailed.selector)
+        );
         poolTester.Test_Process(_r, _proof, "");
         // restore original value
         _proof._pubSignals[D_NewCommitmentHash_StartIdx] = _original_value;

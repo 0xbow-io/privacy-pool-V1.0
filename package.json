@@ -27,7 +27,7 @@
     "@zk-kit/poseidon-cipher.circom": "^1.0.0-beta.1",
     "@zk-kit/utils": "^1.2.0",
     "@zk-kit/utils.circom": "^1.0.0-beta.1",
-    "abitype": "^1.0.4",
+    "abitype": "^1.0.5",
     "circomkit": "^0.2.1",
     "circomlib": "^2.0.5",
     "dotenv": "^16.4.5",
