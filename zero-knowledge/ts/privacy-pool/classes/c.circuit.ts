@@ -78,7 +78,7 @@ export namespace CCircuit {
                   : (output as resT)
               })
               .catch((e) => {
-                throw new Error("unable to compute proof", { cause: e })
+                throw new Error(`proof generation failed, cause: ${e}`)
               })
           : Promise.reject("prover not initialized")
   }

@@ -7,23 +7,18 @@ import type {
 import {
   ContextFn,
   D_ExternIO_StartIdx,
+  FetchCheckpointAtRootFn,
+  FetchRootsFn,
   FnGroth16Verifier,
+  GetStateSizeFn,
   ProcessFn,
   ScopeFn,
-  GetStateSizeFn,
-  FetchRootsFn,
-  UnpackCiphersWithinRangeFn,
-  FetchCheckpointAtRootFn
+  UnpackCiphersWithinRangeFn
 } from "@privacy-pool-v1/contracts"
-import type { Commitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
-import {
-  MerkleTreeInclusionProof,
-  RecoverCommitment,
-  ConstCommitment
-} from "@privacy-pool-v1/domainobjs"
+import type { Commitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
+import { ConstCommitment, RecoverCommitment } from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
-  ICircuit,
   SnarkJSOutputT,
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/zero-knowledge"
@@ -32,6 +27,8 @@ import {
   NewPrivacyPoolCircuit
 } from "@privacy-pool-v1/zero-knowledge"
 import { LeanIMT } from "@zk-kit/lean-imt"
+import type { CipherText } from "@zk-kit/poseidon-cipher"
+import type { Point } from "maci-crypto"
 import { hashLeftRight } from "maci-crypto"
 import type {
   Address,
@@ -42,16 +39,12 @@ import type {
   WalletActions,
   WalletClient
 } from "viem"
-import { createPublicClient, http, formatUnits } from "viem"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
-import type { Point } from "maci-crypto"
-import type { CipherText } from "@zk-kit/poseidon-cipher"
+import { createPublicClient, http } from "viem"
 
 export const GetOnChainPrivacyPool = (
   meta: PrivacyPoolMeta,
-  conn?: PublicClient,
-  zkArtifacts?: CircomArtifactsT
-): CPool.poolC => new CPool.poolC(meta, conn, zkArtifacts)
+  conn?: PublicClient
+): CPool.poolC => new CPool.poolC(meta, conn)
 
 export type OnChainPrivacyPool = CPool.poolC
 
@@ -59,67 +52,8 @@ export namespace CPool {
   export class stateC implements IState.StateI {
     MAX_MERKLE_DEPTH = 32
     merkleTree = new LeanIMT(hashLeftRight)
-    cipherStore: bigint[][] = []
     rootSet: Set<bigint> = new Set()
-    zkCircuit?: ICircuit.circuitI
-
-    constructor(zkArtifacts?: CircomArtifactsT) {
-      this.zkCircuit = zkArtifacts
-        ? NewPrivacyPoolCircuit(zkArtifacts)
-        : undefined
-    }
-
-    static newState = (zkArtifacts?: CircomArtifactsT): IState.StateI =>
-      new stateC(zkArtifacts)
-
-    StorePackedCipher = (
-      cipher: [
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint
-      ]
-    ): number => {
-      // pack the cipher text and salt public key, and commitment hash
-      this.cipherStore.push(cipher)
-      return this.cipherStore.length - 1
-    }
-
-    PackCipher = (
-      CipherText: [bigint, bigint, bigint, bigint, bigint, bigint, bigint], // 7 elements
-      SaltPubKey: [bigint, bigint], // 2 elements
-      CommitmentHash: bigint
-    ): [
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint
-    ] => {
-      return [
-        CipherText[0],
-        CipherText[1],
-        CipherText[2],
-        CipherText[3],
-        CipherText[4],
-        CipherText[5],
-        CipherText[6],
-        SaltPubKey[0],
-        SaltPubKey[1],
-        CommitmentHash
-      ]
-    }
+    static newState = (): IState.StateI => new stateC()
 
     StateSize = (): bigint => BigInt(this.merkleTree.size)
 
@@ -141,13 +75,6 @@ export namespace CPool {
       // update the merkle tree
       this.merkleTree.insertMany(roots)
       return this.merkleTree.root
-    }
-
-    genMerkleProofFor = (index: bigint): InclusionProofT => {
-      return MerkleTreeInclusionProof(
-        this.merkleTree,
-        this.MAX_MERKLE_DEPTH
-      )(index)
     }
   }
 
@@ -200,10 +127,9 @@ export namespace CPool {
 
     constructor(
       public meta: PrivacyPoolMeta,
-      public conn?: PublicClient,
-      public zkArtifacts?: CircomArtifactsT
+      public conn?: PublicClient
     ) {
-      super(zkArtifacts)
+      super()
       // set con to the std public client if it is not set
       this.conn =
         this.conn ??
@@ -245,6 +171,7 @@ export namespace CPool {
 
       //TODO Make this batched to avoid hitting block gas limit
       const sizeDiff = chainStateSize - this.StateSize()
+      // prevents spamming the contract with requests
       if (sizeDiff > 0n) {
         const ToFrom: [bigint, bigint] = [this.StateSize(), chainStateSize - 1n]
         const roots = (
@@ -265,85 +192,53 @@ export namespace CPool {
             )
         return _checkpoint[0]
       }
-      return false
+      return true
     }
     /**
-     * @dev process: iterates through ciphertexts and recover commitments
-        from ciphers that can be decrypted with the provided key
+     * @dev decryptCiphers: iterates through ciphertexts and try to decrypt them
+     based on the provided keys. The decrypted secrets are stored in the key state.
      * @param Request: the set of keys to be used for decryption
      */
-    recoverCommitments = async (
-      keys: {
-        pkScalar: bigint
-        nonce: bigint
-      }[],
-      ignoreVoids = true,
-      ignoreNullified = true
-    ): Promise<
-      {
-        pkScalar: bigint
-        nonce: bigint
-        commitment: Commitment
-      }[]
-    > => {
+    decryptCiphers = async (
+      keys: PrivacyKeys,
+      from = 0n,
+      to = this.StateSize() / 2n - 1n
+    ) => {
+      const decryptionPromises: Promise<void>[] = []
+
       const ciphers = this._ciphers
-        ? await this._ciphers(this.meta.address, [
-            0n,
-            this.StateSize() / 4n + 1n
-          ])
+        ? await this._ciphers(this.meta.address, [from, to])
         : await UnpackCiphersWithinRangeFn(this.meta.chain, this.conn)(
             this.meta.address,
-            [0n, this.StateSize() / 4n + 1n]
+            [from, to]
           )
-      const commitments: {
-        pkScalar: bigint
-        nonce: bigint
-        commitment: Commitment
-      }[] = []
       for (let i = 0; i < ciphers[0].length; i++) {
-        const cipher = ciphers[0][i]
-        const salt = ciphers[1][i]
+        const rawCipherText = [
+          ciphers[0][i][0],
+          ciphers[0][i][1],
+          ciphers[0][i][2],
+          ciphers[0][i][3],
+          ciphers[0][i][4],
+          ciphers[0][i][5],
+          ciphers[0][i][6]
+        ] as [bigint, bigint, bigint, bigint, bigint, bigint, bigint]
+        const rawSaltPk = [ciphers[1][i][0], ciphers[1][i][1]] as [
+          bigint,
+          bigint
+        ]
         const commitmentHash = ciphers[2][i]
         for (let j = 0; j < keys.length; j++) {
-          const _commitment = RecoverCommitment(
-            {
-              _pKScalar: keys[j].pkScalar,
-              _nonce: keys[j].nonce,
-              _len: ConstCommitment.STD_TUPLE_SIZE,
-              _saltPk: salt as Point<bigint>,
-              _cipher: cipher.map((x) => BigInt(x)) as CipherText<bigint>
-            },
-            {
-              _hash: commitmentHash
-            }
+          decryptionPromises.push(
+            keys[j].decryptCipher(
+              rawSaltPk,
+              rawCipherText,
+              commitmentHash,
+              BigInt(i) + from
+            )
           )
-          if (_commitment) {
-            if (_commitment.isVoid() && ignoreVoids) {
-              continue
-            }
-
-            if (ignoreNullified) {
-              // check if nullroot of the commitment
-              // exists in the rootset
-              // if so then continue
-              if (this.rootSet.has(_commitment.nullRoot)) {
-                continue
-              }
-            }
-
-            // set the index to the leaf index in the merkle tree
-            // otherwise proof generation will fail later on
-            _commitment.setIndex(this.merkleTree)
-
-            commitments.push({
-              pkScalar: keys[j].pkScalar,
-              nonce: keys[j].nonce,
-              commitment: _commitment
-            })
-          }
         }
+        await Promise.all(decryptionPromises)
       }
-      return commitments
     }
 
     scope = async (): Promise<bigint> =>
@@ -366,6 +261,49 @@ export namespace CPool {
         ? this._context(this.meta.address, _r)
         : ContextFn(this.meta.chain, this.conn)(this.meta.address, _r)
 
+    verify = async (
+      proof: SnarkJSOutputT
+    ): Promise<{
+      verified: boolean
+      packedProof: StdPackedGroth16ProofT<bigint>
+    }> => {
+      // pack the proof for on-chain verification
+      const packed = FnPrivacyPool.parseOutputFn("pack")(
+        proof as SnarkJSOutputT
+      ) as StdPackedGroth16ProofT<bigint>
+
+      return {
+        verified: this._onChainGroth16Verifier
+          ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
+          : await FnGroth16Verifier.verifyProofFn(this.meta.chain, this.conn)(
+              this.meta.verifier,
+              packed
+            ),
+        packedProof: packed
+      }
+    }
+
+    processOnChain = async (
+      account: PublicActions & WalletActions & Client,
+      request: TPrivacyPool.RequestT,
+      proof: StdPackedGroth16ProofT<bigint>,
+      simOnly = true
+    ): Promise<boolean | Hex> =>
+      await ProcessFn(account)(
+        this.meta.address,
+        [
+          request,
+          {
+            _pA: proof[0],
+            _pB: proof[1],
+            _pC: proof[2],
+            _pubSignals: proof[3]
+          }
+        ],
+        proof[3][D_ExternIO_StartIdx] as bigint,
+        simOnly
+      )
+
     process = async (
       account: PublicActions & WalletActions & Client,
       _r: TPrivacyPool.RequestT,
@@ -373,70 +311,32 @@ export namespace CPool {
       nonces: bigint[],
       existingCommitment: Commitment[],
       newCommitment: Commitment[],
-      simOnly = false
-    ) =>
-      this.zkCircuit
-        ? await this.zkCircuit
-            .prove({
-              scope: await this.scope(), // calculate scope on the fly if value is not cached
-              context: await this.context(_r), // query contract to get context value based on _r
-              mt: this.merkleTree,
-              maxDepth: this.MAX_MERKLE_DEPTH,
-              pkScalars: pkScalars,
-              nonces: nonces,
-              existing: existingCommitment,
-              new: newCommitment
-            })(
-              //callback fn to verify output on-chain
-              async ({
-                out
-              }): Promise<{
-                verified: boolean
-                packedProof: StdPackedGroth16ProofT<bigint>
-              }> => {
-                // pack the proof for on-chain verification
-                const packed = FnPrivacyPool.parseOutputFn("pack")(
-                  out as SnarkJSOutputT
-                ) as StdPackedGroth16ProofT<bigint>
-                // verify the proof on-chain
-                // if the verifier is not set, return false
-                // this is useful for testing the zkCircuit without the need for a verifier
-                return {
-                  verified: await (this._onChainGroth16Verifier
-                    ? this._onChainGroth16Verifier(this.meta.verifier, packed)
-                    : false),
-                  packedProof: packed
-                }
-              }
-            )
-            .then(async (out) => {
-              // typecast
-              const _out = out as {
-                verified: boolean
-                packedProof: StdPackedGroth16ProofT<bigint>
-              }
-
-              if (_out.verified) {
-                // if the proof is valid, proceed with the transaction
-                return ProcessFn(account)(
-                  this.meta.address,
-                  [
-                    _r,
-                    {
-                      _pA: _out.packedProof[0],
-                      _pB: _out.packedProof[1],
-                      _pC: _out.packedProof[2],
-                      _pubSignals: _out.packedProof[3]
-                    }
-                  ],
-                  _out.packedProof[3][D_ExternIO_StartIdx] as bigint,
-                  simOnly
-                )
-              }
-            })
-            .catch((e) => {
-              throw new Error(`Error in processing request: ${e}`)
-            })
+      zkArtifacts: CircomArtifactsT,
+      simOnly = true
+    ): Promise<boolean | Hex> => {
+      const out = (await NewPrivacyPoolCircuit(zkArtifacts)
+        .prove({
+          scope: await this.scope(), // calculate scope on the fly if value is not cached
+          context: await this.context(_r), // query contract to get context value based on _r
+          mt: this.merkleTree,
+          maxDepth: this.MAX_MERKLE_DEPTH,
+          pkScalars: pkScalars,
+          nonces: nonces,
+          existing: existingCommitment,
+          new: newCommitment
+        })(
+          //callback fn to verify output on-chain
+          async ({ out }) => this.verify(out as SnarkJSOutputT)
+        )
+        .catch((e) => {
+          throw new Error(`Error in processing request: ${e}`)
+        })) as {
+        verified: boolean
+        packedProof: StdPackedGroth16ProofT<bigint>
+      }
+      return out.verified
+        ? await this.processOnChain(account, _r, out.packedProof, simOnly)
         : false
+    }
   }
 }

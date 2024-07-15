@@ -7,7 +7,7 @@ import {
   RecoverCommitment,
   DerivePrivacyKeys
 } from "@privacy-pool-v1/domainobjs"
-import type { TCommitment } from "@privacy-pool-v1/domainobjs"
+import type { TCommitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
 import { mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Point } from "maci-crypto"

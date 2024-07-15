@@ -1,11 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ESNext",
-      "ES2020"
-    ],
+    "lib": ["dom", "dom.iterable", "ESNext", "ES2020"],
     "target": "ESNext",
     "module": "ESNext",
     "jsx": "preserve",
@@ -30,44 +25,18 @@
         "name": "next"
       }
     ],
-    "types": [
-      "bun-types",
-      "node"
-    ],
+    "types": ["bun-types", "node"],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/providers/*": [
-        "./src/providers/*"
-      ],
-      "@/stores/*": [
-        "./src/stores/*"
-      ],
-      "@/utils/*": [
-        "./src/utils/*"
-      ],
-      "@sections/*": [
-        "./src/app/sections/*"
-      ],
-      "@privacy-pool-v1/circuits/*": [
-        "../circuits/*"
-      ],
-      "@privacy-pool-v1/contracts/*": [
-        "../contracts/*"
-      ],
-      "@privacy-pool-v1/core-ts/*": [
-        "../core/ts/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/providers/*": ["./src/providers/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@sections/*": ["./src/app/sections/*"],
+      "@privacy-pool-v1/circuits/*": ["../circuits/*"],
+      "@privacy-pool-v1/contracts/*": ["../contracts/*"],
+      "@privacy-pool-v1/domainobjs/*": ["../domainobjs/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

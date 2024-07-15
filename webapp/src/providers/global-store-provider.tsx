@@ -3,7 +3,11 @@
 import { type ReactNode, createContext, useRef, useContext } from "react"
 import { useStore } from "zustand"
 
-import { type KeyStore, createKeyStore, initKeyStore } from "@/stores/key-store"
+import {
+  type GlobalStore,
+  createKeyStore,
+  initKeyStore
+} from "@/stores/global-store"
 
 export type KeyStoreApi = ReturnType<typeof createKeyStore>
 

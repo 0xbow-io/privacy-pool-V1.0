@@ -1,22 +1,10 @@
 import type { Address } from "viem"
 import type { Chain } from "viem/chains"
 import { sepolia, gnosis } from "viem/chains"
-
-export const availChains = [sepolia, gnosis]
-export const DEFAULT_CHAIN = sepolia
 import { _sepolia_public_client, _gnosis_public_client } from "./clients"
+import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "@privacy-pool-v1/contracts"
 
-export type PrivacyPoolMeta = {
-  chain: Chain // network chain
-  address: Address // contract address
-  verifier: Address
-  genesis: bigint // when pool was deployed
-  id: string // reference id
-  unitRepresentative: string // what representation of value is used
-  minmaxCommitValue: bigint[] // minimum value to commit
-}
-
-export type UnitRepresentativeMeta = {
+export type SimpleFEMeta = {
   name: string
   ticker: string
   address: Address
@@ -24,10 +12,10 @@ export type UnitRepresentativeMeta = {
   iconURI: string
 }
 
-export const SupportedUnitRepresentatives: Map<
+export const SupportSimpleFieldElements: Map<Chain, SimpleFEMeta[]> = new Map<
   Chain,
-  UnitRepresentativeMeta[]
-> = new Map<Chain, UnitRepresentativeMeta[]>([
+  SimpleFEMeta[]
+>([
   [
     sepolia,
     [
@@ -55,9 +43,9 @@ export const SupportedUnitRepresentatives: Map<
   ]
 ])
 
-export const getDefaultRepresentation = (): UnitRepresentativeMeta => {
-  if (SupportedUnitRepresentatives.has(DEFAULT_CHAIN)) {
-    const _metas = SupportedUnitRepresentatives.get(DEFAULT_CHAIN)
+export const getDefaultRepresentation = (): SimpleFEMeta => {
+  if (SupportSimpleFieldElements.has(DEFAULT_CHAIN)) {
+    const _metas = SupportSimpleFieldElements.get(DEFAULT_CHAIN)
     if (_metas) return _metas[0]
   }
   throw new Error("No default pool found")
@@ -67,45 +55,3 @@ export const ChainNameToChain: Map<string, Chain> = new Map<string, Chain>([
   ["Sepolia", sepolia],
   ["Gnosis", gnosis]
 ])
-
-export const PrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
-  Chain,
-  PrivacyPoolMeta[]
->([
-  [
-    sepolia,
-    [
-      {
-        chain: sepolia,
-        id: "Sepolia Eth Pool 1",
-        address: "0xfd892e3845b3c16112bbc2581b23da80cd8d8557" as Address,
-        verifier: "0x542a99775c5eee7f165cfd19954680ab85d586e5" as Address,
-        genesis: 6179793n,
-        unitRepresentative: "ETH", // reference by ticker
-        minmaxCommitValue: [0n, 1000000000000000000n]
-      }
-    ]
-  ],
-  [
-    gnosis,
-    [
-      {
-        chain: gnosis,
-        id: "Gnosis xDAI Pool 1",
-        address: "0x52e41dc97ffcc4b67bd50c4253554ea73317be07" as Address,
-        verifier: "0x8c6561ca85229fd0b2a3d652d1734e60f9f57140" as Address,
-        genesis: 34635522n,
-        unitRepresentative: "xDAI", // reference by ticker
-        minmaxCommitValue: [0n, 1000000000000000000n]
-      }
-    ]
-  ]
-])
-
-export const getDefaultPool = (): PrivacyPoolMeta => {
-  if (PrivacyPools.has(DEFAULT_CHAIN)) {
-    const _metas = PrivacyPools.get(DEFAULT_CHAIN)
-    if (_metas) return _metas[0]
-  }
-  throw new Error("No default pool found")
-}

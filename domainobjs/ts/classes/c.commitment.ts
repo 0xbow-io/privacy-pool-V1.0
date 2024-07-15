@@ -126,7 +126,11 @@ export namespace CCommitment {
     public = () => this._public
 
     setIndex(mt: LeanIMT) {
-      this._index = BigInt(mt.indexOf(this.commitmentRoot))
+      const index = mt.indexOf(this.commitmentRoot)
+      if (index === -1) {
+        throw new Error("commitment not found in commitment tree")
+      }
+      this._index = BigInt(index)
     }
     get index() {
       return this._index
