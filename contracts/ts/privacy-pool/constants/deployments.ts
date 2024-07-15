@@ -17,13 +17,14 @@ export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
       {
         chain: sepolia,
         id: "Sepolia Eth Pool 1",
-        address: "0x8f50067dfC867fA2f102c93c192790b61DC70721" as Address,
-        verifier: "0x7109fa91D440b5c723E1B5cc8098D14Ea7e6CF43" as Address,
+        address: "0x35F9acbaD838b12AA130Ef6386C14d847bdC1642" as Address,
+        verifier: "0x3eFc6308888bC3EC39c596c8776846fA5C0bFDA7" as Address,
         scope:
-          17860360484857216088464258890461544313806446338584014491183282033613384044019n,
-        genesis: 6179793n,
-        unitRepresentative: "ETH", // reference by ticker
-        minmaxCommitValue: [0n, 1000000000000000000n]
+          11049869816642268564454296009173568684966369147224378104485796423384633924130n,
+        genesis: 6311941,
+        fieldElement: "ETH",
+        precision: 18,
+        minmaxCommit: [0n, 1000000000000000000n]
       }
     ]
   ],
@@ -33,13 +34,14 @@ export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
       {
         chain: gnosis,
         id: "Gnosis xDAI Pool 1",
-        address: "0x6e997b9291F32DA0319F1DFc4B84186085492B8d" as Address,
-        verifier: "0x19427f691bF4E73A1d88EE974277F7Cc3D086b88" as Address,
-        genesis: 34635522n,
+        address: "0x0C606138Aa02600c55e0d427cf4B2a7319a808fe" as Address,
+        verifier: "0xD925FC406cAaD1186f0Fc91C0c04bf65878EF68a" as Address,
+        genesis: 34972988n,
         scope:
-          19925016578215552840965678320606972188524212792772556824624777299752266280250n,
-        unitRepresentative: "xDAI", // reference by ticker
-        minmaxCommitValue: [0n, 1000000000000000000n]
+          1594601211935923806427821481643004967624986397998197460555337643549018639657n,
+        fieldElement: "xDAI",
+        precision: 18,
+        minmaxCommit: [0n, 1000000000000000000n]
       }
     ]
   ]

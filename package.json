@@ -35,7 +35,8 @@
     "maci-circuits": "^1.2.5",
     "poseidon-lite": "^0.2.0",
     "snarkjs": "^0.7.4",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "viem": "^2.17.4"
   },
   "scripts": {
     "build:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/buildCircuit.sh",

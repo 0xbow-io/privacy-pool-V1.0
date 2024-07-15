@@ -9,7 +9,10 @@ import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 import { createPublicClient, http } from "viem"
 import { sepolia } from "viem/chains"
 import type { Hex } from "viem"
-import { FnGroth16Verifier } from "@privacy-pool-v1/contracts"
+import {
+  FnGroth16Verifier,
+  ExistingPrivacyPools
+} from "@privacy-pool-v1/contracts"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
 
 import type {
@@ -30,7 +33,14 @@ import {
 const SECONDS = 1000
 jest.setTimeout(70 * SECONDS)
 
+const poolInstance = ExistingPrivacyPools.get(sepolia)
+
 describe("Testing Groth16 Verifier On-Chain Contract Interactions", () => {
+  // TODO: run contract in local network
+  // Currently using contract deployed in sepolia chain
+  const poolInstance = ExistingPrivacyPools.get(sepolia)
+  const onChainVerifier = FnGroth16Verifier.verifyProofFn(sepolia)
+
   describe("should pass with file paths", () => {
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
     const privacyPool = NewPrivacyPoolCircuit({
@@ -38,10 +48,6 @@ describe("Testing Groth16 Verifier On-Chain Contract Interactions", () => {
       wasm: paths.WASM_PATH,
       zKey: paths.ZKEY_PATH
     })
-    // TODO: run contract in local network
-    // Currently using contract deployed in sepolia chain
-    const verifierAddress: Hex = "0x7109fa91D440b5c723E1B5cc8098D14Ea7e6CF43"
-    const onChainVerifier = FnGroth16Verifier.verifyProofFn(sepolia)
 
     beforeAll(async () => {})
 
@@ -52,6 +58,9 @@ describe("Testing Groth16 Verifier On-Chain Contract Interactions", () => {
     test.each(genTestData(10n)())(
       "should compute verifiable output for %s",
       async (test) => {
+        if (poolInstance === undefined) {
+          throw new Error("Pool Instance is undefined")
+        }
         // generate proof for test data
         // since verify defaults to true, this will
         // auto verify the proof
@@ -66,19 +75,22 @@ describe("Testing Groth16 Verifier On-Chain Contract Interactions", () => {
                 out as SnarkJSOutputT
               )
               return {
-                ok: await onChainVerifier(
-                  verifierAddress,
+                verified: await onChainVerifier(
+                  poolInstance[0].verifier,
                   packed as StdPackedGroth16ProofT<bigint>
                 ),
-                out: packed
+                packedProof: packed
               }
             }
           )
           .catch((e) => {
             console.error(e)
-          })) as { ok: boolean; out: StdPackedGroth16ProofT<bigint> }
-        expect(res.ok).toEqual(true)
-        console.log("packed output: ", res.out)
+          })) as {
+          verified: boolean
+          packedProof: StdPackedGroth16ProofT<bigint>
+        }
+        expect(res.verified).toEqual(true)
+        console.log("packed output: ", res.packedProof)
       }
     )
   })

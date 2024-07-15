@@ -17,7 +17,19 @@ import {IPrivacyPool} from "../src/interfaces/IPrivacyPool.sol";
  *
  */
 contract StateTester is Test, State {
-    function Test_ApplyProofToState(IPrivacyPool.GROTH16Proof calldata proof, bytes memory expectedErrorMsg) public {
+    modifier VerifyCheckpoints() {
+        (uint256 _prev_root, uint256 _prev_depth) = GetLastCheckpoint();
+        _;
+        // check that merkle Tree checkpoints are updated
+        (uint256 root, uint256 depth) = GetLastCheckpoint();
+        assertTrue(root != _prev_root, "Root was not updated correctly");
+        assertTrue(depth >= _prev_depth, "Depth was not updated correctly");
+    }
+
+    function Test_ApplyProofToState(
+        IPrivacyPool.GROTH16Proof calldata proof,
+        bytes memory expectedErrorMsg
+    ) public VerifyCheckpoints {
         // if expecting an error Msg, then assert it
         if (expectedErrorMsg.length > 0) {
             vm.expectRevert(expectedErrorMsg);
@@ -25,11 +37,16 @@ contract StateTester is Test, State {
         return ApplyProofToState(proof);
     }
 
-    function Test_SeekRootIdx(uint256 _root) public view returns (bool ok, uint256 idx) {
+    function Test_SeekRootIdx(
+        uint256 _root
+    ) public view returns (bool ok, uint256 idx) {
         return SeekRootIdx(_root);
     }
 
-    function Test_FetchCipherComponentsFromProof(IPrivacyPool.GROTH16Proof calldata _proof, uint8 _idx)
+    function Test_FetchCipherComponentsFromProof(
+        IPrivacyPool.GROTH16Proof calldata _proof,
+        uint8 _idx
+    )
         public
         pure
         returns (
@@ -41,7 +58,10 @@ contract StateTester is Test, State {
         return FetchCipherComponentsFromProof(_proof, _idx);
     }
 
-    function Test_UnpackCiphersWithinRange(uint256 _startIdx, uint256 _endIdx)
+    function Test_UnpackCiphersWithinRange(
+        uint256 _startIdx,
+        uint256 _endIdx
+    )
         public
         view
         returns (
@@ -277,59 +297,74 @@ contract TestState is Test {
                     uint256[D_KEY_SIZE] memory saltPubkey,
                     uint256 commitmentHash
                 ) = stateW.Test_FetchCipherComponentsFromProof(
-                    IPrivacyPool.GROTH16Proof({
-                        _pA: [uint256(0), uint256(0)],
-                        _pB: [[uint256(0), uint256(0)], [uint256(0), uint256(0)]],
-                        _pC: [uint256(0), uint256(0)],
-                        _pubSignals: [
-                            td[i].newNullRoot[0],
-                            td[i].newNullRoot[1],
-                            0,
-                            0,
-                            0,
-                            0,
-                            td[i].newCommitmentRoot[0],
-                            td[i].newCommitmentRoot[1],
-                            0,
-                            0,
-                            td[i].newCommitmentHash[0],
-                            td[i].newCommitmentHash[1],
-                            574,
-                            0,
-                            100,
-                            356,
-                            0,
-                            0,
-                            td[i]._saltPubkey[0][0],
-                            td[i]._saltPubkey[0][1],
-                            td[i]._saltPubkey[1][0],
-                            td[i]._saltPubkey[1][1],
-                            td[i]._cipherText[0][0],
-                            td[i]._cipherText[0][1],
-                            td[i]._cipherText[0][2],
-                            td[i]._cipherText[0][3],
-                            td[i]._cipherText[0][4],
-                            td[i]._cipherText[0][5],
-                            td[i]._cipherText[0][6],
-                            td[i]._cipherText[1][0],
-                            td[i]._cipherText[1][1],
-                            td[i]._cipherText[1][2],
-                            td[i]._cipherText[1][3],
-                            td[i]._cipherText[1][4],
-                            td[i]._cipherText[1][5],
-                            td[i]._cipherText[1][6]
-                        ]
-                    }),
-                    j
-                );
+                        IPrivacyPool.GROTH16Proof({
+                            _pA: [uint256(0), uint256(0)],
+                            _pB: [
+                                [uint256(0), uint256(0)],
+                                [uint256(0), uint256(0)]
+                            ],
+                            _pC: [uint256(0), uint256(0)],
+                            _pubSignals: [
+                                td[i].newNullRoot[0],
+                                td[i].newNullRoot[1],
+                                0,
+                                0,
+                                0,
+                                0,
+                                td[i].newCommitmentRoot[0],
+                                td[i].newCommitmentRoot[1],
+                                0,
+                                0,
+                                td[i].newCommitmentHash[0],
+                                td[i].newCommitmentHash[1],
+                                574,
+                                0,
+                                100,
+                                356,
+                                0,
+                                0,
+                                td[i]._saltPubkey[0][0],
+                                td[i]._saltPubkey[0][1],
+                                td[i]._saltPubkey[1][0],
+                                td[i]._saltPubkey[1][1],
+                                td[i]._cipherText[0][0],
+                                td[i]._cipherText[0][1],
+                                td[i]._cipherText[0][2],
+                                td[i]._cipherText[0][3],
+                                td[i]._cipherText[0][4],
+                                td[i]._cipherText[0][5],
+                                td[i]._cipherText[0][6],
+                                td[i]._cipherText[1][0],
+                                td[i]._cipherText[1][1],
+                                td[i]._cipherText[1][2],
+                                td[i]._cipherText[1][3],
+                                td[i]._cipherText[1][4],
+                                td[i]._cipherText[1][5],
+                                td[i]._cipherText[1][6]
+                            ]
+                        }),
+                        j
+                    );
                 // perform a deep comparison
                 for (uint256 k = 0; k < D_CIPHERTEXT_SIZE; k++) {
-                    assertEq(cipherText[k], td[i]._cipherText[j][k], "cipherText mismatch");
+                    assertEq(
+                        cipherText[k],
+                        td[i]._cipherText[j][k],
+                        "cipherText mismatch"
+                    );
                 }
                 for (uint256 k = 0; k < D_KEY_SIZE; k++) {
-                    assertEq(saltPubkey[k], td[i]._saltPubkey[j][k], "saltPubkey mismatch");
+                    assertEq(
+                        saltPubkey[k],
+                        td[i]._saltPubkey[j][k],
+                        "saltPubkey mismatch"
+                    );
                 }
-                assertEq(commitmentHash, td[i].newCommitmentHash[j], "commitmentHash mismatch");
+                assertEq(
+                    commitmentHash,
+                    td[i].newCommitmentHash[j],
+                    "commitmentHash mismatch"
+                );
             }
         }
     }
@@ -488,7 +523,9 @@ contract TestState is Test {
              *
              */
             for (uint256 j = 0; j < 2; j++) {
-                (bool ok, uint256 idx) = stateW.Test_SeekRootIdx(td[i].newNullRoot[j]);
+                (bool ok, uint256 idx) = stateW.Test_SeekRootIdx(
+                    td[i].newNullRoot[j]
+                );
                 assertEq(ok, false);
                 assertEq(idx, 0);
 
@@ -512,7 +549,9 @@ contract TestState is Test {
              *
              */
             for (uint256 j = 0; j < 2; j++) {
-                (bool ok, uint256 idx) = stateW.Test_SeekRootIdx(td[i].newNullRoot[j]);
+                (bool ok, uint256 idx) = stateW.Test_SeekRootIdx(
+                    td[i].newNullRoot[j]
+                );
                 assertEq(ok, true);
                 assertEq(idx, i * 4 + j);
 
@@ -531,16 +570,28 @@ contract TestState is Test {
             // preform a deep comparison
             for (uint256 j = 0; j < cipherTexts.length; j++) {
                 for (uint256 k = 0; k < cipherTexts[j].length; k++) {
-                    assertEq(cipherTexts[j][k], td[i]._cipherText[j][k], "cipherText mismatch");
+                    assertEq(
+                        cipherTexts[j][k],
+                        td[i]._cipherText[j][k],
+                        "cipherText mismatch"
+                    );
                 }
             }
             for (uint256 j = 0; j < saltPubkeys.length; j++) {
                 for (uint256 k = 0; k < saltPubkeys[j].length; k++) {
-                    assertEq(saltPubkeys[j][k], td[i]._saltPubkey[j][k], "saltPubkey mismatch");
+                    assertEq(
+                        saltPubkeys[j][k],
+                        td[i]._saltPubkey[j][k],
+                        "saltPubkey mismatch"
+                    );
                 }
             }
             for (uint256 j = 0; j < commitmentHashes.length; j++) {
-                assertEq(commitmentHashes[j], td[i].newCommitmentHash[j], "commitmentHash mismatch");
+                assertEq(
+                    commitmentHashes[j],
+                    td[i].newCommitmentHash[j],
+                    "commitmentHash mismatch"
+                );
             }
         }
     }
@@ -596,7 +647,7 @@ contract TestState is Test {
                     ]
                 ],
                 expectedErrorMsg: abi.encodeWithSelector(
-                    IState.NullRootExists.selector, 
+                    IState.NullRootExists.selector,
                     7693650792535944309452694493764107138652740190734382403591779890211701663605
                 )
             }),

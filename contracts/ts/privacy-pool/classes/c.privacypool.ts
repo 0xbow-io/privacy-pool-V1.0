@@ -1,44 +1,40 @@
 import type {
+  IState,
   PrivacyPoolMeta,
   TGroth16Verifier,
   TPrivacyPool
 } from "@privacy-pool-v1/contracts"
 import {
   ContextFn,
+  D_ExternIO_StartIdx,
   FnGroth16Verifier,
   ProcessFn,
   ScopeFn
 } from "@privacy-pool-v1/contracts"
 import type { Commitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
+import { MerkleTreeInclusionProof } from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
   ICircuit,
   SnarkJSOutputT,
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/zero-knowledge"
+import {
+  FnPrivacyPool,
+  NewPrivacyPoolCircuit
+} from "@privacy-pool-v1/zero-knowledge"
+import { LeanIMT } from "@zk-kit/lean-imt"
+import { hashLeftRight } from "maci-crypto"
 import type {
   Address,
   Client,
   Hex,
   PublicActions,
+  PublicClient,
   WalletActions,
-  WalletClient,
-  PublicClient
+  WalletClient
 } from "viem"
-
-import { D_ExternIO_StartIdx } from "@privacy-pool-v1/contracts"
-
-import { createPublicClient, http } from "viem"
-
-import { MerkleTreeInclusionProof } from "@privacy-pool-v1/domainobjs"
-import { FnPrivacyPool } from "@privacy-pool-v1/zero-knowledge"
-
-import { NewPrivacyPoolCircuit } from "@privacy-pool-v1/zero-knowledge"
-
-import { LeanIMT } from "@zk-kit/lean-imt"
-import { hashLeftRight } from "maci-crypto"
-
-import type { IState } from "@privacy-pool-v1/contracts"
+import { createPublicClient, http, formatUnits } from "viem"
 
 export const GetOnChainPrivacyPool = (
   meta: PrivacyPoolMeta,
@@ -65,13 +61,42 @@ export namespace CPool {
     static newState = (zkArtifacts?: CircomArtifactsT): IState.StateI =>
       new stateC(zkArtifacts)
 
-    StoreCipher = (
+    StorePackedCipher = (
+      cipher: [
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint
+      ]
+    ): number => {
+      // pack the cipher text and salt public key, and commitment hash
+      this.cipherStore.push(cipher)
+      return this.cipherStore.length - 1
+    }
+
+    PackCipher = (
       CipherText: [bigint, bigint, bigint, bigint, bigint, bigint, bigint], // 7 elements
       SaltPubKey: [bigint, bigint], // 2 elements
       CommitmentHash: bigint
-    ): number => {
-      // pack the cipher text and salt public key, and commitment hash
-      this.cipherStore.push([
+    ): [
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint
+    ] => {
+      return [
         CipherText[0],
         CipherText[1],
         CipherText[2],
@@ -82,16 +107,15 @@ export namespace CPool {
         SaltPubKey[0],
         SaltPubKey[1],
         CommitmentHash
-      ])
-      return this.cipherStore.length - 1
+      ]
     }
 
     /**
-     * @dev InsertInToRootSet: insert a set of roots into the rootSet
+     * @dev UpdateRootSet: insert a set of roots into the rootSet
      * @param roots: a set of roots to be inserted into the rootSet
      * @returns the new root of the merkle tree
      */
-    InsertInToRootSet = (roots: bigint[]): bigint => {
+    UpdateRootSet = (roots: bigint[]): bigint => {
       for (const root of roots) {
         // check if root exists in the rootSet
         // if not, add it
@@ -205,48 +229,53 @@ export namespace CPool {
               async ({
                 out
               }): Promise<{
-                ok: boolean
-                out: StdPackedGroth16ProofT<bigint>
+                verified: boolean
+                packedProof: StdPackedGroth16ProofT<bigint>
               }> => {
                 // pack the proof for on-chain verification
                 const packed = FnPrivacyPool.parseOutputFn("pack")(
                   out as SnarkJSOutputT
                 ) as StdPackedGroth16ProofT<bigint>
+                // verify the proof on-chain
+                // if the verifier is not set, return false
+                // this is useful for testing the zkCircuit without the need for a verifier
                 return {
-                  // verify the proof on-chain
-                  ok: await (this._onChainGroth16Verifier
+                  verified: await (this._onChainGroth16Verifier
                     ? this._onChainGroth16Verifier(this.meta.verifier, packed)
                     : false),
-                  out: packed
+                  packedProof: packed
                 }
               }
             )
-            .then(async (res) => {
-              // cast res
-              const _res = res as {
-                ok: boolean
-                out: StdPackedGroth16ProofT<bigint>
+            .then(async (out) => {
+              // typecast
+              const _out = out as {
+                verified: boolean
+                packedProof: StdPackedGroth16ProofT<bigint>
               }
-              if (_res.ok) {
+
+              if (_out.verified) {
                 // if the proof is valid, proceed with the transaction
                 console.log("request: ", _r)
-                console.log("proof: ", _res.out)
+                console.log("proof: ", _out.packedProof)
                 return ProcessFn(account)(
                   this.meta.address,
-                  _r,
-                  {
-                    _pA: _res.out[0],
-                    _pB: _res.out[1],
-                    _pC: _res.out[2],
-                    _pubSignals: _res.out[3]
-                  },
-                  _res.out[3][D_ExternIO_StartIdx], //exctract io[0] from _res.out[3]
+                  [
+                    _r,
+                    {
+                      _pA: _out.packedProof[0],
+                      _pB: _out.packedProof[1],
+                      _pC: _out.packedProof[2],
+                      _pubSignals: _out.packedProof[3]
+                    }
+                  ],
+                  _out.packedProof[3][D_ExternIO_StartIdx] as bigint,
                   simOnly
                 )
               }
             })
             .catch((e) => {
-              console.error(e)
+              throw new Error(`Error in processing request: ${e}`)
             })
         : false
   }

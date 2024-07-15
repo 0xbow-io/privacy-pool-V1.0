@@ -6,8 +6,10 @@ Privacy Pool V1.0 is a protocol designed for confidential data operations with t
 > [!CAUTION] Privacy Pool V1.0 Contracts has not been audited. Please use with caution.
 >
 > Currently deployed at:
-> Sepolia: [0x8f50067dfC867fA2f102c93c192790b61DC70721](https://sepolia.etherscan.io/address/0x8f50067dfc867fa2f102c93c192790b61dc70721#code)
-> Gnosis:  [0x6e997b9291F32DA0319F1DFc4B84186085492B8d](https://gnosisscan.io/address/0x6e997b9291f32da0319f1dfc4b84186085492b8d#code)
+>
+> Sepolia: [0x35F9acbaD838b12AA130Ef6386C14d847bdC1642](https://sepolia.etherscan.io/address/0x35F9acbaD838b12AA130Ef6386C14d847bdC1642#code)
+>
+> Gnosis:  [0x0C606138Aa02600c55e0d427cf4B2a7319a808fe](https://gnosisscan.io/address/0x0C606138Aa02600c55e0d427cf4B2a7319a808fe#code)
 
 # Overview
 
@@ -136,7 +138,7 @@ RPC_URL=
 PRIVATE_KEY=
 ETHERSCAN_API_KEY=
 CHAIN=
-Field_Intrepreter=
+FIELD_INTERPRETER=
 ```
 
 ### 2.Run the deployment script

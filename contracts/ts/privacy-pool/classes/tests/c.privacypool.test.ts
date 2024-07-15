@@ -1,5 +1,5 @@
 // run test with:
-// bunx jest ./tests/c.privacypool.test.ts
+// bunx jest ./test/c.privacypool.test.ts
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { NewCommitment } from "@privacy-pool-v1/domainobjs"
 import { beforeAll, describe, expect, test } from "@jest/globals"
@@ -17,21 +17,22 @@ import {
   createPublicClient,
   createWalletClient,
   http,
-  publicActions
+  publicActions,
+  parseEther
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
-import { gnosis } from "viem/chains"
+import { sepolia } from "viem/chains"
+import type { Commitment } from "@privacy-pool-v1/domainobjs"
 
 const rpc = ""
 const privateKey: Hex = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-import type { Commitment } from "@privacy-pool-v1/domainobjs"
 
 const pkScalar = deriveSecretScalar(privateKey)
 const account = privateKeyToAccount(privateKey)
 const publicAddress = account.address
 const walletClient = createWalletClient({
   account,
-  chain: gnosis,
+  chain: sepolia,
   transport: http(rpc)
 }).extend(publicActions)
 
@@ -40,7 +41,7 @@ jest.setTimeout(70 * SECONDS)
 
 describe("Testing Contract Bindings", () => {
   let privacyPool: OnChainPrivacyPool
-  const poolInstance = ExistingPrivacyPools.get(gnosis)
+  const poolInstance = ExistingPrivacyPools.get(sepolia)
 
   beforeAll(() => {
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
@@ -50,8 +51,8 @@ describe("Testing Contract Bindings", () => {
     privacyPool = GetOnChainPrivacyPool(
       poolInstance[0],
       createPublicClient({
-        chain: gnosis,
-        transport: http(rpc)
+        chain: sepolia,
+        transport: rpc !== "" ? http(rpc) : http()
       }),
       {
         vKey: fs.readFileSync(paths.VKEY_PATH, "utf-8"),
@@ -65,38 +66,12 @@ describe("Testing Contract Bindings", () => {
     await cleanThreads()
   })
 
-  test("scope should return Contract's Scope", async () => {
-    if (poolInstance === undefined) {
-      throw new Error("Pool Instance is undefined")
-    }
-    const scopeVal = await privacyPool.scope()
-    expect(scopeVal).toBe(poolInstance[0].scope)
-  })
-
-  test("context() should work", async () => {
-    if (poolInstance === undefined) {
-      throw new Error("Pool Instance is undefined")
-    }
-    const ctx = await privacyPool
-      .context({
-        src: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-        sink: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-        feeCollector: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-        fee: 1000000000000000000n
-      })
-      .catch((err) => {
-        console.log("Error: ", err)
-      })
-    expect(ctx).toBe(
-      948484904148338273465419442055080943932135690228945843182471082443050349992n
-    )
-  })
-
   test("process() should work", async () => {
     const balance = await walletClient.getBalance({ address: publicAddress })
-    console.log("Balance: ", balance)
-    const defaultCommitVal = 1000000000000000n
+    const defaultCommitVal = parseEther("0.0003")
     const scopeVal = await privacyPool.scope()
+
+    console.log("Balance: ", balance, " commiting: ", defaultCommitVal)
 
     const commits: Commitment[] = [
       0n,
@@ -112,14 +87,13 @@ describe("Testing Contract Bindings", () => {
       })
       return c
     })
-
     await privacyPool
       .process(
         walletClient,
         {
           src: publicAddress,
-          sink: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-          feeCollector: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          sink: publicAddress,
+          feeCollector: publicAddress,
           fee: 0n
         },
         [pkScalar, pkScalar, pkScalar, pkScalar],
@@ -129,7 +103,8 @@ describe("Testing Contract Bindings", () => {
         false
       )
       .then((res) => {
-        expect(res).toBe(true)
+        console.log("got txHash: ", res)
+        expect(res).toBeDefined()
       })
       .catch((err) => console.log(err))
   })

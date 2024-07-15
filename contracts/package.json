@@ -11,12 +11,12 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.5.2"
   },
   "scripts": {
     "compile": "forge compile",
     "test": "forge test --ffi -v",
     "gen:bindings": "bun run ./script/gen_abi_bindings.ts",
-    "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv"
+    "deploy": "source .env && forge script --chain $CHAIN script/deploy.s.sol:DeploymentScript --rpc-url $RPC_URL --legacy --broadcast --verify -vvvv"
   }
 }

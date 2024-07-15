@@ -642,7 +642,7 @@ export interface IPrivacyPool_Contract {
         "internalType": "uint256"
       },
       {
-        "name": "dataSetSize",
+        "name": "stateSize",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1484,7 +1484,7 @@ export const PrivacyPoolABI = [
         "internalType": "uint256"
       },
       {
-        "name": "dataSetSize",
+        "name": "stateSize",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"

@@ -17,8 +17,9 @@ export type PrivacyPoolMeta = {
   genesis: bigint // when pool was deployed
   id: string // reference id
   scope: bigint // scope value from the Scope() function
-  unitRepresentative: string // what representation of value is used
-  minmaxCommitValue: bigint[] // minimum value to commit
+  fieldElement: string
+  precision: number
+  minmaxCommit: bigint[]
 }
 
 export type ChainProof<T = bigint> = [T[], T[][], T[], T[]]

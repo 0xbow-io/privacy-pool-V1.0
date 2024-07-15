@@ -83,26 +83,21 @@ contract State is IState {
         // get number of new entries
         uint256 _new_entries = rootSet.length() - _prev_rootSet_len;
         // then for each new entry, grab the root and insert it into the merkleTree
+        uint256 newRoot = 0;
         for (uint256 i = 0; i < _new_entries; i++) {
             uint256 _root = rootSet.at(_prev_rootSet_len + i);
-            merkleTree._insert(_root);
+            newRoot = merkleTree._insert(_root);
         }
 
         /// verify that the number of new entries in the rootSet
         /// is equal to the number of new entries in the merkleTree
         uint256 _merkleTree_growth = merkleTree.size - _prev_merkleTree_size;
-
         if (_new_entries != _merkleTree_growth) {
             revert RootSetOutOfSync(_new_entries, _merkleTree_growth);
         }
-    }
 
-    /// @dev Stores the new state root & size
-    /// After execuction of function body
-    modifier CreateCheckPoint() {
-        _;
         /// record the new state root & depth
-        merkleTreeCheckPoints.set(merkleTree._root(), merkleTree.depth);
+        merkleTreeCheckPoints.set(newRoot, merkleTree.depth);
     }
 
     modifier UpdateCipherStore(IPrivacyPool.GROTH16Proof calldata _proof) {
@@ -347,9 +342,9 @@ contract State is IState {
         internal
         /// Makes sure that the state tree
         /// is in sync with the rootSet
+        /// and capture the latest merkle-root & size
+        /// after function execution
         SyncTree
-        // captures the latest merkle-root & size after function execution
-        CreateCheckPoint
         /// fetch the ciphers from the proof and insert it into the cipher store
         UpdateCipherStore(_proof)
     {

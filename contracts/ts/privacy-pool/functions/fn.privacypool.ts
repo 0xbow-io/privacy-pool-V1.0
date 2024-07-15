@@ -2,19 +2,16 @@ import type {
   Address,
   PublicClient,
   Chain,
-  WalletClient,
   Client,
-  Hex,
+  WalletClient,
   PublicActions,
   WalletActions,
-  PrivateKeyAccount,
-  Account
+  Hex
 } from "viem"
 import { PrivacyPoolABI } from "@privacy-pool-v1/contracts"
-import { createPublicClient, http } from "viem"
+import { createPublicClient, http, parseEther } from "viem"
 
-import type { TPrivacyPool, providersT } from "@privacy-pool-v1/contracts"
-import { textChangeRangeIsUnchanged } from "typescript"
+import type { TPrivacyPool } from "@privacy-pool-v1/contracts"
 
 export const ScopeFn = (chain?: Chain, conn?: PublicClient) =>
   FnPrivacyPool.ScopeFn(chain, conn)
@@ -87,9 +84,8 @@ export namespace FnPrivacyPool {
     ) =>
     async (
       contract: Address,
-      Request: TPrivacyPool.RequestT,
-      Proof: TPrivacyPool.ProofT,
-      value = 0n,
+      args: TPrivacyPool.ProcessFn_in_T,
+      value: bigint,
       simOnly = true
     ): Promise<boolean | Hex> =>
       await acc
@@ -98,8 +94,8 @@ export namespace FnPrivacyPool {
           address: contract,
           abi: PrivacyPoolABI,
           functionName: "Process",
-          args: [Request, Proof],
-          value: value
+          args: args,
+          value: BigInt(value)
         })
         .then(async ({ request }) => {
           if (!simOnly) {

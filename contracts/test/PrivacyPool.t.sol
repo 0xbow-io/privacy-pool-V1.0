@@ -32,55 +32,12 @@ contract PrivacyPoolTester is Test, PrivacyPool {
             );
         }
     }
-    /**
-     * @dev Modifier to check if the value transfer is correct
-     * check diff src before & after = IO[0]
-     * check diff sink before & after = IO[1]
-     */
-    modifier ValueTransferCheck(
-        Request calldata _r,
-        IPrivacyPool.GROTH16Proof calldata _proof
-    ) {
-        uint256 _srcBefore = _r.src.balance;
-        uint256 _sinkBefore = _r.sink.balance;
-        uint256 _feeCollectorBefore = _r.feeCollector.balance;
-        _;
-        uint256 _srcAfter = _r.src.balance;
-        uint256 _sinkAfter = _r.sink.balance;
-        uint256 _feeCollectorAfter = _r.feeCollector.balance;
-
-        console.log("srcBefore: %d, srcAfter: %d", _srcBefore, _srcAfter);
-        console.log("sinkBefore: %d, sinkAfter: %d", _sinkBefore, _sinkAfter);
-        console.log(
-            "feeCollectorBefore: %d, feeCollectorAfter: %d",
-            _feeCollectorBefore,
-            _feeCollectorAfter
-        );
-        assertTrue(
-            _srcBefore - _srcAfter == _proof._pubSignals[D_ExternIO_StartIdx],
-            "Source balance has not been updated correctly"
-        );
-        assertTrue(
-            _sinkAfter - _sinkBefore ==
-                _proof._pubSignals[D_ExternIO_StartIdx + 1],
-            "Sink balance has not been updated correctly"
-        );
-        assertTrue(
-            _feeCollectorAfter - _feeCollectorBefore == _r.fee,
-            "FeeCollector balance has not been updated correctly"
-        );
-    }
 
     function Test_Process(
         Request calldata _r,
         IPrivacyPool.GROTH16Proof calldata _proof,
         bytes memory expectedErrorMsg
-    )
-        public
-        payable
-        ValueTransferCheck(_r, _proof)
-        AggregatedFieldSumCheck(expectedErrorMsg.length == 0)
-    {
+    ) public payable AggregatedFieldSumCheck(expectedErrorMsg.length == 0) {
         // if expecting an error Msg, then assert it
         if (expectedErrorMsg.length > 0) {
             vm.expectRevert(expectedErrorMsg);
@@ -177,9 +134,9 @@ contract TestPrivacyPool is Test {
     /**
      * @dev Test Process function over multiple rounds
      * No negative outcomes are expected
-     * note: due to limitaions on the script, only proofs
+     * note: due to limitations on the script, only proofs
      * for commitments can be made, not releases
-     * run: forge test --ffi --match-test test_ProcessMultipleRounds
+     * run: forge test --ffi --match-test test_ProcessMultipleRounds --gas-report
      */
     function test_ProcessMultipleRounds() public {
         vm.deal(address(0x1), 1000000 ether);
@@ -197,19 +154,51 @@ contract TestPrivacyPool is Test {
             (uint256 root, uint256 depth) = poolTester.GetLastCheckpoint();
             // invoke script with ffi to generate proof
             // and Execute Process
-            poolTester.Test_Process{value: 100}(
-                _r,
-                FFI_ComputeSingleProof(
-                    FFIArgs(
-                        poolTester.Scope(),
-                        poolTester.Context(_r),
-                        100,
-                        0,
-                        depth,
-                        root
-                    )
-                ),
-                ""
+            //
+            uint256 _srcBefore = _r.src.balance;
+            uint256 _sinkBefore = _r.sink.balance;
+            uint256 _feeCollectorBefore = _r.feeCollector.balance;
+
+            IPrivacyPool.GROTH16Proof memory _proof = FFI_ComputeSingleProof(
+                FFIArgs({
+                    scope: poolTester.Scope(),
+                    context: poolTester.Context(_r),
+                    IO0: 100,
+                    IO1: 0,
+                    actualTreeDepth: depth,
+                    existingStateRoot: root
+                })
+            );
+
+            poolTester.Test_Process{value: 100}(_r, _proof, "");
+            uint256 _srcAfter = _r.src.balance;
+            uint256 _sinkAfter = _r.sink.balance;
+            uint256 _feeCollectorAfter = _r.feeCollector.balance;
+
+            console.log("srcBefore: %d, srcAfter: %d", _srcBefore, _srcAfter);
+            console.log(
+                "sinkBefore: %d, sinkAfter: %d",
+                _sinkBefore,
+                _sinkAfter
+            );
+            console.log(
+                "feeCollectorBefore: %d, feeCollectorAfter: %d",
+                _feeCollectorBefore,
+                _feeCollectorAfter
+            );
+            assertTrue(
+                _srcBefore - _srcAfter ==
+                    _proof._pubSignals[D_ExternIO_StartIdx],
+                "Source balance has not been updated correctly"
+            );
+            assertTrue(
+                _sinkAfter - _sinkBefore ==
+                    _proof._pubSignals[D_ExternIO_StartIdx + 1],
+                "Sink balance has not been updated correctly"
+            );
+            assertTrue(
+                _feeCollectorAfter - _feeCollectorBefore == _r.fee,
+                "FeeCollector balance has not been updated correctly"
             );
         }
     }
