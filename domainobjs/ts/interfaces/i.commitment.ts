@@ -25,7 +25,7 @@ export namespace ICommitment {
   > {
     setIndex: (mt: LeanIMT) => void
     index: bigint
-    isDummy: () => boolean
+    isVoid: () => boolean
     commitmentRoot: bigint
     nullRoot: bigint
     public: () => PubT

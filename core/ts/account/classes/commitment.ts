@@ -28,10 +28,10 @@ export namespace CCommitment {
     private _key: IPrivacyKey.KeyI
 
     // this nullifier is only valid
-    // when commitment is non-zero (isDummy) &&:
+    // when commitment is non-zero (isVoid) &&:
     // - if the index is true leaf index in the commitment tree
     // - && the nullifier is not yet known (_exhausted)
-    // Otherwise valid when commitment is zero (!isDummy)
+    // Otherwise valid when commitment is zero (!isVoid)
     public _index?: bigint
     public _nonce?: bigint
 
@@ -110,7 +110,7 @@ export namespace CCommitment {
       )
     }
 
-    get isDummy(): boolean {
+    get isVoid(): boolean {
       return this._secrets.value === 0n
     }
     get isExhausted(): boolean {
@@ -136,7 +136,7 @@ export namespace CCommitment {
         value: this.value.toString(),
         salt: this.salt.toString(),
         isExhausted: this.isExhausted,
-        isDummy: this.isDummy
+        isVoid: this.isVoid
       }
     }
   }

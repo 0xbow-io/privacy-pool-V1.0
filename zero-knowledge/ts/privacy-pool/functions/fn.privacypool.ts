@@ -61,16 +61,10 @@ export namespace FnPrivacyPool {
       return {
         inputs: {
           scope: args.scope,
-          actualTreeDepth:
-            merkleProofs[0].actualDepth === 0n // don't take the dummy value
-              ? merkleProofs[1].actualDepth
-              : merkleProofs[0].actualDepth,
+          actualTreeDepth: BigInt(args.mt.depth),
           context: args.context,
           externIO: externIO,
-          existingStateRoot:
-            merkleProofs[0].actualDepth === 0n // don't take the dummy value
-              ? merkleProofs[1].root
-              : merkleProofs[0].root,
+          existingStateRoot: args.mt.root,
           newSaltPublicKey: args.new.map(
             (c) => c.public().saltPk as [bigint, bigint]
           ),

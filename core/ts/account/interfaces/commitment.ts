@@ -14,7 +14,7 @@ export namespace ICommitment {
     pubKey: PkT
     index: bigint
     nonce: bigint
-    isDummy: boolean
+    isVoid: boolean
     isExhausted: boolean
     signature: SigT
     nullifier: NullifierT

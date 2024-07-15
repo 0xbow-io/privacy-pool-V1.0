@@ -9,10 +9,18 @@ import {
   D_ExternIO_StartIdx,
   FnGroth16Verifier,
   ProcessFn,
-  ScopeFn
+  ScopeFn,
+  GetStateSizeFn,
+  FetchRootsFn,
+  UnpackCiphersWithinRangeFn,
+  FetchCheckpointAtRootFn
 } from "@privacy-pool-v1/contracts"
 import type { Commitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
-import { MerkleTreeInclusionProof } from "@privacy-pool-v1/domainobjs"
+import {
+  MerkleTreeInclusionProof,
+  RecoverCommitment,
+  ConstCommitment
+} from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
   ICircuit,
@@ -35,6 +43,9 @@ import type {
   WalletClient
 } from "viem"
 import { createPublicClient, http, formatUnits } from "viem"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import type { Point } from "maci-crypto"
+import type { CipherText } from "@zk-kit/poseidon-cipher"
 
 export const GetOnChainPrivacyPool = (
   meta: PrivacyPoolMeta,
@@ -110,6 +121,8 @@ export namespace CPool {
       ]
     }
 
+    StateSize = (): bigint => BigInt(this.merkleTree.size)
+
     /**
      * @dev UpdateRootSet: insert a set of roots into the rootSet
      * @param roots: a set of roots to be inserted into the rootSet
@@ -140,6 +153,19 @@ export namespace CPool {
 
   export class poolC extends stateC {
     _scope?: (contract: Address) => Promise<TPrivacyPool.ScopeFn_out_T>
+    _stateSize?: (
+      contract: Address
+    ) => Promise<TPrivacyPool.GetStateSizeFn_out_T>
+    _roots?: (
+      contract: Address,
+      args: TPrivacyPool.FetchRootsFn_in_T
+    ) => Promise<TPrivacyPool.FetchRootsFn_out_T>
+
+    _checkpoint?: (
+      contract: Address,
+      root: bigint
+    ) => Promise<[boolean, bigint]>
+
     scopeval?: bigint
     _context?: (
       contract: Address,
@@ -161,6 +187,17 @@ export namespace CPool {
       args: TGroth16Verifier.verifyProofFn_in_T
     ) => Promise<boolean>
 
+    _ciphers?: (
+      contract: Address,
+      range: [bigint, bigint] //[from, to]
+    ) => Promise<
+      readonly [
+        TPrivacyPool.CipherTexts_T,
+        TPrivacyPool.SaltPublicKeys_T,
+        TPrivacyPool.CommitmentHashes_T
+      ]
+    >
+
     constructor(
       public meta: PrivacyPoolMeta,
       public conn?: PublicClient,
@@ -178,10 +215,135 @@ export namespace CPool {
       // bindings to the contract functions
       this._scope = ScopeFn(meta.chain, this.conn)
       this._context = ContextFn(meta.chain, this.conn)
+      this._stateSize = GetStateSizeFn(meta.chain, this.conn)
+      this._roots = FetchRootsFn(meta.chain, this.conn)
+      this._checkpoint = FetchCheckpointAtRootFn(meta.chain, this.conn)
+      this._ciphers = UnpackCiphersWithinRangeFn(meta.chain, this.conn)
+
+      // binding to on-chain verifier
       this._onChainGroth16Verifier = FnGroth16Verifier.verifyProofFn(
         meta.chain,
         this.conn
       )
+    }
+    /**
+     * @dev sync: sync the state of the privacy pool with the on-chain state
+     * @returns true if the sync is successful, false otherwise
+     * Gets the latest on-chain state Size and compare it with the current state size
+     * Collect the new roots from the on-chain state and update the merkle tree on size difference
+     */
+    sync = async (): Promise<boolean> => {
+      const chainStateSize = this._stateSize
+        ? await this._stateSize(this.meta.address)
+        : await GetStateSizeFn(this.meta.chain)(this.meta.address)
+
+      if (chainStateSize < this.StateSize()) {
+        throw new Error(
+          "On-chain state size is less than the current state size"
+        )
+      }
+
+      //TODO Make this batched to avoid hitting block gas limit
+      const sizeDiff = chainStateSize - this.StateSize()
+      if (sizeDiff > 0n) {
+        const ToFrom: [bigint, bigint] = [this.StateSize(), chainStateSize - 1n]
+        const roots = (
+          this._roots
+            ? await this._roots(this.meta.address, ToFrom)
+            : await FetchRootsFn(this.meta.chain, this.conn)(
+                this.meta.address,
+                ToFrom
+              )
+        ) as bigint[]
+        const _newRoot = this.UpdateRootSet(roots)
+        // check that there is a checkpoint exisiting for the new root
+        const _checkpoint = this._checkpoint
+          ? await this._checkpoint(this.meta.address, _newRoot)
+          : await FetchCheckpointAtRootFn(this.meta.chain, this.conn)(
+              this.meta.address,
+              _newRoot
+            )
+        return _checkpoint[0]
+      }
+      return false
+    }
+    /**
+     * @dev process: iterates through ciphertexts and recover commitments
+        from ciphers that can be decrypted with the provided key
+     * @param Request: the set of keys to be used for decryption
+     */
+    recoverCommitments = async (
+      keys: {
+        pkScalar: bigint
+        nonce: bigint
+      }[],
+      ignoreVoids = true,
+      ignoreNullified = true
+    ): Promise<
+      {
+        pkScalar: bigint
+        nonce: bigint
+        commitment: Commitment
+      }[]
+    > => {
+      const ciphers = this._ciphers
+        ? await this._ciphers(this.meta.address, [
+            0n,
+            this.StateSize() / 4n + 1n
+          ])
+        : await UnpackCiphersWithinRangeFn(this.meta.chain, this.conn)(
+            this.meta.address,
+            [0n, this.StateSize() / 4n + 1n]
+          )
+      const commitments: {
+        pkScalar: bigint
+        nonce: bigint
+        commitment: Commitment
+      }[] = []
+      for (let i = 0; i < ciphers[0].length; i++) {
+        const cipher = ciphers[0][i]
+        const salt = ciphers[1][i]
+        const commitmentHash = ciphers[2][i]
+        for (let j = 0; j < keys.length; j++) {
+          const _commitment = RecoverCommitment(
+            {
+              _pKScalar: keys[j].pkScalar,
+              _nonce: keys[j].nonce,
+              _len: ConstCommitment.STD_TUPLE_SIZE,
+              _saltPk: salt as Point<bigint>,
+              _cipher: cipher.map((x) => BigInt(x)) as CipherText<bigint>
+            },
+            {
+              _hash: commitmentHash
+            }
+          )
+          if (_commitment) {
+            if (_commitment.isVoid() && ignoreVoids) {
+              continue
+            }
+
+            if (ignoreNullified) {
+              // check if nullroot of the commitment
+              // exists in the rootset
+              // if so then continue
+              if (this.rootSet.has(_commitment.nullRoot)) {
+                continue
+              }
+            }
+
+            // set the index to the leaf index in the merkle tree
+            // otherwise proof generation will fail later on
+            _commitment.setIndex(this.merkleTree)
+
+            commitments.push({
+              pkScalar: keys[j].pkScalar,
+              nonce: keys[j].nonce,
+              commitment: _commitment
+            })
+          }
+        }
+      }
+      return commitments
     }
 
     scope = async (): Promise<bigint> =>
@@ -256,8 +418,6 @@ export namespace CPool {
 
               if (_out.verified) {
                 // if the proof is valid, proceed with the transaction
-                console.log("request: ", _r)
-                console.log("proof: ", _out.packedProof)
                 return ProcessFn(account)(
                   this.meta.address,
                   [

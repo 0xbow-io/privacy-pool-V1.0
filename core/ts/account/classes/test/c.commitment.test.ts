@@ -46,7 +46,7 @@ describe("Creating Commitments with Signature & Nullifier", () => {
     expect(commitment.hash()).toEqual(test_commitment_hash)
     expect(commitment.signature).toEqual(test_signature)
     expect(commitment.nullifier).toEqual(test_nullifier)
-    expect(commitment.isDummy).not.toBeTrue()
+    expect(commitment.isVoid).not.toBeTrue()
 
     // check that a valid signature is produced
     expect(
@@ -77,7 +77,7 @@ describe("Creating Commitments with Signature & Nullifier", () => {
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()
     expect(commitment.hash()).toEqual(test_commitment_hash)
-    expect(commitment.isDummy).not.toBeTrue()
+    expect(commitment.isVoid).not.toBeTrue()
 
     const cipherText: Ciphertext = commitment.cipherText
     const plaintext: Plaintext = pK.decrypt(
@@ -96,7 +96,7 @@ describe("Creating Commitments with Signature & Nullifier", () => {
     }
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()
-    expect(commitment.isDummy).not.toBeTrue()
+    expect(commitment.isVoid).not.toBeTrue()
 
     const cipherText: Ciphertext = commitment.cipherText
     const plaintext: Plaintext = pK.decrypt(
@@ -114,6 +114,6 @@ describe("Creating Commitments with Signature & Nullifier", () => {
     }
     const commitment: Commitment = CreateCommitment(pK, test_secret)
     expect(commitment).toBeDefined()
-    expect(commitment.isDummy).toBeTrue()
+    expect(commitment.isVoid).toBeTrue()
   })
 })

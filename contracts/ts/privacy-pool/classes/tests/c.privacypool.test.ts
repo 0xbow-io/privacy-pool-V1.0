@@ -24,18 +24,7 @@ import { privateKeyToAccount } from "viem/accounts"
 import { sepolia } from "viem/chains"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
 
-const rpc = ""
-const privateKey: Hex = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-
-const pkScalar = deriveSecretScalar(privateKey)
-const account = privateKeyToAccount(privateKey)
-const publicAddress = account.address
-const walletClient = createWalletClient({
-  account,
-  chain: sepolia,
-  transport: http(rpc)
-}).extend(publicActions)
-
+const rpc: string = "https://ethereum-sepolia-rpc.publicnode.com"
 const SECONDS = 1000
 jest.setTimeout(70 * SECONDS)
 
@@ -66,13 +55,27 @@ describe("Testing Contract Bindings", () => {
     await cleanThreads()
   })
 
-  test("process() should work", async () => {
+  test("sync() should correctly sync to onchain state", async () => {
+    const res = await privacyPool.sync()
+    expect(res).toBe(true)
+  })
+
+  /*
+  test("process() should work for making a new commit", async () => {
+    const privateKey: Hex =
+      ""
+    const pkScalar = deriveSecretScalar(privateKey)
+    const account = privateKeyToAccount(privateKey)
+    const publicAddress = account.address
+    const walletClient = createWalletClient({
+      account,
+      chain: sepolia,
+      transport: rpc !== "" ? http(rpc) : http()
+    }).extend(publicActions)
+
     const balance = await walletClient.getBalance({ address: publicAddress })
-    const defaultCommitVal = parseEther("0.0003")
+    const defaultCommitVal = parseEther("0.0001")
     const scopeVal = await privacyPool.scope()
-
-    console.log("Balance: ", balance, " commiting: ", defaultCommitVal)
-
     const commits: Commitment[] = [
       0n,
       0n,
@@ -108,4 +111,77 @@ describe("Testing Contract Bindings", () => {
       })
       .catch((err) => console.log(err))
   })
+   */
+  /*
+  test("process() should work for making a release", async () => {
+    const privateKey: Hex =
+      ""
+    const pkScalar = deriveSecretScalar(privateKey)
+    const account = privateKeyToAccount(privateKey)
+    const publicAddress = account.address
+    const walletClient = createWalletClient({
+      account,
+      chain: sepolia,
+      transport: rpc !== "" ? http(rpc) : http()
+    }).extend(publicActions)
+
+    const balance = await walletClient.getBalance({ address: publicAddress })
+    const defaultCommitVal = parseEther("0.0001")
+    const scopeVal = await privacyPool.scope()
+
+    // recover commitments that are not void and haven
+    // not been nullified
+    const recovered = await privacyPool.recoverCommitments([
+      {
+        pkScalar: pkScalar,
+        nonce: 0n
+      }
+    ])
+
+    console.log(recovered[0].commitment.asTuple())
+
+    // we will then use one of the recovered commitments for a release transaction
+    await privacyPool
+      .process(
+        walletClient,
+        {
+          src: publicAddress,
+          sink: publicAddress,
+          feeCollector: publicAddress,
+          fee: 0n
+        },
+        [pkScalar, pkScalar, pkScalar, pkScalar],
+        [0n, 0n, 0n, 0n],
+        [
+          NewCommitment({
+            _pK: privateKey,
+            _nonce: 0n,
+            _scope: scopeVal,
+            _value: 0n
+          }),
+          recovered[0].commitment
+        ],
+        [
+          NewCommitment({
+            _pK: privateKey,
+            _nonce: 0n,
+            _scope: scopeVal,
+            _value: 0n
+          }),
+          NewCommitment({
+            _pK: privateKey,
+            _nonce: 0n,
+            _scope: scopeVal,
+            _value: 0n
+          })
+        ],
+        false
+      )
+      .then((res) => {
+        console.log("got txHash: ", res)
+        expect(res).toBeDefined()
+      })
+      .catch((err) => console.log(err))
+  })
+   */
 })

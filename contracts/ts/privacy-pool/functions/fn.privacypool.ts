@@ -12,6 +12,7 @@ import { PrivacyPoolABI } from "@privacy-pool-v1/contracts"
 import { createPublicClient, http, parseEther } from "viem"
 
 import type { TPrivacyPool } from "@privacy-pool-v1/contracts"
+import type { bufferToBigInt } from "@zk-kit/utils"
 
 export const ScopeFn = (chain?: Chain, conn?: PublicClient) =>
   FnPrivacyPool.ScopeFn(chain, conn)
@@ -25,7 +26,133 @@ export const ProcessFn = <
   acc: WalletClient
 ) => FnPrivacyPool.ProcessFn(acc)
 
+export const GetStateSizeFn = (chain?: Chain, conn?: PublicClient) =>
+  FnPrivacyPool.GetStateSizeFn(chain, conn)
+
+export const FetchRootsFn = (chain?: Chain, conn?: PublicClient) =>
+  FnPrivacyPool.FetchRootsFn(chain, conn)
+
+export const FetchCheckpointAtRootFn = (chain?: Chain, conn?: PublicClient) =>
+  FnPrivacyPool.FetchCheckpointAtRootFn(chain, conn)
+
+export const UnpackCiphersWithinRangeFn = (
+  chain?: Chain,
+  conn?: PublicClient
+) => FnPrivacyPool.UnpackCiphersWithinRangeFn(chain, conn)
+
 export namespace FnPrivacyPool {
+  export const GetStateSizeFn =
+    (chain?: Chain, conn?: PublicClient) =>
+    (
+      contract: Address,
+      _conn: PublicClient = conn
+        ? conn
+        : createPublicClient({
+            chain: chain as Chain,
+            transport: http()
+          })
+    ): Promise<TPrivacyPool.GetStateSizeFn_out_T> =>
+      _conn
+        .readContract({
+          address: contract,
+          abi: PrivacyPoolABI,
+          functionName: "GetStateSize",
+          account: contract
+        })
+        .then((result) => {
+          return result
+        })
+        .catch((error) => {
+          throw error
+        })
+
+  export const FetchRootsFn =
+    (chain?: Chain, conn?: PublicClient) =>
+    (
+      contract: Address,
+      args: TPrivacyPool.FetchRootsFn_in_T,
+      _conn: PublicClient = conn
+        ? conn
+        : createPublicClient({
+            chain: chain as Chain,
+            transport: http()
+          })
+    ): Promise<TPrivacyPool.FetchRootsFn_out_T> =>
+      _conn
+        .readContract({
+          address: contract,
+          abi: PrivacyPoolABI,
+          functionName: "FetchRoots",
+          args: args,
+          account: contract
+        })
+        .then((result) => {
+          return result
+        })
+        .catch((error) => {
+          throw error
+        })
+
+  export const FetchCheckpointAtRootFn =
+    (chain?: Chain, conn?: PublicClient) =>
+    (
+      contract: Address,
+      root: bigint,
+      _conn: PublicClient = conn
+        ? conn
+        : createPublicClient({
+            chain: chain as Chain,
+            transport: http()
+          })
+    ): Promise<[boolean, bigint]> =>
+      _conn
+        .readContract({
+          address: contract,
+          abi: PrivacyPoolABI,
+          functionName: "FetchCheckpointAtRoot",
+          args: [root],
+          account: contract
+        })
+        .then((result) => {
+          return result
+        })
+        .catch((error) => {
+          throw error
+        }) as Promise<[boolean, bigint]>
+
+  export const UnpackCiphersWithinRangeFn =
+    (chain?: Chain, conn?: PublicClient) =>
+    (
+      contract: Address,
+      range: [bigint, bigint],
+      _conn: PublicClient = conn
+        ? conn
+        : createPublicClient({
+            chain: chain as Chain,
+            transport: http()
+          })
+    ): Promise<
+      readonly [
+        TPrivacyPool.CipherTexts_T,
+        TPrivacyPool.SaltPublicKeys_T,
+        TPrivacyPool.CommitmentHashes_T
+      ]
+    > =>
+      _conn
+        .readContract({
+          address: contract,
+          abi: PrivacyPoolABI,
+          functionName: "UnpackCiphersWithinRange",
+          args: range,
+          account: contract
+        })
+        .then((result) => {
+          return result
+        })
+        .catch((error) => {
+          throw error
+        })
+
   export const ScopeFn =
     (chain?: Chain, conn?: PublicClient) =>
     (

@@ -8,6 +8,8 @@ import {
   ScopeFn,
   ContextFn,
   ProcessFn,
+  GetStateSizeFn,
+  FetchRootsFn,
   ExistingPrivacyPools
 } from "@privacy-pool-v1/contracts"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
@@ -43,6 +45,8 @@ describe("Testing PrivacyPool Contract Interactions", () => {
   })
   const scope = ScopeFn(sepolia)
   const context = ContextFn(sepolia)
+  const stateSize = GetStateSizeFn(sepolia)
+  const roots = FetchRootsFn(sepolia)
 
   test("ScopeFn should return Contract's Scope", async () => {
     if (poolInstance === undefined) {
@@ -65,7 +69,20 @@ describe("Testing PrivacyPool Contract Interactions", () => {
       console.log("Error: ", err)
     })
     expect(ctx).toBe(
-      948484904148338273465419442055080943932135690228945843182471082443050349992n
+      18824919204445295815315038918036918273633356007290005683148704932478272514740n
     )
+  })
+
+  test("Calling GetStateSize() & FetchRoots()  should work", async () => {
+    if (poolInstance === undefined) {
+      throw new Error("Pool Instance is undefined")
+    }
+    const _stateSize = await stateSize(poolInstance[0].address)
+    console.log("State Size: ", _stateSize)
+    expect(_stateSize).toBeDefined()
+
+    const _roots = await roots(poolInstance[0].address, [0n, _stateSize - 1n])
+    console.log("Roots: ", _roots)
+    expect(_roots).toBeDefined()
   })
 })

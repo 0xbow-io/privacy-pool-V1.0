@@ -28,7 +28,7 @@ export const RecoverCommitment = (
   challenge: {
     _hash?: bigint
     _tuple?: bigint[]
-    _secet?: Point<bigint>
+    _secret?: Point<bigint>
   }
 ): Commitment => CCommitment.CommitmentC.recover(args, challenge)()
 
@@ -132,7 +132,7 @@ export namespace CCommitment {
       return this._index
     }
 
-    isDummy = () => this._private.value === 0n
+    isVoid = () => this._private.value === 0n
 
     toJSON = () => {
       return {

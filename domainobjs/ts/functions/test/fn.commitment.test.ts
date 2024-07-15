@@ -91,7 +91,7 @@ describe("Testing blindFn Function", () => {
         {
           _hash: _res.challenges.hash,
           _tuple: _res.challenges.tuple,
-          _secet: _res.private.secret
+          _secret: _res.private.secret
         }
       )()
 

@@ -25,7 +25,48 @@ export type PrivacyPoolMeta = {
 export type ChainProof<T = bigint> = [T[], T[][], T[], T[]]
 // Types bounded to Privacy Pool Contract
 export namespace TPrivacyPool {
-  // To-DO: Autogenerate this from the contract ABI
+  // TODO: Autogenerate this from the contract ABI
+
+  //Bindings to the GetStateSize() function in the contract
+  export type GetStateSizeFn_T = ExtractAbiFunction<
+    IPrivacyPool_Contract["abi"],
+    "GetStateSize"
+  >
+  export type GetStateSizeFn_out_T = AbiParametersToPrimitiveTypes<
+    GetStateSizeFn_T["outputs"]
+  >[0]
+
+  //Bindings to the FetchRoots() function in the contract
+  export type FetchRootsFn_T = ExtractAbiFunction<
+    IPrivacyPool_Contract["abi"],
+    "FetchRoots"
+  >
+
+  export type FetchRootsFn_in_T = AbiParametersToPrimitiveTypes<
+    FetchRootsFn_T["inputs"]
+  >
+
+  export type FetchRootsFn_out_T = AbiParametersToPrimitiveTypes<
+    FetchRootsFn_T["outputs"]
+  >[0]
+
+  // Bindings to the UnpackCiphersWithinRange() function in the contract
+  export type UnpackCiphersWithinRangeFn_T = ExtractAbiFunction<
+    IPrivacyPool_Contract["abi"],
+    "UnpackCiphersWithinRange"
+  >
+
+  export type UnpackCiphersWithinRangeFn_in_T = AbiParametersToPrimitiveTypes<
+    UnpackCiphersWithinRangeFn_T["inputs"]
+  >
+
+  export type UnpackCiphersWithinRangeFn_out_T = AbiParametersToPrimitiveTypes<
+    UnpackCiphersWithinRangeFn_T["outputs"]
+  >
+
+  export type CipherTexts_T = UnpackCiphersWithinRangeFn_out_T[0]
+  export type SaltPublicKeys_T = UnpackCiphersWithinRangeFn_out_T[1]
+  export type CommitmentHashes_T = UnpackCiphersWithinRangeFn_out_T[2]
 
   // Bindings to the Scope() function in the contract
   export type ScopeFn_T = ExtractAbiFunction<
