@@ -44,10 +44,10 @@ describe("Testing MerkleTreeInclusionProof", () => {
       params: [32]
     }).witnessTester()
 
-    // insert a batch of 4  at a time
-    // since we are pushing the commitmentroot & nullroot
+    // insert a batch of 4 at a time
+    // since we are pushing the commitmentRoot & nullroot
     for (let i = 0; i < cycles; i++) {
-      const c = Array.from({ length: 2 }, () => {
+      const c = Array.from({ length: 4 }, () => {
         const _c = NewCommitment({
           _pK: generatePrivateKey(),
           _nonce: BigInt(i),
@@ -62,18 +62,12 @@ describe("Testing MerkleTreeInclusionProof", () => {
 
       // Insert into merkle tree
       mt.insertMany(c)
-
-      for (let i = 0; i < 2; i++) {
-        const index = mt.indexOf(c[i])
-        inclusionProofs.push(merkleFn(index))
-      }
     }
   })
 
   test("locally generated proof should be valid", () => {
     for (let i = 0; i < cycles; i++) {
-      const proof = inclusionProofs[i]
-      console.log("leaf: ", leaves[i])
+      const proof = merkleFn(mt.indexOf(leaves[i]))
       expect(
         mt.verifyProof({
           root: proof.root,
@@ -87,7 +81,7 @@ describe("Testing MerkleTreeInclusionProof", () => {
 
   test("LeanIMTInclusionProof should compute correct root", async () => {
     for (let i = 0; i < cycles; i++) {
-      const proof = inclusionProofs[i]
+      const proof = merkleFn(mt.indexOf(leaves[i]))
 
       const INPUT = {
         leaf: leaves[i],

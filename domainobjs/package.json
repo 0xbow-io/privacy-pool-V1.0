@@ -3,7 +3,7 @@
   "module": "index.ts",
   "version": "1.0",
   "description": "Privacy Pool V1",
-  "repository": "https://github.com/0xbow-io/privacy-pools-v1/domainobjs",
+  "repository": "https://github.com/0xbow-io/privacy-pool-V1.0/domainobjs",
   "license": "MIT",
   "author": "0xBow",
   "type": "module",
