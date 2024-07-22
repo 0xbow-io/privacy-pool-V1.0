@@ -1,0 +1,30 @@
+{
+  "PrivacyPool_V1": {
+    "file": "./privacy-pool/privacyPool",
+    "template": "PrivacyPool",
+    "pubs": [
+      "scope",
+      "actualTreeDepth",
+      "context",
+      "externIO",
+      "existingStateRoot",
+      "newSaltPublicKey",
+      "newCiphertext"
+    ],
+    "params": [32, 7, 4, 2, 2]
+  },
+  "domain-CommitmentOwnershipProof": {
+    "file": "./domain/commitment",
+    "template": "CommitmentOwnershipProof"
+  },
+  "domain-CommitmentMembershipProof": {
+    "file": "./domain/commitment",
+    "template": "CommitmentMembershipProof",
+    "params": [32]
+  },
+  "privacyPool-HandleExistingCommitment": {
+    "file": "./privacy-pool/privacyPool",
+    "template": "HandleExistingCommitment",
+    "params": [32, 7]
+  }
+}
