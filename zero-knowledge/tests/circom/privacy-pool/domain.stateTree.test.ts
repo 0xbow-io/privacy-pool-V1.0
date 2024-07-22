@@ -47,7 +47,7 @@ describe("Testing MerkleTreeInclusionProof", () => {
     // insert a batch of 4 at a time
     // since we are pushing the commitmentRoot & nullroot
     for (let i = 0; i < cycles; i++) {
-      const c = Array.from({ length: 4 }, () => {
+      const c = Array.from({ length: 2 }, () => {
         const _c = NewCommitment({
           _pK: generatePrivateKey(),
           _nonce: BigInt(i),
