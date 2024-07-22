@@ -116,8 +116,8 @@ export default function Home() {
   //   getInTotalValueFormatted,
   //
   //   updateInCommit,
-  //   udpatePublicValue,
-  //   udpateOutputValue,
+  //   updatePublicValue,
+  //   updateOutputValue,
   //
   //   isInputValid,
   //   isOutputValid
@@ -482,7 +482,7 @@ export default function Home() {
                 type="number"
                 placeholder={outValues[targetOutputIndex].toString()}
                 onChange={(e) =>
-                  udpateOutputValue(targetOutputIndex, Number(e.target.value))
+                  updateOutputValue(targetOutputIndex, Number(e.target.value))
                 }
                 className={cn(
                   "px-4 py-3 text-sm font-semibold text-blackmail ",
@@ -667,7 +667,7 @@ export default function Home() {
                 id="extra-amount"
                 type="number"
                 placeholder={publicValue.toString()}
-                onChange={(e) => udpatePublicValue(Number(e.target.value))}
+                onChange={(e) => updatePublicValue(Number(e.target.value))}
                 className={cn(
                   "px-4 py-3 text-sm font-semibold text-blackmail ",
                   extraAmountIsValid ? "text-blackmail" : "text-rust-effect"

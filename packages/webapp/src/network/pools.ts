@@ -4,6 +4,15 @@ import { sepolia, gnosis } from "viem/chains"
 import { _sepolia_public_client, _gnosis_public_client } from "./clients"
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "@privacy-pool-v1/contracts"
 
+export type PrivacyPoolMeta = {
+  chain: Chain,       // network chain
+  address: Address,   // contract address
+  genesis: bigint,    // when pool was deployed
+  id: string,         // reference id
+  unitRepresentative: string, // what representation of value is used
+  minmaxCommitValue: bigint[], // minimum value to commit
+}
+
 export type SimpleFEMeta = {
   name: string
   ticker: string
@@ -42,6 +51,37 @@ export const SupportSimpleFieldElements: Map<Chain, SimpleFEMeta[]> = new Map<
     ]
   ]
 ])
+
+
+export const PrivacyPools : Map<Chain, PrivacyPoolMeta[]> = new Map<Chain, PrivacyPoolMeta[]>(
+  [
+    [
+      sepolia, [
+      {
+        chain: sepolia,
+        id: 'Sepolia Eth Pool 1',
+        address: '0x8e3E4702B4ec7400ef15fba30B3e4bfdc72aBC3B',
+        genesis: 5471254n,
+        unitRepresentative: 'ETH', // reference by ticker
+        minmaxCommitValue: [0n, 1000000000000000000n]
+      }
+    ]
+    ],
+    [
+
+      gnosis, [
+      {
+        chain: gnosis,
+        id: 'Gnosis xDAI Pool 1',
+        address: '0x18AE7dbb48cF6b00D1AC7bb758eD28c5FCcafA4c',
+        genesis: 34448288n,
+        unitRepresentative: 'xDAI', // reference by ticker
+        minmaxCommitValue: [0n, 1000000000000000000n]
+      }
+    ]
+    ]
+  ]
+)
 
 export const getDefaultRepresentation = (): SimpleFEMeta => {
   if (SupportSimpleFieldElements.has(DEFAULT_CHAIN)) {

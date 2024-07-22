@@ -54,6 +54,21 @@ export class PrivacyKey {
     return this._secret
   }
 
+  asJSON(): object {
+    return {
+      _nonce: this._nonce.toString(),
+      _pkScalar: this._pkScalar.toString(),
+      _secret: {
+        x: this._secret[0].toString(),
+        y: this._secret[1].toString()
+      },
+      _knownSecrets: Array.from(this._knownSecrets.entries()).reduce((acc, [key, value]) => {
+        acc[key.toString()] = value.map(([v1, v2, v3, v4]) => [v1.toString(), v2.toString(), v3.toString(), v4.toString()]);
+        return acc;
+      }, {})
+    };
+  }
+
   eK_FromSaltPk = (saltPk: Point<bigint>): Point<bigint> =>
     mulPointEscalar(saltPk, this.pKScalar)
 

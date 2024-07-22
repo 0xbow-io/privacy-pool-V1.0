@@ -451,7 +451,7 @@ contract TestPrivacyPool is Test {
             feeCollector: _r.feeCollector,
             fee: _r.fee
         });
-        /// udpate the proof context value
+        /// update the proof context value
         _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
             _tampered_r
         );
@@ -467,7 +467,7 @@ contract TestPrivacyPool is Test {
             feeCollector: _r.feeCollector,
             fee: _r.fee
         });
-        /// udpate the proof context value
+        /// update the proof context value
         _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
             _tampered_r
         );
@@ -483,7 +483,7 @@ contract TestPrivacyPool is Test {
             feeCollector: address(0x2),
             fee: _r.fee
         });
-        /// udpate the proof context value
+        /// update the proof context value
         _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
             _tampered_r
         );
@@ -499,7 +499,7 @@ contract TestPrivacyPool is Test {
             feeCollector: _r.feeCollector,
             fee: 200
         });
-        /// udpate the proof context value
+        /// update the proof context value
         _proof._pubSignals[D_Context_StartIdx] = poolTester.Context(
             _tampered_r
         );
