@@ -178,8 +178,7 @@ dist
 .DS_Store
 
 
-## Local notes
-notes.txt
+## Local
 /contracts/cache_forge
 /contracts/cache
 /zero-knowledge/scripts/privacy-pool/buildCircuit.js
