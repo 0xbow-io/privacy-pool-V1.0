@@ -67,6 +67,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible"
+import { useKeyStore } from "@/providers/global-store-provider.tsx"
 
 export default function Home() {
   const [open, setOpen] = React.useState(false)
@@ -82,46 +83,35 @@ export default function Home() {
   const [tabsValue, setTabsValue] = React.useState("account")
   const isNotMobile = useMediaQuery("(min-width: 768px)")
 
-  // const {
-  //   keys,
-  //   notEmpty,
-  //   generate,
-  //
-  //   availChains,
-  //   avilPools,
-  //   getCurrentPool,
-  //   currUnitRepresentative,
-  //
-  //   updateTargetPoolChain,
-  //
-  //   importFromJSON,
-  //   exportToJSON,
-  //
-  //   getAvailableInputOptions,
-  //   inCommits,
-  //
-  //   publicValue,
-  //
-  //   outValues,
-  //   outTotalValue,
-  //
-  //   extraAmountIsValid,
-  //   extraAmountReason,
-  //   outputAmountIsValid,
-  //   outputAmountReasons,
-  //
-  //   getOutputPubKeyHash,
-  //   updateOutputPrivacyKey,
-  //
-  //   getInTotalValueFormatted,
-  //
-  //   updateInCommit,
-  //   updatePublicValue,
-  //   updateOutputValue,
-  //
-  //   isInputValid,
-  //   isOutputValid
-  // } = useKeyStore((state) => state)
+  const {
+    keys,
+    notEmpty,
+    generate,
+    availChains,
+    avilPools,
+    getCurrentPool,
+    currUnitRepresentative,
+    updateTargetPoolChain,
+    importFromJSON,
+    exportToJSON,
+    getAvailableInputOptions,
+    inCommits,
+    publicValue,
+    outValues,
+    outTotalValue,
+    extraAmountIsValid,
+    extraAmountReason,
+    outputAmountIsValid,
+    outputAmountReasons,
+    getOutputPubKeyHash,
+    updateOutputPrivacyKey,
+    getInTotalValueFormatted,
+    updateInCommit,
+    updatePublicValue,
+    updateOutputValue,
+    isInputValid,
+    isOutputValid
+  } = useKeyStore((state) => state)
 
   // init
   useEffect(() => {
@@ -257,7 +247,7 @@ export default function Home() {
         <CardContent className="space-y-2">
           <Accordion type="single" collapsible>
             {keys.map((key) => {
-              const jsonKey = key.asJSON
+              const jsonKey = key.asJSON()
               return (
                 <AccordionItem
                   key={jsonKey.pubAddr}
@@ -286,12 +276,12 @@ export default function Home() {
                         </div>
                         <div>
                           <h2 className="text-xs  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.privKey}
+                            {jsonKey.keypair.privKey.serialize()}
                           </h2>
                         </div>
                         <div>
                           <h2 className="text-xs text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.pubKey}
+                            {jsonKey.keypair.pubKey.serialize()}
                           </h2>
                         </div>
                       </div>

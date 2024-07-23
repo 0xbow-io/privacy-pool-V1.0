@@ -41,7 +41,7 @@ import type {
 } from "viem"
 import { createPublicClient, http } from "viem"
 
-export const GetOnChainPrivacyPool = (
+export const getOnChainPrivacyPool = (
   meta: PrivacyPoolMeta,
   conn?: PublicClient
 ): CPool.poolC => new CPool.poolC(meta, conn)

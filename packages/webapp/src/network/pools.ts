@@ -2,7 +2,8 @@ import type { Address } from "viem"
 import type { Chain } from "viem/chains"
 import { sepolia, gnosis } from "viem/chains"
 import { _sepolia_public_client, _gnosis_public_client } from "./clients"
-import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "@privacy-pool-v1/contracts"
+import { DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
+// import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "@privacy-pool-v1/contracts"
 
 export type PrivacyPoolMeta = {
   chain: Chain,       // network chain
@@ -84,8 +85,8 @@ export const PrivacyPools : Map<Chain, PrivacyPoolMeta[]> = new Map<Chain, Priva
 )
 
 export const getDefaultRepresentation = (): SimpleFEMeta => {
-  if (SupportSimpleFieldElements.has(DEFAULT_CHAIN)) {
-    const _metas = SupportSimpleFieldElements.get(DEFAULT_CHAIN)
+  if (SupportSimpleFieldElements.has(DEFAULT_TARGET_CHAIN)) {
+    const _metas = SupportSimpleFieldElements.get(DEFAULT_TARGET_CHAIN)
     if (_metas) return _metas[0]
   }
   throw new Error("No default pool found")

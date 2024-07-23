@@ -7,7 +7,7 @@ import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import {
   ExistingPrivacyPools,
-  GetOnChainPrivacyPool
+  getOnChainPrivacyPool
 } from "@privacy-pool-v1/contracts"
 import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
@@ -38,7 +38,7 @@ describe("Testing Contract Bindings", () => {
     if (poolInstance === undefined) {
       throw new Error("Pool Instance is undefined")
     }
-    privacyPool = GetOnChainPrivacyPool(
+    privacyPool = getOnChainPrivacyPool(
       poolInstance[0],
       createPublicClient({
         chain: TARGET_CHAIN,

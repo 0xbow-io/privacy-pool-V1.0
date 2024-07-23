@@ -8,7 +8,7 @@ import type { PubKey } from "maci-domainobjs"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account/functions"
 
 import { hash4 } from "maci-crypto"
-import assert from "node:assert"
+// import assert from "node:assert"
 
 // Useful aliases
 export type Commitment = ICommitment.CommitmentI
@@ -122,7 +122,10 @@ export namespace CCommitment {
 
     asArray = (): bigint[] => {
       const commitment = [...this.pubKey.rawPubKey, this.hash, this.index]
-      assert(commitment.length === 4)
+      if (commitment.length !== 4) {
+        throw new Error("commitment length must be 4")
+      }
+      // assert(commitment.length === 4)
       return commitment
     }
 

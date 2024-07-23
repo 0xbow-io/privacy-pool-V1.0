@@ -26,7 +26,7 @@ export type AccountState = {
   currPool: PrivacyPoolMeta
   currUnitRepresentative: SimpleFEMeta
 
-  circuit: PrivacyPoolCircuit
+  // circuit: PrivacyPoolCircuit
 
   avilCommits: Commitment[]
 
@@ -78,7 +78,7 @@ export type KeyStore = AccountState & AccountActions
 export const defaultInitState: AccountState = {
   keys: [],
   verifierKey: null,
-  circuit: NewPrivacyPoolCircuit('',''),
+  // circuit: NewPrivacyPoolCircuit('',''),
 
   availChains: [sepolia, gnosis],
   avilPools: PrivacyPools,
@@ -265,7 +265,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       let curr_outputAmountIsValid = [true, true]
 
       set((state) => ({
-        extraAmountIsValid: _expected_output < 0 ? false : true,
+        extraAmountIsValid: _expected_output >= 0,
         extraAmountReason:
           _expected_output < 0 ? "total output value is negative" : "",
         publicValue: value,

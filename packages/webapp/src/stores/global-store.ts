@@ -2,13 +2,13 @@ import { createStore } from "zustand/vanilla"
 import { downloadJSON } from "@/utils/files"
 import type { Chain } from "viem/chains"
 import { sepolia, gnosis } from "viem/chains"
-import { formatUnits } from "viem"
+import { createPublicClient, formatUnits, http } from "viem"
 import type { Hex } from "viem"
 import { ChainNameToChain, getDefaultRepresentation } from "@/network/pools"
 import {
   ExistingPrivacyPools,
   SUPPORTED_CHAINS,
-  DEFAULT_CHAIN
+  DEFAULT_CHAIN, getDefaultPool, getOnChainPrivacyPool
 } from "@privacy-pool-v1/contracts"
 import type {
   PrivacyPoolMeta,
@@ -16,6 +16,7 @@ import type {
 } from "@privacy-pool-v1/contracts"
 import type { Commitment, PrivacyKey } from "@privacy-pool-v1/domainobjs"
 import type { SupportSimpleFieldElements, SimpleFEMeta } from "@/network/pools"
+import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
 
 export type GlobalState = {
   /**
@@ -82,13 +83,18 @@ export interface PoolActions {
 
 export type GlobalStore = KeyActions & PoolActions & GlobalActions
 
-export const initiGlobalState: GlobalState = {
+export const initGlobalState: GlobalState = {
   keys: [],
   pools: [],
-  currChain: DEFAULT_CHAIN
+  currChain: DEFAULT_CHAIN,
+  currPool: getOnChainPrivacyPool(getDefaultPool(), createPublicClient({
+      chain: DEFAULT_TARGET_CHAIN,
+      transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
+    })),
+  currFE: getDefaultRepresentation()
 }
 
-export const initGlobalStore = (): GlobalState => initiGlobalState
+export const initGlobalStore = (): GlobalState => initGlobalState
 
 /*
 
