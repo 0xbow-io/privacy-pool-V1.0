@@ -1,4 +1,5 @@
 import type { Hex } from "viem"
+import type {PubKey} from "maci-domainobjs"
 import { generatePrivateKey } from "viem/accounts"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Point } from "@zk-kit/baby-jubjub"
@@ -8,13 +9,33 @@ import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import { RecoverCommitment, ConstCommitment } from "@privacy-pool-v1/domainobjs"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
+import { Keypair, PrivKey } from "maci-domainobjs"
+import { createHash } from 'crypto';
+import {hexToBigInt} from "viem"
+import { hashLeftRight } from "maci-crypto"
 
 export type PrivacyKeys = PrivacyKey[]
+
+type PrivacyKeyJSON = {
+  _nonce: string
+  _pkScalar: string
+  _secret: {
+    x: string
+    y: string
+  }
+  privateKey: Hex
+  publicKey: Hex
+  pubAddr: Hex
+  _knownSecrets: {
+    [key: string]: [string, string, string, string][]
+  }
+}
 
 export class PrivacyKey {
   _nonce: bigint
   _pkScalar: bigint
   _secret: Point<bigint>
+  keypair: Keypair
 
   // Mapping of Scope to
   // Minimum required elements that can
@@ -28,6 +49,7 @@ export class PrivacyKey {
     this._nonce = nonce
     this._pkScalar = deriveSecretScalar(privateKey)
     this._secret = mulPointEscalar(this.Pk, this.pKScalar)
+    this.keypair = new Keypair(new PrivKey(hexToBigInt(privateKey)))
   }
 
   static generate = (nonce: bigint): PrivacyKey => {
@@ -50,20 +72,25 @@ export class PrivacyKey {
     return mulPointEscalar(Base8, this.pKScalar)
   }
 
-  get asHex(): Hex {
-    return `0x${this._pkScalar.toString(16)}`
+  get pubKey(): PubKey {
+    return this.keypair.pubKey
   }
 
-  get publicKey(): Hex {
-    const [x, y] = this.Pk
-    return `0x${x.toString(16)}${y.toString(16)}`
+  get pubKeyHash(): bigint {
+    const pubKey = this.pubKey
+    return hashLeftRight(pubKey.rawPubKey[0], pubKey.rawPubKey[1])
+  }
+
+  get publicAddr(): Hex {
+    const hash = createHash('sha256').update(this.pubKey.toJSON().pubKey).digest('hex');
+    return `0x${hash.slice(0, 40)}`;
   }
 
   get secretK(): Point<bigint> {
     return this._secret
   }
 
-  asJSON(): object {
+  get asJSON(): PrivacyKeyJSON {
     return {
       _nonce: this._nonce.toString(),
       _pkScalar: this._pkScalar.toString(),
@@ -71,6 +98,9 @@ export class PrivacyKey {
         x: this._secret[0].toString(),
         y: this._secret[1].toString()
       },
+      privateKey: `0x${this.keypair.privKey.rawPrivKey.toString(16).padStart(64, '0')}` ,
+      publicKey: `0x${this.keypair.pubKey.serialize()}` ,
+      pubAddr: this.publicAddr,
       _knownSecrets: Array.from(this._knownSecrets.entries()).reduce(
         (acc, [key, value]) => {
           acc[key.toString()] = value.map(([v1, v2, v3, v4]) => [

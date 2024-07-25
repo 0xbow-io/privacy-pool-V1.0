@@ -125,8 +125,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (get().avilCommits.length == 0) {
         set((state) => ({
           avilCommits: [
-            createNewCommitment({_pK: key.asHex, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: what would be the scope value?
-            createNewCommitment( {_pK: key.asHex, _value: 0n, _scope: 0n , _nonce: 0n })
+            createNewCommitment({_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: what would be the scope value?
+            createNewCommitment( {_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n })
           ]
         }))
       }
@@ -337,7 +337,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     updateOutputPrivacyKey: (index: number, pubKeySerialized: string): void => {
       // iterate through keys and find the one with matching pubKeyHash
       const key = get().keys.find(
-        (pk) => pk.publicKey === pubKeySerialized
+        (pk) => pk.keypair.pubKey.serialize() === pubKeySerialized
       )
       if (key === undefined) {
         throw new Error("No key found with: " + pubKeySerialized)
@@ -353,7 +353,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (pK === undefined) {
         return "0x"
       }
-      return pK.publicKey
+      return pK.keypair.pubKey.serialize()
     },
     isInputValid: (): { ok: boolean; reason: string } => {
       // check that all input commitments are set

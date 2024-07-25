@@ -83,7 +83,7 @@ const makeNewCommit = async (privateKey: Hex) => {
       ],
       [privacyKey.nonce, privacyKey.nonce, privacyKey.nonce, privacyKey.nonce],
       [
-        NewCommitment({
+        createNewCommitment({
           _pK: privateKey,
           _nonce: 0n,
           _scope: scopeVal,
@@ -92,13 +92,13 @@ const makeNewCommit = async (privateKey: Hex) => {
         commits[0]
       ],
       [
-        NewCommitment({
+        createNewCommitment({
           _pK: privateKey,
           _nonce: 0n,
           _scope: scopeVal,
           _value: defaultCommitVal
         }),
-        NewCommitment({
+        createNewCommitment({
           _pK: privateKey,
           _nonce: 0n,
           _scope: scopeVal,

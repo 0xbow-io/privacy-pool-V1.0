@@ -117,11 +117,6 @@ export default function Home() {
     isOutputValid
   } = useKeyStore((state) => state)
 
-  // init
-  useEffect(() => {
-    console.log("in useEffect")
-  })
-
   const [worker, setWorker] = useState<Worker | null>(null)
 
   useEffect(() => {
@@ -301,12 +296,14 @@ export default function Home() {
                         </div>
                         <div>
                           <h2 className="text-xs  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.privKey}
+                            tba
+                            {/*{jsonKey.keypair.privKey}*/}
                           </h2>
                         </div>
                         <div>
                           <h2 className="text-xs text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.pubKey}
+                            tba
+                            {/*{jsonKey.keypair.pubKey}*/}
                           </h2>
                         </div>
                       </div>
@@ -317,13 +314,13 @@ export default function Home() {
                         </div>
                         <div>
                           <h2 className="text-xs  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.ek_x}
+                            {jsonKey._secret.x}
                           </h2>
                         </div>
                         <div>
                           <h2 className="text-xs  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.ek_y}
-                          </h2>
+                            {jsonKey._secret.y}
+                          </h2>l
                         </div>
                       </div>
                     </div>
@@ -534,9 +531,9 @@ export default function Home() {
                 </SelectTrigger>
                 <SelectContent position="popper" id="putput-key-dropdown">
                   {keys.map((key) => {
-                    const pk = key.pubKey.serialize()
+                    const pk = key.publicAddr
                     return (
-                      <SelectItem key={key.pubKeyHash} value={pk}>
+                      <SelectItem key={key.publicAddr} value={pk}>
                         {`0x${pk.substring(0, 14)}....${pk.substring(54)}`}
                       </SelectItem>
                     )
