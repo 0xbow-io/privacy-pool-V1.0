@@ -59,7 +59,7 @@ describe("Testing Contract Bindings", () => {
   test("process() should work for making a new commit", async () => {
     const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
 
-    const privateKey: Hex = ""
+    const privateKey: Hex = "0xbc"
     const account = privateKeyToAccount(privateKey)
     const publicAddress = account.address
     const walletClient = createWalletClient({
@@ -80,7 +80,8 @@ describe("Testing Contract Bindings", () => {
     await privacyPool.decryptCiphers([privacyKey])
     const commits = await privacyKey.recoverCommitments(privacyPool)
 
-    console.log(commits)
+    console.log('privacyKey:', privacyKey)
+    console.log('commits:', commits)
 
     // we will then use one of the recovered commitments for a commit transaction
     await privacyPool

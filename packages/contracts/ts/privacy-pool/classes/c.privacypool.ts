@@ -3,7 +3,7 @@ import type {
   PrivacyPoolMeta,
   TGroth16Verifier,
   TPrivacyPool
-} from "@privacy-pool-v1/contracts"
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import {
   ContextFn,
   D_ExternIO_StartIdx,
@@ -14,21 +14,18 @@ import {
   ProcessFn,
   ScopeFn,
   UnpackCiphersWithinRangeFn
-} from "@privacy-pool-v1/contracts"
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import type { Commitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
-import { ConstCommitment, RecoverCommitment } from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
   SnarkJSOutputT,
   StdPackedGroth16ProofT
-} from "@privacy-pool-v1/zero-knowledge"
+} from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import {
   FnPrivacyPool,
   NewPrivacyPoolCircuit
-} from "@privacy-pool-v1/zero-knowledge"
+} from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import { LeanIMT } from "@zk-kit/lean-imt"
-import type { CipherText } from "@zk-kit/poseidon-cipher"
-import type { Point } from "maci-crypto"
 import { hashLeftRight } from "maci-crypto"
 import type {
   Address,

@@ -50,6 +50,15 @@ export class PrivacyKey {
     return mulPointEscalar(Base8, this.pKScalar)
   }
 
+  get asHex(): Hex {
+    return `0x${this._pkScalar.toString(16)}`
+  }
+
+  get publicKey(): Hex {
+    const [x, y] = this.Pk
+    return `0x${x.toString(16)}${y.toString(16)}`
+  }
+
   get secretK(): Point<bigint> {
     return this._secret
   }
@@ -62,11 +71,19 @@ export class PrivacyKey {
         x: this._secret[0].toString(),
         y: this._secret[1].toString()
       },
-      _knownSecrets: Array.from(this._knownSecrets.entries()).reduce((acc, [key, value]) => {
-        acc[key.toString()] = value.map(([v1, v2, v3, v4]) => [v1.toString(), v2.toString(), v3.toString(), v4.toString()]);
-        return acc;
-      }, {})
-    };
+      _knownSecrets: Array.from(this._knownSecrets.entries()).reduce(
+        (acc, [key, value]) => {
+          acc[key.toString()] = value.map(([v1, v2, v3, v4]) => [
+            v1.toString(),
+            v2.toString(),
+            v3.toString(),
+            v4.toString()
+          ])
+          return acc
+        },
+        {}
+      )
+    }
   }
 
   eK_FromSaltPk = (saltPk: Point<bigint>): Point<bigint> =>

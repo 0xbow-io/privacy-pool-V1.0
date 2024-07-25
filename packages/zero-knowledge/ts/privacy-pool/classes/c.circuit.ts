@@ -7,7 +7,7 @@ import type {
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/zero-knowledge"
 import type { CircuitSignals } from "snarkjs"
-import { FnPrivacyPool } from "@privacy-pool-v1/zero-knowledge"
+import { FnPrivacyPool } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 
 export type PrivacyPoolCircuit = ICircuit.circuitI
 export const NewPrivacyPoolCircuit = (

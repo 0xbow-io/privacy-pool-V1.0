@@ -8,10 +8,10 @@ import type {
   WalletActions,
   Hex
 } from "viem"
-import { PrivacyPoolABI } from "@privacy-pool-v1/contracts"
+import { PrivacyPoolABI } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { createPublicClient, http, parseEther } from "viem"
 
-import type { TPrivacyPool } from "@privacy-pool-v1/contracts"
+import type { TPrivacyPool } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import type { bufferToBigInt } from "@zk-kit/utils"
 
 export const ScopeFn = (chain?: Chain, conn?: PublicClient) =>

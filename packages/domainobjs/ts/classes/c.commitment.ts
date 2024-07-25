@@ -9,7 +9,7 @@ import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 
-export const NewCommitment = (args: {
+export const createNewCommitment = (args: {
   _pK: Hex
   _nonce: bigint
   _scope: bigint

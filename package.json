@@ -11,10 +11,17 @@
     "packages/*"
   ],
   "scripts": {
-    "build:privacypool:circom": "bun --filter @privacy-pool-v1/zero-knowledge build:privacypool",
+    "build:privacypool:circom": "bun run ./packages/zero-knowledge/scripts/privacy-pool/buildCircuit.sh",
     "test:privacypool:circom": "bun --filter @privacy-pool-v1/zero-knowledge test:privacypool",
     "contracts:compile": "bun --filter=\"@privacy-pool-v1/contracts\" compile",
     "contracts:test": "bun --filter=\"@privacy-pool-v1/contracts\" test",
     "webapp:dev": "bun --filter @privacy-pool-v1/webapp dev"
+  },
+  "dependencies": {
+    "@zk-kit/circuits": "^1.0.0-beta",
+    "circomkit": "^0.2.1",
+    "circomlib": "^2.0.5",
+    "maci-circuits": "^1.2.5",
+    "snarkjs": "^0.7.4"
   }
 }

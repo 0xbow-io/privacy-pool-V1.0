@@ -13,7 +13,7 @@
   },
   "scripts": {
     "get:deps": "bun run ./scripts/get-deps.sh",
-    "build:privacypool": "bun run ./scripts/privacy-pool/buildCircuit.sh",
+    "build:privacypool": " bun run ./scripts/privacy-pool/buildCircuit.sh",
     "test:privacypool": "bunx jest --testPathPattern=./tests/circom/privacy-pool"
   },
   "dependencies": {

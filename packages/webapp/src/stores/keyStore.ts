@@ -2,12 +2,9 @@ import { createStore } from "zustand/vanilla"
 import { downloadJSON } from "@/utils/files"
 import { type Chain, sepolia, gnosis } from "viem/chains"
 import { formatUnits } from "viem"
-import { NewPrivacyPoolCircuit, type PrivacyPoolCircuit } from "@privacy-pool-v1/core-ts/zk-circuit"
-import type { PrivacyKey, Commitment } from "@privacy-pool-v1/core-ts/account/"
-import {
-  CreatePrivacyKey,
-  CreateCommitment
-} from "@privacy-pool-v1/core-ts/account/"
+import type { Commitment} from "@privacy-pool-v1/domainobjs/ts"
+import {PrivacyKey, createNewCommitment} from "@privacy-pool-v1/domainobjs/ts"
+
 
 import type { SimpleFEMeta, PrivacyPoolMeta } from "@/network/pools"
 import {
@@ -111,7 +108,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
   createStore<KeyStore>()((set, get) => ({
     ...initState,
     generate: (): PrivacyKey => {
-      const key: PrivacyKey = CreatePrivacyKey()
+      const key: PrivacyKey = PrivacyKey.generate(0n)
       set((state) => ({
         keys: [...state.keys, key]
       }))
@@ -128,8 +125,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (get().avilCommits.length == 0) {
         set((state) => ({
           avilCommits: [
-            CreateCommitment(key, { value: 0n }),
-            CreateCommitment(key, { value: 0n })
+            createNewCommitment({_pK: key.asHex, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: what would be the scope value?
+            createNewCommitment( {_pK: key.asHex, _value: 0n, _scope: 0n , _nonce: 0n })
           ]
         }))
       }
@@ -145,7 +142,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       }
 
       const _new_keys = jsonObj.keys.map((k: any) =>
-        CreatePrivacyKey(k.privateKey)
+        new PrivacyKey(k.privateKey)
       )
 
       // set default output keys
@@ -153,8 +150,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         keys: _new_keys,
         outPrivacyKeys: [_new_keys[0], _new_keys[0]],
         avilCommits: [
-          CreateCommitment(_new_keys[0], { value: 0n }),
-          CreateCommitment(_new_keys[0], { value: 0n })
+          createNewCommitment({_pK: _new_keys[0].asHex, _value: 0n, _scope: 0n , _nonce: 0n }),
+          createNewCommitment({_pK: _new_keys[0].asHex, _value: 0n, _scope: 0n , _nonce: 0n })
         ]
       }))
     },
@@ -201,7 +198,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     updateInCommit: (index: number, value: string) => {
       // verify that these commit are still available
       const commit = get().avilCommits.find(
-        (c) => c.hash.toString(16) === value
+        (c) => c.hash().toString(16) === value
       )
       if (commit === undefined) {
         throw new Error("commit not available: " + value)
@@ -223,17 +220,17 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     getAvailableInputOptions: (index: number) => {
       const _input_taken = get().inCommits[index == 0 ? 1 : 0]
       const avail = get().avilCommits.filter(
-        (c) => c.hash.toString(16) !== _input_taken
+        (c) => c.hash().toString(16) !== _input_taken
       )
-      return avail.map((c) => c.hash.toString(16))
+      return avail.map((c) => c.hash().toString(16))
     },
     refreshInTotalValue: () => {
       const _total_input: number = get().inCommits.reduce((acc, val) => {
         const commit = get().avilCommits.find(
-          (c) => c.hash.toString(16) === val
+          (c) => c.hash().toString(16) === val
         ) // only add the value if the commit is available
         if (commit !== undefined) {
-          acc += Number(commit.raw.value)
+          acc += Number(commit.asTuple()[0])
         }
         return acc
       }, 0)
@@ -340,7 +337,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     updateOutputPrivacyKey: (index: number, pubKeySerialized: string): void => {
       // iterate through keys and find the one with matching pubKeyHash
       const key = get().keys.find(
-        (pk) => pk.pubKey.serialize() === pubKeySerialized
+        (pk) => pk.publicKey === pubKeySerialized
       )
       if (key === undefined) {
         throw new Error("No key found with: " + pubKeySerialized)
@@ -356,7 +353,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (pK === undefined) {
         return "0x"
       }
-      return pK.pubKey.serialize()
+      return pK.publicKey
     },
     isInputValid: (): { ok: boolean; reason: string } => {
       // check that all input commitments are set
@@ -368,7 +365,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         }
         // check if it is available
         const commit = get().avilCommits.find(
-          (c) => c.hash.toString(16) === hash
+          (c) => c.hash().toString(16) === hash
         )
         if (commit === undefined) {
           _all_inputs_valid[i] = false

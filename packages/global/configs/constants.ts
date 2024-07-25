@@ -1,4 +1,3 @@
-import path from "node:path"
 
 export const generic_configs = "configs"
 export const generic_src = "src"
@@ -22,5 +21,4 @@ export const project_poa = "proof-of-assocation"
 export const project_org = "0xbow-io"
 export const project_repo = "privacy-pool-V1.0"
 
-export const project_root_path = path.resolve(__dirname, "../../../")
 export const project_base_url = `https://raw.githubusercontent.com/${project_org}/${project_repo}/main`

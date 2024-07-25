@@ -1,6 +1,6 @@
 import path from "node:path"
 
-import { project_base_url, project_root_path } from "./constants"
+import { project_base_url } from "./constants"
 
 export function getPath(
   project_name: string,
@@ -8,7 +8,6 @@ export function getPath(
   sub: string[] = []
 ): string {
   return path.resolve(
-    project_root_path,
     project_name,
     project_component || "",
     ...sub
@@ -25,6 +24,6 @@ function removeSpecificPrefix(
 }
 
 export function DeriveURLPath(fullPath: string): string {
-  const retracted = removeSpecificPrefix(fullPath, project_root_path)
+  const retracted = removeSpecificPrefix(fullPath, '')
   return `${project_base_url}/${retracted}`
 }

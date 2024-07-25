@@ -1,6 +1,5 @@
 import { NewCommitment } from "@privacy-pool-v1/domainobjs"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
-import crypto from "node:crypto"
 import { generatePrivateKey } from "viem/accounts"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 
@@ -9,9 +8,11 @@ function splitBigIntRandomly(value: bigint): [bigint, bigint] {
     throw new Error("Input must be a positive BigInt")
   }
 
-  // Generate a random BigInt between 0 and value (inclusive)
-  const randomBytes = crypto.randomBytes(value.toString(16).length)
-  const randomBigInt = BigInt(`0x${randomBytes.toString("hex")}`) % (value + 1n)
+  const numBytes = Math.ceil(value.toString(16).length / 2);
+  const randomValues = new Uint8Array(numBytes);
+  window.crypto.getRandomValues(randomValues);
+  let hexString = '0x' + Array.from(randomValues).map(b => b.toString(16).padStart(2, '0')).join('');
+  const randomBigInt = BigInt(hexString) % (value + 1n);
 
   const part1 = randomBigInt
   const part2 = value - part1

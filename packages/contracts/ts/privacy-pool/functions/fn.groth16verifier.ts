@@ -1,5 +1,5 @@
-import type { TGroth16Verifier } from "@privacy-pool-v1/contracts"
-import { Groth16VerifierABI } from "@privacy-pool-v1/contracts"
+import type { TGroth16Verifier } from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { Groth16VerifierABI } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import type { Address, PublicClient, Chain } from "viem"
 import { createPublicClient, http } from "viem"
 

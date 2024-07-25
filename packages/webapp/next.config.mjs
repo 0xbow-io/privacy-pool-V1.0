@@ -1,4 +1,15 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {}
+export default {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.worker\.js$/,
+        use: {
+          loader: "worker-loader",
+          options: { filename: "static/workers/[name].[hash].worker.js" }
+        }
+      })
+    }
 
-export default nextConfig
+    return config
+  }
+}

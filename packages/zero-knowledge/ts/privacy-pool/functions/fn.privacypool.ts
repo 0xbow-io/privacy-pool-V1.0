@@ -7,7 +7,7 @@ import type {
   Groth16_VKeyJSONT,
   CircomArtifactT,
   StdPackedGroth16ProofT
-} from "@privacy-pool-v1/zero-knowledge"
+} from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import type { TCommitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
 import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/domainobjs"
 import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"

@@ -4,7 +4,7 @@ import WelcomeSection from "@sections/welcome/welcome"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import React, { useEffect, useCallback } from "react"
+import React, { useEffect, useCallback, useState } from "react"
 import {
   Upload,
   UserRoundPlus,
@@ -68,6 +68,10 @@ import {
   CollapsibleTrigger
 } from "@/components/ui/collapsible"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import {
+  loadWorkerDynamically,
+} from "@/workers/WorkerLazyLoader.ts"
+import type { Hex } from "viem"
 
 export default function Home() {
   const [open, setOpen] = React.useState(false)
@@ -117,6 +121,27 @@ export default function Home() {
   useEffect(() => {
     console.log("in useEffect")
   })
+
+  const [worker, setWorker] = useState<Worker | null>(null)
+
+  useEffect(() => {
+    loadWorkerDynamically().then(setWorker)
+
+    // Cleanup function to terminate the worker when the component unmounts
+    return () => {
+      if (worker) {
+        worker.terminate()
+      }
+    }
+  }, [])
+
+  const testWorker = (key: Hex) => {
+    console.log("testing worker", key)
+    if(!worker){
+      console.log('no worker found')
+    }
+    worker?.postMessage({ action: "makeCommit", privateKey: key })
+  }
 
   // on file drop to load local account
   const onDrop = useCallback(
@@ -247,7 +272,7 @@ export default function Home() {
         <CardContent className="space-y-2">
           <Accordion type="single" collapsible>
             {keys.map((key) => {
-              const jsonKey = key.asJSON()
+              const jsonKey = key.asJSON
               return (
                 <AccordionItem
                   key={jsonKey.pubAddr}
@@ -276,12 +301,12 @@ export default function Home() {
                         </div>
                         <div>
                           <h2 className="text-xs  text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.privKey.serialize()}
+                            {jsonKey.keypair.privKey}
                           </h2>
                         </div>
                         <div>
                           <h2 className="text-xs text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.keypair.pubKey.serialize()}
+                            {jsonKey.keypair.pubKey}
                           </h2>
                         </div>
                       </div>
@@ -680,9 +705,19 @@ export default function Home() {
             <div className="flex-auto">
               <Button
                 onClick={generate}
-                className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg  font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+                className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
               >
                 Compute
+              </Button>
+              <Button
+                className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+                onClick={() => {
+                  const key = keys[2].asJSON.privateKey as Hex
+                  console.log('mykey',keys[2].asJSON, key)
+                  testWorker(key)
+                }}
+              >
+                test worker
               </Button>
             </div>
           </div>
