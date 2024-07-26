@@ -123,9 +123,16 @@ self.addEventListener("message", async (event) => {
   // Check if the message is to trigger the performComputation function
   if (event.data.action === "makeCommit") {
 
-    const result = await makeNewCommit(event.data.privateKey)
-    console.log("returned res", result)
-    // Send the result back to the main thread
-    self.postMessage({ action: "makeCommitRes", payload: result })
+    try {
+
+      const result = await makeNewCommit(event.data.privateKey)
+      console.log("returned res", result)
+      // Send the result back to the main thread
+      self.postMessage({ action: "makeCommitRes", payload: result })
+    } catch (error) {
+      console.error("Error in worker", error)
+      // Send the error back to the main thread
+      self.postMessage({ action: "makeCommitErr", payload: error })
+    }
   }
 })

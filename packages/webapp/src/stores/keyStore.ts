@@ -125,7 +125,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (get().avilCommits.length == 0) {
         set((state) => ({
           avilCommits: [
-            createNewCommitment({_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: what would be the scope value?
+            createNewCommitment({_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: scope should be defined from the pool's constant (pool.scope())
             createNewCommitment( {_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n })
           ]
         }))

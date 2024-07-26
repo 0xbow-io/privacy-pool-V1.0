@@ -1,5 +1,17 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.tsx"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select.tsx"
 import React from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 
@@ -10,20 +22,25 @@ type InputsDialogProps = {
   targetInputIndex: number
 }
 
-export const InputsDialog = ({ className, isOpen, onOpenChange, targetInputIndex }: InputsDialogProps ) => {
-  const {inCommits, updateInCommit, getAvailableInputOptions } = useKeyStore((state) => state)
-  const [inputSheetIsOpen, setInputSheetOpen] = React.useState(false)
+export const InputsDialog = ({
+  className,
+  isOpen,
+  onOpenChange,
+  targetInputIndex
+}: InputsDialogProps) => {
+  const { inCommits, updateInCommit, getAvailableInputOptions } = useKeyStore(
+    (state) => state
+  )
 
   const currInCommit: string =
     inCommits[targetInputIndex] === ""
       ? "0x"
       : `0x${inCommits[targetInputIndex].substring(0, 14)}....${inCommits[
-        targetInputIndex
+          targetInputIndex
         ].substring(54)}`
 
-
   return (
-    <Dialog open={inputSheetIsOpen} onOpenChange={setInputSheetOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="">
         <DialogHeader>
           <DialogTitle>Choose an Input Commitment</DialogTitle>

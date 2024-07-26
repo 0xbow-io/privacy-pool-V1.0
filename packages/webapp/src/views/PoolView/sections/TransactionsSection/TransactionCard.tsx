@@ -33,6 +33,7 @@ export const TransactionCard = ({ className }: { className: string }) => {
   } = useKeyStore((state) => state)
 
   const [worker, setWorker] = useState<Worker | null>(null)
+  const [operationIsRunning, setOperationIsRunning] = useState(false)
 
   useEffect(() => {
     loadWorkerDynamically().then(setWorker)
@@ -45,12 +46,34 @@ export const TransactionCard = ({ className }: { className: string }) => {
     }
   }, [])
 
+  useEffect(() => {
+    if (worker) {
+      worker.onmessage = (event) => {
+        const { action, payload } = event.data;
+        if (action === "makeCommitRes") {
+          console.log("Message from worker:", payload);
+          setOperationIsRunning(false);
+        } else if (action === "makeCommitErr") {
+          console.error("Worker error:", payload);
+          setOperationIsRunning(false);
+        }
+      }
+
+      worker.onerror = (error) => {
+        console.error('Worker error:', error)
+        setOperationIsRunning(false)
+      }
+    }
+  }, [worker])
+
   const testWorker = (key: Hex) => {
     console.log("testing worker", key)
     if(!worker){
       console.log('no worker found')
     }
     worker?.postMessage({ action: "makeCommit", privateKey: key })
+    setOperationIsRunning(true)
+
   }
 
   return (
@@ -138,27 +161,28 @@ export const TransactionCard = ({ className }: { className: string }) => {
       <CardFooter className="mt-4">
         <div
           className={cn(
-            "relative flex flex-col gap-4 text-blackmail duration-300 ease-in",
+            "relative flex flex-row gap-4 text-blackmail duration-300 ease-in",
             className
           )}
         >
-          <div className="flex-auto">
+          <div className="flex flex-row m-2">
             <Button
               onClick={generate}
-              className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
+              className="w-full rounded-none border-2 mr-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
             >
               Compute
             </Button>
             <Button
               className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
               onClick={() => {
-                const key = keys[2].asJSON.privateKey as Hex
-                console.log("mykey", keys[2].asJSON, key)
+                const key = keys[0].asJSON.privateKey as Hex
+                console.log("mykey", keys[0].asJSON, key)
                 testWorker(key)
               }}
             >
-              test worker
+              Process
             </Button>
+            Worker is running: {operationIsRunning ? "true" : "false"}
           </div>
         </div>
       </CardFooter>
