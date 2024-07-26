@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils.ts"
 
-interface props {
+type WelcomeSectionProps = {
   className: string
 }
-export default function WelcomeSection({ className }: props) {
+export const WelcomeSection =({ className }: WelcomeSectionProps) =>  {
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="z-20 relative grid  grid-cols-2 items-center justify-center bg-blackmail px-8 py-8 shadow-md shadow-blackmail">
