@@ -2,9 +2,8 @@ import { createStore } from "zustand/vanilla"
 import { downloadJSON } from "@/utils/files"
 import { type Chain, sepolia, gnosis } from "viem/chains"
 import { formatUnits } from "viem"
-import type { Commitment} from "@privacy-pool-v1/domainobjs/ts"
-import {PrivacyKey, createNewCommitment} from "@privacy-pool-v1/domainobjs/ts"
-
+import type { Commitment } from "@privacy-pool-v1/domainobjs/ts"
+import { PrivacyKey, createNewCommitment } from "@privacy-pool-v1/domainobjs/ts"
 
 import type { SimpleFEMeta, PrivacyPoolMeta } from "@/network/pools"
 import {
@@ -102,8 +101,6 @@ export const defaultInitState: AccountState = {
   outputAmountReasons: ["no encryption key set", "no encryption key set"]
 }
 
-
-
 export const createKeyStore = (initState: AccountState = defaultInitState) =>
   createStore<KeyStore>()((set, get) => ({
     ...initState,
@@ -121,12 +118,25 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         }))
       }
 
+      const currentPool = get().currPool
+      const poolScope = currentPool.scope
+
       // create dummy commitments if there is nothing available
       if (get().avilCommits.length == 0) {
         set((state) => ({
           avilCommits: [
-            createNewCommitment({_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n }), // TODO: scope should be defined from the pool's constant (pool.scope())
-            createNewCommitment( {_pK: key.asJSON.privateKey, _value: 0n, _scope: 0n , _nonce: 0n })
+            createNewCommitment({
+              _pK: key.asJSON.privateKey,
+              _value: 0n,
+              _scope: poolScope,
+              _nonce: 0n
+            }),
+            createNewCommitment({
+              _pK: key.asJSON.privateKey,
+              _value: 0n,
+              _scope: poolScope,
+              _nonce: 0n
+            })
           ]
         }))
       }
@@ -141,8 +151,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         throw new Error("Invalid JSON data")
       }
 
-      const _new_keys = jsonObj.keys.map((k: any) =>
-        new PrivacyKey(k.privateKey)
+      const _new_keys = jsonObj.keys.map(
+        (k: any) => new PrivacyKey(k.privateKey)
       )
 
       // set default output keys
@@ -150,8 +160,18 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         keys: _new_keys,
         outPrivacyKeys: [_new_keys[0], _new_keys[0]],
         avilCommits: [
-          createNewCommitment({_pK: _new_keys[0].asHex, _value: 0n, _scope: 0n , _nonce: 0n }),
-          createNewCommitment({_pK: _new_keys[0].asHex, _value: 0n, _scope: 0n , _nonce: 0n })
+          createNewCommitment({
+            _pK: _new_keys[0].asHex,
+            _value: 0n,
+            _scope: 0n,
+            _nonce: 0n
+          }),
+          createNewCommitment({
+            _pK: _new_keys[0].asHex,
+            _value: 0n,
+            _scope: 0n,
+            _nonce: 0n
+          })
         ]
       }))
     },

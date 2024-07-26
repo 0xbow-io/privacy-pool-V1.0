@@ -1,17 +1,17 @@
 import type { Hex } from "viem"
-import type {PubKey} from "maci-domainobjs"
+import type { PubKey } from "maci-domainobjs"
 import { generatePrivateKey } from "viem/accounts"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Point } from "@zk-kit/baby-jubjub"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
-import type { Commitment } from "@privacy-pool-v1/domainobjs"
+import { Commitment, createNewCommitment } from "@privacy-pool-v1/domainobjs"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import { RecoverCommitment, ConstCommitment } from "@privacy-pool-v1/domainobjs"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import { Keypair, PrivKey } from "maci-domainobjs"
-import { createHash } from 'crypto';
-import {hexToBigInt} from "viem"
+import { createHash } from "crypto"
+import { hexToBigInt } from "viem"
 import { hashLeftRight } from "maci-crypto"
 
 export type PrivacyKeys = PrivacyKey[]
@@ -82,8 +82,10 @@ export class PrivacyKey {
   }
 
   get publicAddr(): Hex {
-    const hash = createHash('sha256').update(this.pubKey.toJSON().pubKey).digest('hex');
-    return `0x${hash.slice(0, 40)}`;
+    const hash = createHash("sha256")
+      .update(this.pubKey.toJSON().pubKey)
+      .digest("hex")
+    return `0x${hash.slice(0, 40)}`
   }
 
   get secretK(): Point<bigint> {
@@ -98,8 +100,8 @@ export class PrivacyKey {
         x: this._secret[0].toString(),
         y: this._secret[1].toString()
       },
-      privateKey: `0x${this.keypair.privKey.rawPrivKey.toString(16).padStart(64, '0')}` ,
-      publicKey: `0x${this.keypair.pubKey.serialize()}` ,
+      privateKey: `0x${this.keypair.privKey.rawPrivKey.toString(16).padStart(64, "0")}`,
+      publicKey: `0x${this.keypair.pubKey.serialize()}`,
       pubAddr: this.publicAddr,
       _knownSecrets: Array.from(this._knownSecrets.entries()).reduce(
         (acc, [key, value]) => {
@@ -150,7 +152,9 @@ export class PrivacyKey {
       console.error(`Error decrypting cipherText: ${e}`)
     }
 
+
     if (!_commitment) {
+      console.log('no commitment available')
       return
     }
 
@@ -176,6 +180,7 @@ export class PrivacyKey {
   ): Promise<Commitment[]> => {
     const commitments: Commitment[] = []
     const _scope = await pool.scope()
+    console.log('current scope', _scope)
     const _secrets = this._knownSecrets.get(_scope)
     if (_secrets) {
       for (let i = 0; i < _secrets.length; i++) {
@@ -206,6 +211,7 @@ export class PrivacyKey {
           }
         )
         if (_commitment) {
+          console.log('existing commitment', _commitment)
           // update commitment index
 
           try {
@@ -226,6 +232,18 @@ export class PrivacyKey {
           }
         }
       }
+    } else {
+      console.log('add dummy')
+      // if no commitments were recovered from existing secrets
+      // we'll push the dummy root commitment
+      const commitment = createNewCommitment({
+        _pK: this.asJSON.privateKey,
+        _nonce: this.nonce,
+        _scope: _scope,
+        _value: 0n
+      })
+
+      commitments.push(commitment)
     }
     return commitments
   }

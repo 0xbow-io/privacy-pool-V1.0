@@ -59,9 +59,10 @@ const makeNewCommit = async (privateKey: Hex) => {
 
   await privacyPool.decryptCiphers([privacyKey])
   const commits = await privacyKey.recoverCommitments(privacyPool)
+
   const vKey = await fetch(paths.VKEY_PATH).then((res) => res.text())
-  const wasm = await fetch(paths.WASM_PATH).then((res) => res.text())
-  const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.text())
+  const wasm = await fetch(paths.WASM_PATH).then((res) => res.arrayBuffer())
+  const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.arrayBuffer())
 
   console.log('existing commits', commits)
 
@@ -106,9 +107,9 @@ const makeNewCommit = async (privateKey: Hex) => {
         })
       ],
       {
-        vKey,
-        wasm,
-        zKey
+        vKey: vKey,
+        wasm: new Uint8Array(wasm),
+        zKey: new Uint8Array(zKey)
       },
       false
     )

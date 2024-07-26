@@ -322,8 +322,11 @@ export namespace CPool {
           existing: existingCommitment,
           new: newCommitment
         })(
-          //callback fn to verify output on-chain
-          async ({ out }) => this.verify(out as SnarkJSOutputT)
+          // callback fn to verify output on-chain
+          async ({ out }) => {
+            console.log('callback fn reached')
+            return this.verify(out as SnarkJSOutputT)
+          }
         )
         .catch((e) => {
           throw new Error(`Error in processing request: ${e}`)
