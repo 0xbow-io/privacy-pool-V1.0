@@ -61,7 +61,7 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
 
             return (
               <div
-                key={`input:${c}`}
+                key={`input:${index}`}
                 className="rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full"
               >
                 <h2 className="font-semibold text-blackmail ">

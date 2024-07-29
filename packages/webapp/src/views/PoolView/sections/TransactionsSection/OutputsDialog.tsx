@@ -89,7 +89,7 @@ export const OutputsDialog = ({
               Owned by:
             </label>
             <Select
-              value={`0x${getOutputPubKeyHash(targetOutputIndex).substring(0, 14)}....${getOutputPubKeyHash(targetOutputIndex).substring(54)}`}
+              value={`0x${getOutputPubKeyHash(targetOutputIndex).substring(0, 14)}....${getOutputPubKeyHash(targetOutputIndex).substring(40)}`}
               onValueChange={(value) =>
                 updateOutputPrivacyKey(targetOutputIndex, value)
               }
@@ -97,7 +97,7 @@ export const OutputsDialog = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select">
                   0x{getOutputPubKeyHash(targetOutputIndex).substring(0, 14)}
-                  ....{getOutputPubKeyHash(targetOutputIndex).substring(54)}
+                  ....{getOutputPubKeyHash(targetOutputIndex).substring(30)}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" id="putput-key-dropdown">
@@ -105,7 +105,7 @@ export const OutputsDialog = ({
                   const pk = key.publicAddr
                   return (
                     <SelectItem key={key.publicAddr} value={pk}>
-                      {`0x${pk.substring(0, 14)}....${pk.substring(54)}`}
+                      {`0x${pk.substring(0, 14)}....${pk.substring(30)}`}
                     </SelectItem>
                   )
                 })}

@@ -357,7 +357,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     updateOutputPrivacyKey: (index: number, pubKeySerialized: string): void => {
       // iterate through keys and find the one with matching pubKeyHash
       const key = get().keys.find(
-        (pk) => pk.keypair.pubKey.serialize() === pubKeySerialized
+        (pk) => pk.publicAddr === pubKeySerialized
       )
       if (key === undefined) {
         throw new Error("No key found with: " + pubKeySerialized)
@@ -373,7 +373,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       if (pK === undefined) {
         return "0x"
       }
-      return pK.keypair.pubKey.serialize()
+      return pK.publicAddr
     },
     isInputValid: (): { ok: boolean; reason: string } => {
       // check that all input commitments are set

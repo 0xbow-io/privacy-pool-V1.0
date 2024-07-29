@@ -20,20 +20,28 @@ import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import { InputCommitments } from "@/views/PoolView/sections/TransactionsSection/InputCommitments.tsx"
 import { OutputCommitments } from "@/views/PoolView/sections/TransactionsSection/OutputCommitments.tsx"
 import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
+import { Loader } from "@/components/Loader/Loader.tsx"
+
+enum WorkerStatus {
+  IDLE,
+  BUSY,
+  SUCCESS,
+  ERROR
+}
 
 export const TransactionCard = ({ className }: { className: string }) => {
-
   const {
     extraAmountIsValid,
     extraAmountReason,
     publicValue,
     updatePublicValue,
     generate,
-    keys,
+    keys
+
   } = useKeyStore((state) => state)
 
   const [worker, setWorker] = useState<Worker | null>(null)
-  const [operationIsRunning, setOperationIsRunning] = useState(false)
+  const [workerStatus, setWorkerStatus] = useState<WorkerStatus>(WorkerStatus.IDLE)
 
   useEffect(() => {
     loadWorkerDynamically().then(setWorker)
@@ -47,37 +55,42 @@ export const TransactionCard = ({ className }: { className: string }) => {
   }, [])
 
   useEffect(() => {
+    if (workerStatus === WorkerStatus.SUCCESS || workerStatus === WorkerStatus.ERROR) {
+      setTimeout(() => setWorkerStatus(WorkerStatus.IDLE), 5000)
+    }
+  }, [workerStatus])
+
+  useEffect(() => {
     if (worker) {
       worker.onmessage = (event) => {
-        const { action, payload } = event.data;
+        const { action, payload } = event.data
         if (action === "makeCommitRes") {
-          console.log("Message from worker:", payload);
-          setOperationIsRunning(false);
+          console.log("Message from worker:", payload)
+          setWorkerStatus(WorkerStatus.SUCCESS)
         } else if (action === "makeCommitErr") {
-          console.error("Worker error:", payload);
-          setOperationIsRunning(false);
+          console.error("Worker error:", payload)
+          setWorkerStatus(WorkerStatus.ERROR)
         }
       }
 
       worker.onerror = (error) => {
-        console.error('Worker error:', error)
-        setOperationIsRunning(false)
+        console.error("Worker error:", error)
+        setWorkerStatus(WorkerStatus.ERROR)
       }
     }
   }, [worker])
 
   const testWorker = (key: Hex) => {
     console.log("testing worker", key)
-    if(!worker){
-      console.log('no worker found')
+    if (!worker) {
+      console.log("no worker found")
     }
     worker?.postMessage({ action: "makeCommit", privateKey: key })
-    setOperationIsRunning(true)
-
+    setWorkerStatus(WorkerStatus.BUSY)
   }
 
   return (
-    <Card className={cn("", className)}>
+    <Card className={cn("relative", className)}>
       <CardHeader className="">
         <CardTitle className="pt-6 border-t-2  border-blackmail text-xl font-bold">
           Compute Commitments & Releases
@@ -108,10 +121,9 @@ export const TransactionCard = ({ className }: { className: string }) => {
                         hash) in the Pool&apos;s Merkle Tree.{" "}
                         <span className="text-toxic-orange">
                           {" "}
-                          Dummy input commitments{" "}
+                          Void input commitment{" "}
                         </span>{" "}
-                        has 0 value and does not exists in the Pool&apos;s
-                        Merkle Tree. It is used as a placeholder for when you
+                        has 0 value and is used as a placeholder for when you
                         don&apos;t want to use an existing commitment. <br />
                         <br />
                         Total sum of the output commitment values need to match
@@ -155,7 +167,9 @@ export const TransactionCard = ({ className }: { className: string }) => {
               {extraAmountReason}
             </h2>
           </div>
-          <div className="flex-auto">{<OutputCommitments className="border-2"/>}</div>
+          <div className="flex-auto">
+            {<OutputCommitments className="border-2" />}
+          </div>
         </div>
       </CardContent>
       <CardFooter className="mt-4">
@@ -177,15 +191,16 @@ export const TransactionCard = ({ className }: { className: string }) => {
               onClick={() => {
                 const key = keys[0].asJSON.privateKey as Hex
                 console.log("mykey", keys[0].asJSON, key)
+
                 testWorker(key)
               }}
             >
               Process
             </Button>
-            Worker is running: {operationIsRunning ? "true" : "false"}
           </div>
         </div>
       </CardFooter>
+      <Loader loading={workerStatus == WorkerStatus.BUSY} />
     </Card>
   )
 }

@@ -53,7 +53,7 @@ export const OutputCommitments = ({className} : {className: string}) => {
         {outValues.map((value, index) => {
           return (
             <div
-              key={`output:${value.toString()}`}
+              key={`output:${index}`}
               className={cn(
                 "rounded-md border px-4 py-3 text-sm items-center justify-between flex flex-row w-full",
                 outputAmountIsValid[targetOutputIndex]
