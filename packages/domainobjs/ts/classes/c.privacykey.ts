@@ -180,7 +180,6 @@ export class PrivacyKey {
   ): Promise<Commitment[]> => {
     const commitments: Commitment[] = []
     const _scope = await pool.scope()
-    console.log('current scope', _scope)
     const _secrets = this._knownSecrets.get(_scope)
     if (_secrets) {
       for (let i = 0; i < _secrets.length; i++) {
@@ -233,7 +232,6 @@ export class PrivacyKey {
         }
       }
     } else {
-      console.log('add dummy')
       // if no commitments were recovered from existing secrets
       // we'll push the dummy root commitment
       const commitment = createNewCommitment({

@@ -64,8 +64,6 @@ const makeNewCommit = async (privateKey: Hex) => {
   const wasm = await fetch(paths.WASM_PATH).then((res) => res.arrayBuffer())
   const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.arrayBuffer())
 
-  console.log('existing commits', commits)
-
   // we will then use one of the recovered commitments for a commit transaction
   await privacyPool
     .process(
@@ -114,7 +112,6 @@ const makeNewCommit = async (privateKey: Hex) => {
       false
     )
     .then((res) => {
-      console.log("got txHash: ", res)
       return res
     })
     .catch((err) => console.log(err))
@@ -127,7 +124,6 @@ self.addEventListener("message", async (event) => {
     try {
 
       const result = await makeNewCommit(event.data.privateKey)
-      console.log("returned res", result)
       // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })
     } catch (error) {

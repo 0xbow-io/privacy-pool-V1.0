@@ -182,23 +182,22 @@ export namespace FnPrivacyPool {
       proof: proofT,
       vKeyFetcher: (_v: artifactT) => Promise<artifactT> = LoadVkeyFn()
     ): Promise<boolean> => {
-      console.log("before vKeyFetcher")
-      return await vKeyFetcher(vkey).then(async (_vkey) => {
-        console.log("before groth16.verify")
-        return await groth16
-          .verify(
-            _vkey,
-            (proof as SnarkJSOutputT).publicSignals as PublicSignals,
-            (proof as SnarkJSOutputT).proof as Groth16Proof
-          )
-          .then((output) => {
-            return output
-          })
-          .catch((e) => {
-            console.log(e)
-            throw new Error("snarkjs.groth16 verify failed ", { cause: e })
-          })
-      })
+      return await vKeyFetcher(vkey).then(
+        async (_vkey) =>
+          await groth16
+            .verify(
+              _vkey,
+              (proof as SnarkJSOutputT).publicSignals as PublicSignals,
+              (proof as SnarkJSOutputT).proof as Groth16Proof
+            )
+            .then((output) => {
+              return output
+            })
+            .catch((e) => {
+              console.log(e)
+              throw new Error("snarkjs.groth16 verify failed ", { cause: e })
+            })
+      )
     }
 
   export const parseOutputFn =
