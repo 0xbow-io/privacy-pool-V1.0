@@ -80,9 +80,6 @@ describe("Testing Contract Bindings", () => {
     await privacyPool.decryptCiphers([privacyKey])
     const commits = await privacyKey.recoverCommitments(privacyPool)
 
-    console.log('privacyKey:', privacyKey)
-    console.log('commits:', commits)
-
     // we will then use one of the recovered commitments for a commit transaction
     await privacyPool
       .process(

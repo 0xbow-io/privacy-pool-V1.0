@@ -241,5 +241,16 @@ export namespace CCommitment {
             saltPk: args._saltPk
           }
         ) // wrap binding with commitment class
+
+    static recoverFromJSON = (json: any, challenge: any) => {
+      const args = {
+        _pKScalar: BigInt(json.private.pkScalar),
+        _cipher: json.public.cipher.map(BigInt),
+        _saltPk: json.public.saltPk.map(BigInt),
+        _nonce: BigInt(json.private.nonce),
+        _len: json.private.secret.length
+      }
+      return CCommitment.CommitmentC.recover(args, challenge)()
+    }
   }
 }

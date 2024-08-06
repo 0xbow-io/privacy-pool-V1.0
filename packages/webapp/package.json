@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -20,8 +22,11 @@
     "@radix-ui/react-toast": "^1.2.1",
     "@radix-ui/react-tooltip": "^1.1.2",
     "bigfloat": "^0.1.1",
+    "bignumber.js": "^9.1.2",
+    "bn.js": "^5.2.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "emotion": "^11.0.0",
     "lucide-react": "^0.394.0",
     "maci-crypto": "^1.2.5",
     "next": "^14.2.5",

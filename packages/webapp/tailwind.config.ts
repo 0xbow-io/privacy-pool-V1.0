@@ -20,7 +20,8 @@ const config = {
     screens: {
       phone: "460px",
       tablet: "640px",
-      laptop: "1980px"
+      laptop: "1280px",
+      "2xl": "1600px"
     },
     extend: {
       colors: {

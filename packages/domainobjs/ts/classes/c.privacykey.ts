@@ -210,7 +210,6 @@ export class PrivacyKey {
           }
         )
         if (_commitment) {
-          console.log('existing commitment', _commitment)
           // update commitment index
 
           try {

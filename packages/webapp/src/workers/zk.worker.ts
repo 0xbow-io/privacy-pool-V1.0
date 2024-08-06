@@ -9,22 +9,23 @@ import {
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import {
+  CCommitment,
+  type Commitment,
   createNewCommitment,
-  PrivacyKey,
-  RecoverCommitment
+  PrivacyKey
 } from "@privacy-pool-v1/domainobjs/ts"
 import {
   ExistingPrivacyPools,
   getOnChainPrivacyPool,
   type OnChainPrivacyPool
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { gnosis } from "viem/chains"
+import { sepolia } from "viem/chains"
 import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
-import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge/ts/circuit.ts"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import type { ASP } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import CommitmentC = CCommitment.CommitmentC
 
 let privacyPool: OnChainPrivacyPool
-const poolInstance = ExistingPrivacyPools.get(gnosis)
+const poolInstance = ExistingPrivacyPools.get(sepolia)
 if (poolInstance === undefined) {
   throw new Error("Pool Instance is undefined")
 }
@@ -43,18 +44,24 @@ const paths: circomArtifactPaths = {
   ZKEY_PATH: `${basePath}/groth16_pkey.zkey`
 }
 
-const makeNewCommit = async (privateKey: Hex) => {
-  const account = privateKeyToAccount(privateKey)
-  const publicAddress = account.address
+const makeNewCommit = async (
+  privateKey: Hex,
+  selectedAsp: ASP,
+  commitmentsHashes: Hex[],
+  outputValues: number[]
+) => {
+  const privacyKey = PrivacyKey.from(privateKey, 0n)
+  const account = privateKeyToAccount(privacyKey.asJSON.privateKey)
+  const publicAddr = privacyKey.publicAddr
+  const { fee, feeCollector } = selectedAsp
+
   const walletClient = createWalletClient({
     account,
     chain: DEFAULT_TARGET_CHAIN,
     transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
   }).extend(publicActions)
 
-  const privacyKey = PrivacyKey.from(privateKey, 0n)
-
-  const balance = await walletClient.getBalance({ address: publicAddress })
+  const balance = await walletClient.getBalance({ address: publicAddr })
   const defaultCommitVal = parseEther("0.0001")
   const scopeVal = await privacyPool.scope()
 
@@ -65,21 +72,44 @@ const makeNewCommit = async (privateKey: Hex) => {
   }
 
   await privacyPool.decryptCiphers([privacyKey])
-  const commits = await privacyKey.recoverCommitments(privacyPool)
+
+  const allKeyCommitments = await privacyKey.recoverCommitments(privacyPool)
+
+  // User can pick 2 void commitments with the same hash, but the
+  // commitment root will be different for them. So we need to
+  // handle the case when the user picks 2 void commitments with the
+  // same hash
+
+  let selectedCommitments: [Commitment | undefined, Commitment | undefined] = [
+    undefined,
+    undefined
+  ]
+
+  selectedCommitments[0] = allKeyCommitments.find(
+    (commit) => commit.hash().toString(16) === commitmentsHashes[0]
+  )
+  selectedCommitments[1] = allKeyCommitments.find(
+    (commit) =>
+      commit.hash().toString(16) === commitmentsHashes[1] &&
+      commit.commitmentRoot !== selectedCommitments[0]?.commitmentRoot
+  )
+
+  if (!selectedCommitments[0] || !selectedCommitments[1]) {
+    throw new Error("commitments not found")
+  }
 
   const vKey = await fetch(paths.VKEY_PATH).then((res) => res.text())
   const wasm = await fetch(paths.WASM_PATH).then((res) => res.arrayBuffer())
   const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.arrayBuffer())
 
-  // we will then use one of the recovered commitments for a commit transaction
   await privacyPool
     .process(
       walletClient,
       {
-        src: publicAddress,
-        sink: publicAddress,
-        feeCollector: publicAddress,
-        fee: 0n
+        src: publicAddr,
+        sink: publicAddr,
+        feeCollector,
+        fee: fee
       },
       [
         privacyKey.pKScalar,
@@ -88,27 +118,19 @@ const makeNewCommit = async (privateKey: Hex) => {
         privacyKey.pKScalar
       ],
       [privacyKey.nonce, privacyKey.nonce, privacyKey.nonce, privacyKey.nonce],
+      selectedCommitments as [CommitmentC, CommitmentC],
       [
         createNewCommitment({
           _pK: privateKey,
           _nonce: 0n,
           _scope: scopeVal,
-          _value: 0n
-        }),
-        commits[0]
-      ],
-      [
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: defaultCommitVal
+          _value: parseEther(outputValues[0].toString())
         }),
         createNewCommitment({
           _pK: privateKey,
-          _nonce: 0n,
+          _nonce: 1n,
           _scope: scopeVal,
-          _value: commits[0].asTuple()[0] + defaultCommitVal
+          _value: parseEther(outputValues[1].toString())
         })
       ],
       {
@@ -125,8 +147,6 @@ const makeNewCommit = async (privateKey: Hex) => {
 }
 
 const release = async (privacyKey: PrivacyKey, outputValues: bigint[]) => {
-  const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
-
   const pkScalar = privacyKey.pKScalar
   const privateKey = privacyKey.asJSON.privateKey
   const account = privateKeyToAccount(privateKey)
@@ -196,7 +216,12 @@ self.addEventListener("message", async (event) => {
   // Check if the message is to trigger the performComputation function
   if (event.data.action === "makeCommit") {
     try {
-      const result = await makeNewCommit(event.data.privateKey)
+      const result = await makeNewCommit(
+        event.data.privateKey,
+        event.data.selectedASP,
+        event.data.inCommits,
+        event.data.outValues
+      )
       // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })
     } catch (error) {

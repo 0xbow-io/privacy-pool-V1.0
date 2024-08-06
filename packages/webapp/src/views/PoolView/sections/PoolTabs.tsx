@@ -10,6 +10,7 @@ import React from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"
 import { TransactionCard } from "@/views/PoolView/sections/TransactionsSection/TransactionCard.tsx"
+import ComputeSection from "@/views/PoolView/sections/ComputeSection/ComputeSection.tsx"
 
 export enum TabsValue {
   Account = "account",
@@ -35,7 +36,7 @@ export const PoolTabs = ({
   const hasWallet = notEmpty()
 
   return (
-    <div className={cn("relative", "flex-auto z-10")}>
+    <div className={cn("relative", "flex-auto z-10 w-full")}>
       <Tabs value={currentTab}>
         <div className="flex flex-row gap-x-1 items-start max-phone:flex-col max-phone:gap-y-4">
           <TabsList className="relative flex flex-col items-start w-fit text-blackmail bg-doctor h-fit mt-2 p-4 max-phone:flex-row max-phone:p-2 max-phone:mt-0 max-phone:w-full max-phone:justify-around  ">
@@ -78,18 +79,16 @@ export const PoolTabs = ({
               Settings
             </TabsTrigger>
           </TabsList>
-          <div>
-            <TabsContent value="account">
-              {notEmpty() ? (
-                <AccountCard className="bg-doctor" />
-              ) : (
-                <WelcomeSection className="" />
-              )}
-            </TabsContent>
-            <TabsContent value="compute">
-              <TransactionCard className="bg-doctor" />
-            </TabsContent>
-          </div>
+          <TabsContent value="account">
+            {notEmpty() ? (
+              <AccountCard className="bg-doctor" />
+            ) : (
+              <WelcomeSection className="" />
+            )}
+          </TabsContent>
+          <TabsContent value="compute">
+            <ComputeSection />
+          </TabsContent>
         </div>
       </Tabs>
       {/*{Inputs_Dialog("absolute")}*/}

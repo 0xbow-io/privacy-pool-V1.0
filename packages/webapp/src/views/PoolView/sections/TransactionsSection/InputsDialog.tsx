@@ -12,8 +12,15 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import {
+  ExistingPrivacyPools,
+  getOnChainPrivacyPool
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { createPublicClient, http } from "viem"
+import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
+import { sepolia } from "viem/chains"
 
 type InputsDialogProps = {
   className: string
@@ -28,9 +35,57 @@ export const InputsDialog = ({
   onOpenChange,
   targetInputIndex
 }: InputsDialogProps) => {
-  const { inCommits, updateInCommit, getAvailableInputOptions } = useKeyStore(
-    (state) => state
-  )
+  const {
+    inCommits,
+    avilCommits,
+    selectedKey,
+    updateInCommit,
+    selectedCommitmentIndexes
+  } = useKeyStore((state) => state)
+
+  const [keyCommitHashes, setKeyCommitHashes] = useState<string[]>([])
+
+  useEffect(() => {
+    const getCommitHashes = async () => {
+      const poolInstance = ExistingPrivacyPools.get(sepolia) //TODO: dynamic pool selection
+      console.log("filter", selectedKey, selectedKey?.asJSON)
+      if (!poolInstance || !selectedKey) {
+        return
+      }
+
+      const privacyPool = getOnChainPrivacyPool(
+        poolInstance[0],
+        createPublicClient({
+          chain: DEFAULT_TARGET_CHAIN,
+          transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
+        })
+      )
+      const synced = await privacyPool.sync()
+
+      if (!synced) {
+        return
+      }
+      await privacyPool.decryptCiphers([selectedKey])
+      const keyCommits = await selectedKey?.recoverCommitments(privacyPool)
+      if (!keyCommits) {
+        return
+      }
+      const commitHashes = keyCommits.map((commit) =>
+        commit.hash().toString(16)
+      )
+
+      setKeyCommitHashes(commitHashes)
+    }
+    getCommitHashes()
+  }, [])
+
+  const selectOptions = avilCommits
+    .map((c, index) => ({ hash: c.hash().toString(16), index }))
+    .filter(
+      ({ hash }, index) =>
+        !selectedCommitmentIndexes.includes(index) &&
+        keyCommitHashes.includes(hash)
+    )
 
   const currInCommit: string =
     inCommits[targetInputIndex] === ""
@@ -52,17 +107,24 @@ export const InputsDialog = ({
         <div className="flex-auto">
           <Select
             value={currInCommit}
-            onValueChange={(value) => updateInCommit(targetInputIndex, value)}
+            onValueChange={(value) => {
+              const { hash, commitIndex } = JSON.parse(value)
+              updateInCommit(targetInputIndex, hash, commitIndex)
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select">{currInCommit}</SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
-              {getAvailableInputOptions(targetInputIndex).map((hash) => {
-                const _hash_ = `0x${hash.substring(0, 14)}....${hash.substring(54)}`
+              {selectOptions.map((commit, index) => {
+                const { hash, index: commitIndex } = commit
+                const shortenedHash = `0x${hash.substring(0, 14)}....${hash.substring(54)}`
                 return (
-                  <SelectItem key={hash} value={hash}>
-                    {_hash_}
+                  <SelectItem
+                    key={index}
+                    value={JSON.stringify({ hash, commitIndex })}
+                  >
+                    {shortenedHash}
                   </SelectItem>
                 )
               })}
