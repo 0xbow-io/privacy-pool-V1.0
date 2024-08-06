@@ -1,3 +1,7 @@
+import dotenv from "dotenv"
+
+dotenv.config()
+
 export default {
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -11,5 +15,11 @@ export default {
     }
 
     return config
+  },
+  env: {
+    NEXT_PUBLIC_INFURA_PROJECT_URL: process.env.INFURA_PROJECT_URL,
+    NEXT_PUBLIC_INFURA_PROJECT_ID: process.env.INFURA_PROJECT_ID,
+    NEXT_PUBLIC_INFURA_PROJECT_SECRET: process.env.INFURA_PROJECT_SECRET,
+    NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS
   }
 }

@@ -3,16 +3,14 @@ import type {
   PublicClient,
   Chain,
   Client,
-  WalletClient,
   PublicActions,
   WalletActions,
   Hex
 } from "viem"
 import { PrivacyPoolABI } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { createPublicClient, http, parseEther } from "viem"
+import { createPublicClient, http } from "viem"
 
 import type { TPrivacyPool } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import type { bufferToBigInt } from "@zk-kit/utils"
 
 export const ScopeFn = (chain?: Chain, conn?: PublicClient) =>
   FnPrivacyPool.ScopeFn(chain, conn)
