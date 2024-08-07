@@ -1,12 +1,13 @@
 import type { GlobalConfig, circomArtifactPaths } from "./type"
 import { getPath, DeriveURLPath } from "./utils"
-import { generic_circom } from "./constants"
+import { generic_artifacts, generic_circom } from "./constants"
 export function getCircomArtifactPaths(
   global: GlobalConfig,
   projectName: string,
   circuitName: string,
   getRemote = false
 ): circomArtifactPaths {
+  console.log('func', global.GLOBAL_ARTIFACTS_DIR, generic_circom)
   const local: circomArtifactPaths = {
     WASM_PATH: getPath(global.GLOBAL_ARTIFACTS_DIR, generic_circom, [
       projectName,

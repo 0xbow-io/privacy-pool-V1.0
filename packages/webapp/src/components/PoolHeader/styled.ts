@@ -5,7 +5,7 @@ export const Container = styled.div`
   flex-direction: row;
   border: 2px solid;
   border-radius: 1.5rem;
-  background-color: #000;
+  background-color: #220066;
   color: #f8f8ff;
   padding: 0.75rem 1rem;
   position: relative;
@@ -21,9 +21,9 @@ export const HeaderText = styled.h2`
 `
 
 export const PoolRootContainer = styled.div`
-  margin-left: auto;
-  border: 2px solid;
-  padding: 0.5rem;
-  background-color: #333;
-  color: #f8f8ff;
+    margin-left: auto;
+    border: 2px solid;
+    padding: 0.5rem;
+    background-color: #352370;
+    color: #f8f8ff;
 `

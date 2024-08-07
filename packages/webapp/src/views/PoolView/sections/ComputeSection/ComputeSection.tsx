@@ -41,6 +41,7 @@ const ComputeSection = () => {
   const [selectedKey, setSelectedKey] = useState<PrivacyKey | undefined>(
     undefined
   )
+  console.log('in', inCommits)
   const [selectedASP, setSelectedASP] = useState<ASP | null>(null)
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
     TransactionStatus.pending

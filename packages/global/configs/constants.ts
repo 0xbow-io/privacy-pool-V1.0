@@ -18,6 +18,8 @@ export const project_contracts = "packages/contracts"
 export const project_privacy_pool = "packages/privacy-pool"
 export const project_poa = "proof-of-assocation"
 
+export const circuit_name = "privacy-pool"
+
 export const project_org = "0xbow-io"
 export const project_repo = "privacy-pool-V1.0"
 

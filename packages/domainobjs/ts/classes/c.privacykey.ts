@@ -239,7 +239,7 @@ export class PrivacyKey {
         _scope: _scope,
         _value: 0n
       })
-
+      console.log('void commitment insert')
       commitments.push(commitment)
     }
     return commitments

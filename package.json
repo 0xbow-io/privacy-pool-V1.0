@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build:privacypool:circom": "bun run ./packages/zero-knowledge/scripts/privacy-pool/buildCircuit.sh",
+    "test:contracts": "bunx jest --testPathPattern=./packages/contracts/ts/privacy-pool/classes/.*\\.test\\.ts$",
     "test:privacypool:circom": "bun --filter @privacy-pool-v1/zero-knowledge test:privacypool",
     "contracts:compile": "bun --filter=\"@privacy-pool-v1/contracts\" compile",
     "contracts:test": "bun --filter=\"@privacy-pool-v1/contracts\" test",

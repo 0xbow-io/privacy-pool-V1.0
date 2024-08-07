@@ -64,7 +64,6 @@ const makeNewCommit = async (
   const balance = await walletClient.getBalance({ address: publicAddr })
   const defaultCommitVal = parseEther("0.0001")
   const scopeVal = await privacyPool.scope()
-
   const synced = await privacyPool.sync()
 
   if (!synced) {
@@ -84,14 +83,21 @@ const makeNewCommit = async (
     undefined,
     undefined
   ]
+  console.log(
+    "commits",
+    allKeyCommitments.map((commit) => ({
+      hash: commit.hash().toString(16),
+      root: commit.commitmentRoot.toString(16)
+    })),
+    commitmentsHashes
+  )
 
   selectedCommitments[0] = allKeyCommitments.find(
     (commit) => commit.hash().toString(16) === commitmentsHashes[0]
   )
   selectedCommitments[1] = allKeyCommitments.find(
     (commit) =>
-      commit.hash().toString(16) === commitmentsHashes[1] &&
-      commit.commitmentRoot !== selectedCommitments[0]?.commitmentRoot
+      commit.hash().toString(16) === commitmentsHashes[1]
   )
 
   if (!selectedCommitments[0] || !selectedCommitments[1]) {

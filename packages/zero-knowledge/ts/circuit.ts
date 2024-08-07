@@ -1,7 +1,7 @@
 import {
   globalConf,
   getPath,
-  getCircomArtifactPaths
+  getCircomArtifactPaths, circuit_name
 } from "@privacy-pool-v1/global"
 import type { circomArtifactPaths } from "@privacy-pool-v1/global"
 import {
@@ -65,7 +65,7 @@ export namespace PrivacyPool {
   ]
 
   export const circomArtifacts = (remote = false): circomArtifactPaths =>
-    getCircomArtifactPaths(globalConf, project_privacy_pool, id, remote)
+    getCircomArtifactPaths(globalConf, circuit_name, id, remote)
 
   export const circomkitConf: CircomkitConfig = {
     protocol: protocol,
