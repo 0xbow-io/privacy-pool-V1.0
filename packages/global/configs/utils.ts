@@ -24,6 +24,6 @@ function removeSpecificPrefix(
 }
 
 export function DeriveURLPath(fullPath: string): string {
-  const retracted = removeSpecificPrefix(fullPath, '')
+  const retracted = removeSpecificPrefix(fullPath, ' /Users/attemka/dev/privacy-pool-V1.0')
   return `${project_base_url}/${retracted}`
 }

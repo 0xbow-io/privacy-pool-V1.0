@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { SettingsDrawer } from "@/views/PoolView/sections/SettingsDrawer.tsx"
 import { PoolTabs, TabsValue } from "@/views/PoolView/sections/PoolTabs.tsx"
 import { PoolHeader } from "@/components/PoolHeader/PoolHeader.tsx"
+import Footer from "@/components/Footer/Footer.tsx"
 
 export const PoolView = () => {
   const [currentTab, setCurrentTab] = useState<TabsValue>(TabsValue.Account)
@@ -26,6 +27,7 @@ export const PoolView = () => {
           />
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -203,6 +203,10 @@ export namespace CPool {
     ) => {
       const decryptionPromises: Promise<void>[] = []
 
+      if (from === 0n && to === -1n) {
+        return
+      }
+
       const ciphers = this._ciphers
         ? await this._ciphers(this.meta.address, [from, to])
         : await UnpackCiphersWithinRangeFn(this.meta.chain, this.conn)(
@@ -311,6 +315,7 @@ export namespace CPool {
       zkArtifacts: CircomArtifactsT,
       simOnly = true
     ): Promise<boolean | Hex> => {
+      const scope = await this.scope()
       const out = (await NewPrivacyPoolCircuit(zkArtifacts)
         .prove({
           scope: await this.scope(), // calculate scope on the fly if value is not cached

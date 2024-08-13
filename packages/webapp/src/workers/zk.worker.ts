@@ -14,12 +14,13 @@ import {
   createNewCommitment,
   PrivacyKey
 } from "@privacy-pool-v1/domainobjs/ts"
+import type {ICommitment} from "@privacy-pool-v1/domainobjs/ts"
 import {
   ExistingPrivacyPools,
   getOnChainPrivacyPool,
   type OnChainPrivacyPool
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { sepolia } from "viem/chains"
+import { gnosis, sepolia } from "viem/chains"
 import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
 import type { ASP } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import CommitmentC = CCommitment.CommitmentC
@@ -42,6 +43,33 @@ const paths: circomArtifactPaths = {
   VKEY_PATH: `${basePath}/groth16_vkey.json`,
   WASM_PATH: `${basePath}/PrivacyPool_V1.wasm`,
   ZKEY_PATH: `${basePath}/groth16_pkey.zkey`
+}
+
+const decryptAllKeys = async (privateKeys: Hex[]) => {
+  const keyToCommitJSONs: { [privateKey: Hex]: ReturnType<ICommitment.CommitmentI["toJSON"]>[] } = {}
+
+  const privacyKeys = privateKeys.map((privateKey) =>
+    PrivacyKey.from(privateKey, 0n)
+  )
+  const synced = await privacyPool.sync()
+
+  if (!synced) {
+    throw new Error("sync failed")
+  }
+
+  await privacyPool.decryptCiphers(privacyKeys)
+
+  for (const key of privacyKeys) {
+    const allKeyCommitments = await key.recoverCommitments(privacyPool)
+    keyToCommitJSONs[key.pKey] = allKeyCommitments.map(
+      (commit) => {
+        console.log('incoming commit', commit, commit.toJSON())
+        return commit.toJSON()
+      }
+    )
+  }
+
+  return keyToCommitJSONs
 }
 
 const makeNewCommit = async (
@@ -97,7 +125,8 @@ const makeNewCommit = async (
   )
   selectedCommitments[1] = allKeyCommitments.find(
     (commit) =>
-      commit.hash().toString(16) === commitmentsHashes[1]
+      commit.hash().toString(16) === commitmentsHashes[1] &&
+      commit.commitmentRoot !== selectedCommitments[0]?.commitmentRoot
   )
 
   if (!selectedCommitments[0] || !selectedCommitments[1]) {
@@ -134,7 +163,7 @@ const makeNewCommit = async (
         }),
         createNewCommitment({
           _pK: privateKey,
-          _nonce: 1n,
+          _nonce: 0n,
           _scope: scopeVal,
           _value: parseEther(outputValues[1].toString())
         })
@@ -249,6 +278,18 @@ self.addEventListener("message", async (event) => {
       console.error("Error in worker", error)
       // Send the error back to the main thread
       self.postMessage({ action: "releaseErr", payload: error })
+    }
+  }
+
+  if (event.data.action === "getKeysCommitments") {
+    try {
+      const result = await decryptAllKeys(event.data.privateKeys)
+      // Send the result back to the main thread
+      self.postMessage({ action: "getKeysCommitmentsRes", payload: result })
+    } catch (error) {
+      console.error("Error in worker", error)
+      // Send the error back to the main thread
+      self.postMessage({ action: "getKeysCommitmentsErr", payload: error })
     }
   }
 })

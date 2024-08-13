@@ -35,18 +35,27 @@ const ComputeSection = () => {
     disabled: false,
     text: "next"
   })
-  const { keys, inCommits, outValues, avilCommits, updateSelectedKey } =
-    useKeyStore((state) => state)
+  const {
+    keys,
+    inCommits,
+    outValues,
+    keyCommitHashes,
+    avilCommits,
+    updateKeyCommitHashes,
+    updateSelectedKey
+  } = useKeyStore((state) => state)
   const publicKeys = keys.map((key) => key.publicAddr)
   const [selectedKey, setSelectedKey] = useState<PrivacyKey | undefined>(
     undefined
   )
-  console.log('in', inCommits)
   const [selectedASP, setSelectedASP] = useState<ASP | null>(null)
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
     TransactionStatus.pending
   )
   const [worker, setWorker] = useState<Worker | null>(null)
+
+  console.log("keys commits:", keyCommitHashes)
+  console.log("available commits:", avilCommits)
 
   useEffect(() => {
     loadWorkerDynamically().then(setWorker)
@@ -69,6 +78,8 @@ const ComputeSection = () => {
         } else if (action === "makeCommitErr") {
           console.error("Worker error:", payload)
           setTransactionStatus(TransactionStatus.failure)
+        } else if (action === "getKeysCommitmentsRes") {
+          updateKeyCommitHashes(payload)
         }
       }
 
@@ -76,6 +87,12 @@ const ComputeSection = () => {
         console.error("Worker error:", error)
         setTransactionStatus(TransactionStatus.failure)
       }
+
+      // start processing the keys commitments as soon as worker is initialised
+      worker?.postMessage({
+        action: "getKeysCommitments",
+        privateKeys: keys.map((key) => key.pKey)
+      })
     }
   }, [worker])
 

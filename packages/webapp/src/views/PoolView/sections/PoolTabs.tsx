@@ -5,7 +5,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs.tsx"
-import { AccountCard } from "@/views/PoolView/sections/AccountCard.tsx"
+import { AccountCard } from "@/views/PoolView/sections/AccountSection/AccountCard.tsx"
 import React from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"

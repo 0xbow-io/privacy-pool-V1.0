@@ -2,7 +2,11 @@ import { createStore } from "zustand/vanilla"
 import { downloadJSON } from "@/utils/files"
 import { type Chain, sepolia, gnosis } from "viem/chains"
 import { formatUnits, type Hex } from "viem"
-import type { Commitment } from "@privacy-pool-v1/domainobjs/ts"
+import {
+  CCommitment,
+  type Commitment,
+  type ICommitment
+} from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyKey, createNewCommitment } from "@privacy-pool-v1/domainobjs/ts"
 
 import type { SimpleFEMeta, PrivacyPoolMeta } from "@/network/pools"
@@ -27,6 +31,7 @@ export type AccountState = {
   // circuit: PrivacyPoolCircuit
 
   avilCommits: Commitment[]
+  keyCommitHashes: { [privateKey: Hex]: Hex[] }
 
   // relevant input values / objects
   inCommits: string[] // hash of the commitments chosen as input
@@ -63,6 +68,9 @@ export interface AccountActions {
   getInTotalValueFormatted: () => number
   updatePublicValue: (value: number) => void
   updateSelectedKey: (pK: Hex) => void
+  updateKeyCommitHashes: (keyToCommitJSONs: {
+    [privateKey: Hex]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
+  }) => void
 
   updateOutputValue: (index: number, value: number) => void
   updateOutputPrivacyKey: (index: number, pubKeyHash: string) => void
@@ -79,6 +87,7 @@ export const defaultInitState: AccountState = {
   selectedKey: undefined,
   verifierKey: null,
   // circuit: NewPrivacyPoolCircuit('',''),
+  keyCommitHashes: {},
 
   availChains: [sepolia, gnosis],
   avilPools: PrivacyPools,
@@ -168,28 +177,16 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         outPrivacyKeys: [_new_keys[0], _new_keys[1]],
         avilCommits: [
           createNewCommitment({
-            _pK: _new_keys[0].asJSON.privateKey,
+            _pK: _new_keys[0].pKey,
             _value: 0n,
             _scope: scope,
             _nonce: 0n
           }),
           createNewCommitment({
-            _pK: _new_keys[0].asJSON.privateKey,
-            _value: 0n,
-            _scope: scope,
-            _nonce: 1n
-          }),
-          createNewCommitment({
-            _pK: _new_keys[1].asJSON.privateKey,
+            _pK: _new_keys[0].pKey,
             _value: 0n,
             _scope: scope,
             _nonce: 0n
-          }),
-          createNewCommitment({
-            _pK: _new_keys[1].asJSON.privateKey,
-            _value: 0n,
-            _scope: scope,
-            _nonce: 1n
           })
         ]
       }))
@@ -237,18 +234,44 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         selectedKey: key
       }))
     },
+    updateKeyCommitHashes: (keyToCommitJSONs) => {
+      const keyToHashMap: { [key: Hex]: Hex[] } = {}
+
+      for (const key in keyToCommitJSONs) {
+        if (keyToCommitJSONs.hasOwnProperty(key)) {
+          keyToHashMap[key as Hex] = keyToCommitJSONs[key as Hex].map(
+            (commit) => BigInt(commit.hash).toString(16) as Hex
+          )
+        }
+      }
+
+      const allCommits = Object.values(keyToCommitJSONs)
+        .flat()
+        .map((commit) => {
+          console.log("commit:", commit)
+          return CCommitment.CommitmentC.recoverFromJSON(commit, {
+            _hash: BigInt(commit.hash)
+          })
+        })
+
+      set((state) => ({
+        keyCommitHashes: keyToHashMap,
+        avilCommits: allCommits
+      }))
+    },
     getCurrentPool: (): PrivacyPoolMeta => {
       return get().currPool
     },
-    updateInCommit: (
-      inputIndex,
-      value,
-      commitIndex
-    ) => {
+    updateInCommit: (inputIndex, value, commitIndex) => {
       // verify that these commit are still available
+      console.log(
+        "my current commits:",
+        get().avilCommits.map((c) => c.hash().toString(16))
+      )
       const commit = get().avilCommits.find(
         (c) => c.hash().toString(16) === value
       )
+
       if (commit === undefined) {
         throw new Error("commit not available: " + value)
       }

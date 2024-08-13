@@ -48,11 +48,14 @@ export const TransactionProcessingStep = ({
         <div className="flex flex-col items-center justify-center w-full h-full">
           <LoaderIcon />
           <p className="mt-2 text-sm">Processing...</p>
+          <div className="mt-2 text-sm">
+            This may take up to 1min, please don't close or refresh the page
+          </div>
         </div>
       )}
       {status === TransactionStatus.success && (
         <div className="flex flex-col items-center justify-center w-full h-full">
-          <BadgeCheck height={'2em'} />
+          <BadgeCheck height={"2em"} />
           <p className="mt-2 text-sm">Transaction Successful!</p>
           <button
             onClick={handleDownload}
@@ -64,7 +67,7 @@ export const TransactionProcessingStep = ({
       )}
       {status === TransactionStatus.failure && (
         <div className="flex flex-col items-center justify-center w-full h-full">
-          <CircleAlert height={'2em'} />
+          <CircleAlert height={"2em"} />
           <p className="mt-2 text-sm">Transaction Failed</p>
           <p className="mt-2 text-sm text-red-500">{errorDetails}</p>
         </div>

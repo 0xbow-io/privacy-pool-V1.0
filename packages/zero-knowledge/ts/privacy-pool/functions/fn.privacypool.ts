@@ -64,7 +64,7 @@ export namespace FnPrivacyPool {
           actualTreeDepth: BigInt(args.mt.depth),
           context: args.context,
           externIO: externIO,
-          existingStateRoot: args.mt.root,
+          existingStateRoot: args.mt.root || 0n,
           newSaltPublicKey: args.new.map(
             (c) => c.public().saltPk as [bigint, bigint]
           ),
@@ -146,8 +146,10 @@ export namespace FnPrivacyPool {
         obj: artifactT
       ) => Promise<artifactT> = FetchArtifactFn()
     ) =>
-    async (inputs: CircuitSignals): Promise<proofT> =>
-      Promise.all([artifactsFetcher(wasm), artifactsFetcher(zKey)])
+    async (inputs: CircuitSignals): Promise<proofT> => {
+
+console.log('inputs', inputs)
+      return Promise.all([artifactsFetcher(wasm), artifactsFetcher(zKey)])
         .then(
           async ([_wasm, _zkey]) =>
             await groth16
@@ -170,6 +172,7 @@ export namespace FnPrivacyPool {
           console.log(e)
           throw new Error("Failed to load artifacts", { cause: e })
         })
+    }
 
   export const verifyFn =
     <

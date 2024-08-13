@@ -148,7 +148,8 @@ export namespace CCommitment {
         private: {
           nonce: this._private.nonce.toString(),
           value: this._private.value.toString(),
-          secret: this._private.secret.map((v) => v.toString())
+          secret: this._private.secret.map((v) => v.toString()),
+          pkScalar: this._private.pkScalar.toString()
         },
         hash: this.hash().toString(),
         cRoot: this.commitmentRoot.toString(),
@@ -248,7 +249,7 @@ export namespace CCommitment {
         _cipher: json.public.cipher.map(BigInt),
         _saltPk: json.public.saltPk.map(BigInt),
         _nonce: BigInt(json.private.nonce),
-        _len: json.private.secret.length
+        _len: json.private.secret.length + 3 // todo: write this as a const
       }
       return CCommitment.CommitmentC.recover(args, challenge)()
     }

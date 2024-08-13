@@ -12,19 +12,14 @@ import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import { Keypair, PrivKey } from "maci-domainobjs"
 import { createHash } from "crypto"
 import { hexToBigInt } from "viem"
+import { privateKeyToAccount } from "viem/accounts"
 import { hashLeftRight } from "maci-crypto"
 
 export type PrivacyKeys = PrivacyKey[]
 
 type PrivacyKeyJSON = {
   _nonce: string
-  _pkScalar: string
-  _secret: {
-    x: string
-    y: string
-  }
   privateKey: Hex
-  publicKey: Hex
   pubAddr: Hex
   _knownSecrets: {
     [key: string]: [string, string, string, string][]
@@ -35,7 +30,7 @@ export class PrivacyKey {
   _nonce: bigint
   _pkScalar: bigint
   _secret: Point<bigint>
-  keypair: Keypair
+  pKey: Hex
 
   // Mapping of Scope to
   // Minimum required elements that can
@@ -49,7 +44,7 @@ export class PrivacyKey {
     this._nonce = nonce
     this._pkScalar = deriveSecretScalar(privateKey)
     this._secret = mulPointEscalar(this.Pk, this.pKScalar)
-    this.keypair = new Keypair(new PrivKey(hexToBigInt(privateKey)))
+    this.pKey = privateKey
   }
 
   static generate = (nonce: bigint): PrivacyKey => {
@@ -72,20 +67,10 @@ export class PrivacyKey {
     return mulPointEscalar(Base8, this.pKScalar)
   }
 
-  get pubKey(): PubKey {
-    return this.keypair.pubKey
-  }
-
-  get pubKeyHash(): bigint {
-    const pubKey = this.pubKey
-    return hashLeftRight(pubKey.rawPubKey[0], pubKey.rawPubKey[1])
-  }
-
   get publicAddr(): Hex {
-    const hash = createHash("sha256")
-      .update(this.pubKey.toJSON().pubKey)
-      .digest("hex")
-    return `0x${hash.slice(0, 40)}`
+    const account = privateKeyToAccount(this.pKey)
+    const publicAddress = account.address
+    return publicAddress
   }
 
   get secretK(): Point<bigint> {
@@ -95,13 +80,7 @@ export class PrivacyKey {
   get asJSON(): PrivacyKeyJSON {
     return {
       _nonce: this._nonce.toString(),
-      _pkScalar: this._pkScalar.toString(),
-      _secret: {
-        x: this._secret[0].toString(),
-        y: this._secret[1].toString()
-      },
-      privateKey: `0x${this.keypair.privKey.rawPrivKey.toString(16).padStart(64, "0")}`,
-      publicKey: `0x${this.keypair.pubKey.serialize()}`,
+      privateKey: this.pKey,
       pubAddr: this.publicAddr,
       _knownSecrets: Array.from(this._knownSecrets.entries()).reduce(
         (acc, [key, value]) => {
@@ -152,9 +131,8 @@ export class PrivacyKey {
       console.error(`Error decrypting cipherText: ${e}`)
     }
 
-
     if (!_commitment) {
-      console.log('no commitment available')
+      console.log("no commitment available")
       return
     }
 
@@ -233,15 +211,23 @@ export class PrivacyKey {
     } else {
       // if no commitments were recovered from existing secrets
       // we'll push the dummy root commitment
-      const commitment = createNewCommitment({
-        _pK: this.asJSON.privateKey,
-        _nonce: this.nonce,
-        _scope: _scope,
-        _value: 0n
-      })
-      console.log('void commitment insert')
-      commitments.push(commitment)
+      const firstCommitment =  createNewCommitment({
+          _pK: this.pKey,
+          _nonce: this.nonce,
+          _scope: _scope,
+          _value: 0n
+        })
+        const secondCommitment =   createNewCommitment({
+          _pK: this.pKey,
+          _nonce: this.nonce,
+          _scope: _scope,
+          _value: 0n
+        })
+      console.log("void commitments insert")
+      commitments.push(firstCommitment)
+      commitments.push(secondCommitment)
     }
+    console.log('returned commitments', commitments)
     return commitments
   }
 }

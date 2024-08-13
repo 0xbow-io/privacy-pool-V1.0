@@ -4,14 +4,10 @@ import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import { createNewCommitment } from "@privacy-pool-v1/domainobjs"
 import { beforeAll, describe, expect, test } from "@jest/globals"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import {
   ExistingPrivacyPools,
   getOnChainPrivacyPool
 } from "@privacy-pool-v1/contracts"
-import type { circomArtifactPaths } from "@privacy-pool-v1/global"
-import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge/ts/circuit"
-import fs from "node:fs"
 import type { Hex } from "viem"
 import {
   createPublicClient,
@@ -22,17 +18,16 @@ import {
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { sepolia, gnosis } from "viem/chains"
-import type { Commitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs"
-const rpc: string = ""
-const TARGET_CHAIN = gnosis
+const rpc: string = "https://patient-red-daylight.ethereum-sepolia.quiknode.pro/1dd49d866f8b378e878895b5735b243466a54f78/"
+const TARGET_CHAIN = sepolia
 
 const SECONDS = 1000
 jest.setTimeout(70 * SECONDS)
 
 describe("Testing Contract Bindings", () => {
   let privacyPool: OnChainPrivacyPool
-  const poolInstance = ExistingPrivacyPools.get(gnosis)
+  const poolInstance = ExistingPrivacyPools.get(TARGET_CHAIN)
 
   beforeAll(() => {
     if (poolInstance === undefined) {
@@ -140,33 +135,47 @@ describe("Testing Contract Bindings", () => {
   // })
 
   test("process() should work for making a new commit (retest)", async () => {
-    const paths: circomArtifactPaths = PrivacyPool.circomArtifacts(false)
+    const paths = {
+      WASM_PATH: 'https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/PrivacyPool_V1_js/PrivacyPool_V1.wasm',
+      VKEY_PATH: 'https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_vkey.json',
+      ZKEY_PATH: 'https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey'
+    }
     console.log("paths", paths)
 
     const privateKey: Hex =
-      "0x043bba2bbcec4e52243d1fa5a49cf8cb3a30bf7fd10ff315b2c32b10a8430eca"
+      "0xda6d2b432c028c7a03b028b562ea710e393d7e1a2e5fa91a550a807c4e84600d"
     const account = privateKeyToAccount(privateKey)
     const publicAddress = account.address
+    console.log('public address', publicAddress)
     const walletClient = createWalletClient({
       account,
-      chain: sepolia,
+      chain: TARGET_CHAIN,
       transport: rpc !== "" ? http(rpc) : http()
     }).extend(publicActions)
 
     const privacyKey = PrivacyKey.from(privateKey, 0n)
 
     const balance = await walletClient.getBalance({ address: publicAddress })
-    const defaultCommitVal = parseEther("0.0001")
+    const defaultCommitVal = parseEther("0.00001")
     const scopeVal = await privacyPool.scope()
-
     const synced = await privacyPool.sync()
+    const stateSize = privacyPool.StateSize()
+    console.log('stateSize', stateSize)
     expect(synced).toBe(true)
 
     await privacyPool.decryptCiphers([privacyKey])
     const commits = await privacyKey.recoverCommitments(privacyPool)
 
-    const wasmContent = new Uint8Array(fs.readFileSync(paths.WASM_PATH))
-    const zKeyContent = new Uint8Array(fs.readFileSync(paths.ZKEY_PATH))
+    const voidCommitment = createNewCommitment({
+      _pK: privateKey,
+      _nonce: 0n,
+      _scope: scopeVal,
+      _value: 0n
+    })
+
+    console.log('key nonce', privacyKey.nonce)
+    console.log('void hash', voidCommitment.hash().toString(16))
+    console.log('existing commits', commits.map(c => c.hash().toString(16)))
 
     // we will then use one of the recovered commitments for a commit transaction
     await privacyPool
@@ -197,26 +206,31 @@ describe("Testing Contract Bindings", () => {
             _scope: scopeVal,
             _value: 0n
           }),
-          commits[0]
+          createNewCommitment({
+            _pK: privateKey,
+            _nonce: 0n,
+            _scope: scopeVal,
+            _value: 0n
+          }),
         ],
         [
           createNewCommitment({
             _pK: privateKey,
             _nonce: 0n,
             _scope: scopeVal,
-            _value: parseEther("0.00005")
+            _value: parseEther("0.0005")
           }),
           createNewCommitment({
             _pK: privateKey,
-            _nonce: 1n,
+            _nonce: 0n,
             _scope: scopeVal,
-            _value: parseEther("0.00005")
+            _value: parseEther("0.0005")
           })
         ],
         {
-          vKey: fs.readFileSync(paths.VKEY_PATH, "utf-8"),
-          wasm: wasmContent,
-          zKey: zKeyContent
+          vKey: paths.VKEY_PATH,
+          wasm: paths.WASM_PATH,
+          zKey: paths.ZKEY_PATH
         },
         false
       )

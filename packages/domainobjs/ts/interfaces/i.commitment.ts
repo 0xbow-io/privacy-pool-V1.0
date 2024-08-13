@@ -4,6 +4,8 @@ import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 
 export namespace ICommitment {
+
+
   export interface CommitmentI<
     PubT = {
       scope: bigint | string

@@ -14,13 +14,6 @@ import {
 } from "@/components/ui/select.tsx"
 import React, { useEffect, useState } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
-import {
-  ExistingPrivacyPools,
-  getOnChainPrivacyPool
-} from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { createPublicClient, http } from "viem"
-import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
-import { sepolia } from "viem/chains"
 
 type InputsDialogProps = {
   className: string
@@ -37,55 +30,20 @@ export const InputsDialog = ({
 }: InputsDialogProps) => {
   const {
     inCommits,
+    keys,
     avilCommits,
     selectedKey,
     updateInCommit,
+    updateSelectedKey,
+    keyCommitHashes,
     selectedCommitmentIndexes
   } = useKeyStore((state) => state)
 
-  const [keyCommitHashes, setKeyCommitHashes] = useState<string[]>([])
+  const walletSelectOptions = keys.map((key) => key.publicAddr)
 
-  useEffect(() => {
-    const getCommitHashes = async () => {
-      const poolInstance = ExistingPrivacyPools.get(sepolia) //TODO: dynamic pool selection
-      console.log("filter", selectedKey, selectedKey?.asJSON)
-      if (!poolInstance || !selectedKey) {
-        return
-      }
-
-      const privacyPool = getOnChainPrivacyPool(
-        poolInstance[0],
-        createPublicClient({
-          chain: DEFAULT_TARGET_CHAIN,
-          transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
-        })
-      )
-      const synced = await privacyPool.sync()
-
-      if (!synced) {
-        return
-      }
-      await privacyPool.decryptCiphers([selectedKey])
-      const keyCommits = await selectedKey?.recoverCommitments(privacyPool)
-      if (!keyCommits) {
-        return
-      }
-      const commitHashes = keyCommits.map((commit) =>
-        commit.hash().toString(16)
-      )
-
-      setKeyCommitHashes(commitHashes)
-    }
-    getCommitHashes()
-  }, [])
-
-  const selectOptions = avilCommits
-    .map((c, index) => ({ hash: c.hash().toString(16), index }))
-    .filter(
-      ({ hash }, index) =>
-        !selectedCommitmentIndexes.includes(index) &&
-        keyCommitHashes.includes(hash)
-    )
+  const commitsSelectOptions = keyCommitHashes[selectedKey?.pKey || "0x"]
+    .map((hash, index) => ({ hash, index }))
+    .filter((_, index) => index !== selectedCommitmentIndexes[targetInputIndex])
 
   const currInCommit: string =
     inCommits[targetInputIndex] === ""
@@ -100,10 +58,40 @@ export const InputsDialog = ({
         <DialogHeader>
           <DialogTitle>Choose an Input Commitment</DialogTitle>
           <DialogDescription>
-            Select an existing unused commitment.
+            Select any available wallet and an existing unused commitment from
+            that wallet.
           </DialogDescription>
         </DialogHeader>
 
+        <div>Wallet:</div>
+        <div className="flex-auto">
+          <Select
+            value={selectedKey?.publicAddr}
+            onValueChange={(value) => {
+              updateSelectedKey(
+                keys.find((key) => key.publicAddr === value)!.pKey
+              )
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select">
+                {selectedKey?.publicAddr}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {walletSelectOptions.map((publicAddr, index) => {
+                const shortenedHash = `0x${publicAddr.substring(0, 14)}....${publicAddr.substring(54)}`
+                return (
+                  <SelectItem key={index} value={publicAddr}>
+                    {shortenedHash}
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>Commitment</div>
         <div className="flex-auto">
           <Select
             value={currInCommit}
@@ -116,7 +104,7 @@ export const InputsDialog = ({
               <SelectValue placeholder="Select">{currInCommit}</SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
-              {selectOptions.map((commit, index) => {
+              {commitsSelectOptions.map((commit, index) => {
                 const { hash, index: commitIndex } = commit
                 const shortenedHash = `0x${hash.substring(0, 14)}....${hash.substring(54)}`
                 return (
