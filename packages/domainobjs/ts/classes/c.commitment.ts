@@ -1,13 +1,12 @@
 import type { ICommitment, TCommitment } from "@privacy-pool-v1/domainobjs"
-import { FnCommitment } from "@privacy-pool-v1/domainobjs"
-import type { CipherText } from "@zk-kit/poseidon-cipher"
-import type { Hex } from "viem"
+import { ConstCommitment, FnCommitment } from "@privacy-pool-v1/domainobjs"
 import type { Point } from "@zk-kit/baby-jubjub"
-import { poseidonDecrypt } from "@zk-kit/poseidon-cipher"
-import { ConstCommitment } from "@privacy-pool-v1/domainobjs"
-import { LeanIMT } from "@zk-kit/lean-imt"
-import { hashLeftRight } from "maci-crypto"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
+import { LeanIMT } from "@zk-kit/lean-imt"
+import type { CipherText } from "@zk-kit/poseidon-cipher"
+import { poseidonDecrypt } from "@zk-kit/poseidon-cipher"
+import { hashLeftRight } from "maci-crypto"
+import type { Hex } from "viem"
 
 export const createNewCommitment = (args: {
   _pK: Hex
@@ -32,6 +31,22 @@ export const RecoverCommitment = (
   }
 ): Commitment => CCommitment.CommitmentC.recover(args, challenge)()
 
+export const RecoverFromJSON = (
+  json: {
+    public: {
+      scope: string
+      cipher: string[]
+      saltPk: string[]
+    }
+    hash: string
+    cRoot: string
+  },
+  pkScalar: bigint,
+  nonce: bigint,
+  len = 4
+): Commitment =>
+  CCommitment.CommitmentC.recoverFromJSON(json, pkScalar, nonce, len)
+
 export type Commitment = ICommitment.CommitmentI
 export namespace CCommitment {
   // Represent a commitment as a class type
@@ -39,9 +54,9 @@ export namespace CCommitment {
   // asTuple: represent the internals of a commitment as a an array
   // hash: computes the poseidon hash of the commitment tuple
   export class CommitmentC implements Commitment {
-    _index = 0n
-    _commitmentRoot = 0n
-    _nullRoot = 0n
+    _index = BigInt(0)
+    _commitmentRoot = BigInt(0)
+    _nullRoot = BigInt(0)
     constructor(
       private _private: {
         pkScalar: bigint
@@ -49,10 +64,10 @@ export namespace CCommitment {
         value: bigint
         secret: Point<bigint>
       } = {
-        pkScalar: 0n,
-        nonce: 0n,
-        value: 0n,
-        secret: [0n, 0n]
+        pkScalar: BigInt(0),
+        nonce: BigInt(0),
+        value: BigInt(0),
+        secret: [BigInt(0), BigInt(0)]
       },
       public _public: {
         scope: bigint
@@ -60,11 +75,11 @@ export namespace CCommitment {
         saltPk: Point<bigint>
       } = {
         // Domain reference
-        scope: 0n,
+        scope: BigInt(0),
         // encrypted private
-        cipher: [0n, 0n],
+        cipher: [BigInt(0), BigInt(0)],
         // used to recover encryption key to decrypt _cipher
-        saltPk: [0n, 0n]
+        saltPk: [BigInt(0), BigInt(0)]
       }
     ) {
       this.computeCRoot()
@@ -136,7 +151,15 @@ export namespace CCommitment {
       return this._index
     }
 
-    isVoid = () => this._private.value === 0n
+    isVoid = () => this._private.value === BigInt(0)
+
+    root = () => {
+      return {
+        hash: this.hash(),
+        nullRoot: this.nullRoot,
+        commitmentRoot: this.commitmentRoot
+      }
+    }
 
     toJSON = () => {
       return {
@@ -145,15 +168,8 @@ export namespace CCommitment {
           cipher: this._public.cipher.map((v) => v.toString()),
           saltPk: this._public.saltPk.map((v) => v.toString())
         },
-        private: {
-          nonce: this._private.nonce.toString(),
-          value: this._private.value.toString(),
-          secret: this._private.secret.map((v) => v.toString()),
-          pkScalar: this._private.pkScalar.toString()
-        },
         hash: this.hash().toString(),
-        cRoot: this.commitmentRoot.toString(),
-        nullRoot: this.nullRoot.toString()
+        cRoot: this.commitmentRoot.toString()
       }
     }
 
@@ -243,15 +259,35 @@ export namespace CCommitment {
           }
         ) // wrap binding with commitment class
 
-    static recoverFromJSON = (json: any, challenge: any) => {
-      const args = {
-        _pKScalar: BigInt(json.private.pkScalar),
-        _cipher: json.public.cipher.map(BigInt),
-        _saltPk: json.public.saltPk.map(BigInt),
-        _nonce: BigInt(json.private.nonce),
-        _len: json.private.secret.length // todo: write this as a const
-      }
-      return CCommitment.CommitmentC.recover(args, challenge)()
+    static recoverFromJSON = (
+      json: {
+        public: {
+          scope: string
+          cipher: string[]
+          saltPk: string[]
+        }
+        hash: string
+        cRoot: string
+      },
+      pkScalar: bigint,
+      nonce: bigint,
+      len = 4
+    ) => {
+      return CCommitment.CommitmentC.recover(
+        {
+          _pKScalar: pkScalar,
+          _cipher: json.public.cipher.map((e) => BigInt(e)),
+          _saltPk: [
+            BigInt(json.public.saltPk[0]),
+            BigInt(json.public.saltPk[1])
+          ] as Point<bigint>,
+          _nonce: nonce,
+          _len: len
+        },
+        {
+          _hash: BigInt(json.hash)
+        }
+      )()
     }
   }
 }

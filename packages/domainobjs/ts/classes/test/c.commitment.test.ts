@@ -3,7 +3,7 @@ import type { Hex } from "viem"
 import { generatePrivateKey } from "viem/accounts"
 import {
   ConstCommitment,
-  NewCommitment,
+  createNewCommitment,
   RecoverCommitment,
   DerivePrivacyKeys
 } from "@privacy-pool-v1/domainobjs"
@@ -28,7 +28,7 @@ describe("Verifying Commitment Class", () => {
     for (let i = 0; i < _testSize; i++) {
       const _pK = generatePrivateKey()
       const nonce: bigint = randomBigint(0n, 1000n)
-      const c = NewCommitment({
+      const c = createNewCommitment({
         _pK: _pK,
         _nonce: nonce,
         _scope: randomBigint(0n, 1000n),

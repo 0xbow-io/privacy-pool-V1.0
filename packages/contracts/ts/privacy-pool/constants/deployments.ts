@@ -27,6 +27,18 @@ export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
         fieldElement: "ETH",
         precision: 18,
         minmaxCommit: [0n, 1000000000000000000n]
+      },
+      {
+        chain: sepolia,
+        id: "Sepolia Eth Pool 2",
+        address: "0x0C606138Aa02600c55e0d427cf4B2a7319a808fe" as Address,
+        verifier: "0xD925FC406cAaD1186f0Fc91C0c04bf65878EF68a" as Address,
+        scope:
+          11049869816642268564454296009173568684966369147224378104485796423384633924130n,
+        genesis: 6311941n,
+        fieldElement: "ETH",
+        precision: 18,
+        minmaxCommit: [0n, 1000000000000000000n]
       }
     ]
   ],
