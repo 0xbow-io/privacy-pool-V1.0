@@ -23,7 +23,7 @@ import { privateKeyToAccount } from "viem/accounts"
 import { sepolia, gnosis } from "viem/chains"
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs"
 const rpc: string =
-  "https://patient-red-daylight.ethereum-sepolia.quiknode.pro/1dd49d866f8b378e878895b5735b243466a54f78/"
+  ""
 const TARGET_CHAIN = sepolia
 
 const paths = {
@@ -36,7 +36,7 @@ const paths = {
 }
 
 const privateKey: Hex =
-  "0xda6d2b432c028c7a03b028b562ea710e393d7e1a2e5fa91a550a807c4e84600d"
+  ""
 const account = privateKeyToAccount(privateKey)
 const privacyKey = PrivacyKey.from(privateKey, 0n)
 
