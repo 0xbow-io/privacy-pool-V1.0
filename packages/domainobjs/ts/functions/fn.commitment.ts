@@ -6,7 +6,7 @@ import type { Point } from "@zk-kit/baby-jubjub"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { generatePrivateKey } from "viem/accounts"
 
-import { poseidonDecrypt, poseidonEncrypt, poseidonDecryptWithoutCheck } from "@zk-kit/poseidon-cipher"
+import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 
@@ -128,7 +128,7 @@ export namespace FnCommitment {
     ) =>
     (
       Ek = mulPointEscalar(args._saltPk, args._pKScalar), // Derive encryption key from salt pubkey & private key (as scalar point)
-      Tuple = poseidonDecryptWithoutCheck(args._cipher, Ek, args._nonce, args._len), // ECDH secret from pK & Public Key
+      Tuple = poseidonDecrypt(args._cipher, Ek, args._nonce, args._len), // ECDH secret from pK & Public Key
       Hash = poseidon4(Tuple)
     ): {
       Hash: bigint

@@ -249,7 +249,7 @@ export namespace CCommitment {
         _cipher: json.public.cipher.map(BigInt),
         _saltPk: json.public.saltPk.map(BigInt),
         _nonce: BigInt(json.private.nonce),
-        _len: json.private.secret.length + 3 // todo: write this as a const
+        _len: json.private.secret.length // todo: write this as a const
       }
       return CCommitment.CommitmentC.recover(args, challenge)()
     }

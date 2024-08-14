@@ -2,10 +2,10 @@ import { MouseEventHandler, ReactNode } from "react"
 import clsx from "clsx"
 
 type ButtonProps = {
-  buttonContent: ReactNode | string
   type?: HTMLButtonElement["type"]
   className?: string
   onClick?: MouseEventHandler<HTMLButtonElement> | undefined
+  children?: ReactNode
   variant?: "primary" | "secondary"
   disabled?: boolean
   icon?: ReactNode
@@ -13,8 +13,8 @@ type ButtonProps = {
 }
 
 export default function Button({
-  buttonContent,
   type = "button",
+  children,
   className,
   onClick,
   variant = "primary",
@@ -28,9 +28,9 @@ export default function Button({
       type={type}
       onClick={onClick}
       className={clsx(
-        "flex w-full items-center justify-center",
-        "py-4 text-sm",
-        variant === "primary" ? "bg-white" : "bg-black",
+        "flex items-center justify-center",
+        "p-4 text-sm",
+        variant === "primary" ? "bg-toxic-orange" : "bg-orange-50",
         variant === "primary" ? "text-black" : "text-white",
         disabled && variant === "primary" ? "bg-gray-400" : null,
         disabled && variant === "secondary" ? "bg-boat-color-gray-900" : null,
@@ -40,7 +40,7 @@ export default function Button({
       disabled={disabled}
     >
       {icon ? <span className="mr-2">{icon}</span> : null}
-      {buttonContent}
+      {children}
     </button>
   )
 }

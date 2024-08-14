@@ -1,9 +1,14 @@
 import { cn } from "@/lib/utils.ts"
+import Button from "@/components/Button/Button.tsx"
 
 type WelcomeSectionProps = {
   className: string
+  onProceedClick: () => void
 }
-export const WelcomeSection =({ className }: WelcomeSectionProps) =>  {
+export const WelcomeSection = ({
+  className,
+  onProceedClick
+}: WelcomeSectionProps) => {
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="z-20 relative grid  grid-cols-2 items-center justify-center bg-blackmail px-8 py-8 shadow-md shadow-blackmail">
@@ -22,10 +27,18 @@ export const WelcomeSection =({ className }: WelcomeSectionProps) =>  {
               illicit funds.
               <br />
               <br />
-              Access the settings tab & click{" "}
-              <span className="text-toxic-orange"> Load Account </span> button
-              to load an existing account or create a new one via{" "}
-              <span className="text-toxic-orange"> New Account </span>
+              You can start on Accounts tab where you can{" "}
+              <span className="text-toxic-orange">
+                {" "}
+                Create a new account
+              </span>,{" "}
+              <span className="text-toxic-orange"> Import from JSON </span> or
+              <span className="text-toxic-orange"> Connect Metamask </span>
+              <div className="flex justify-center mt-6">
+                <Button variant="primary" onClick={() => onProceedClick()}>
+                  Go to accounts
+                </Button>
+              </div>
             </p>
           </div>
         </div>

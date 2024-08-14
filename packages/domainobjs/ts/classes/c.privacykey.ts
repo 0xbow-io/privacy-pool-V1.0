@@ -225,7 +225,7 @@ export class PrivacyKey {
         })
       console.log("void commitments insert")
       commitments.push(firstCommitment)
-      commitments.push(secondCommitment)
+      //commitments.push(secondCommitment)
     }
     console.log('returned commitments', commitments)
     return commitments

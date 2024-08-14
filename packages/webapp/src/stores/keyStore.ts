@@ -250,7 +250,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         .map((commit) => {
           console.log("commit:", commit)
           return CCommitment.CommitmentC.recoverFromJSON(commit, {
-            _hash: BigInt(commit.hash)
+            // _hash: BigInt(commit.hash)
           })
         })
 

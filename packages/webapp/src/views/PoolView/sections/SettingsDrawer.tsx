@@ -181,7 +181,7 @@ const SettingsDrawerContent = ({
             }}
             className=" text-blackmail bg-ghost-white hover:text-ghost-white hover:bg-blackmail"
           >
-            <Upload className="mx-4 size-6" /> Load Account
+            <Upload className="mx-4 size-6" />Load Account
           </Button>
         </div>
         <div className="flex-auto flex flex-row">

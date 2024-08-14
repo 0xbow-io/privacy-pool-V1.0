@@ -30,6 +30,8 @@ const poolInstance = ExistingPrivacyPools.get(sepolia)
 if (poolInstance === undefined) {
   throw new Error("Pool Instance is undefined")
 }
+
+console.log('pool instance', poolInstance[0])
 privacyPool = getOnChainPrivacyPool(
   poolInstance[0],
   createPublicClient({
@@ -51,6 +53,8 @@ const decryptAllKeys = async (privateKeys: Hex[]) => {
   const privacyKeys = privateKeys.map((privateKey) =>
     PrivacyKey.from(privateKey, 0n)
   )
+
+  console.log('pks', privateKeys, privacyKeys)
   const synced = await privacyPool.sync()
 
   if (!synced) {
