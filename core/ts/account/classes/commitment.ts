@@ -8,7 +8,7 @@ import type { PubKey } from "maci-domainobjs"
 import { FnCommitment } from "@privacy-pool-v1/core-ts/account/functions"
 
 import { hash4 } from "maci-crypto"
-import assert from "node:assert"
+import assert from "assert"
 
 // Useful aliases
 export type Commitment = ICommitment.CommitmentI

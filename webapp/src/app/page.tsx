@@ -155,7 +155,7 @@ export default function Home() {
 
   // on file drop to load local account
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-
+    setOpen(false); // close the modal before any other validation
     const fileReader = new FileReader();
 
     if (acceptedFiles[0]) {
@@ -174,7 +174,7 @@ export default function Home() {
     }
   }, [importFromJSON]);
 
-  const { getRootProps } = useDropzone({ onDrop });
+  const { getInputProps, getRootProps } = useDropzone({ onDrop });
 
 
   const SettingsSection = (className: string) => {
@@ -215,11 +215,9 @@ export default function Home() {
         </div>
       
         <div className="flex-auto flex flex-row ">
-          <div
-            {...getRootProps()}
-            className="flex-auto flex flex-row "
-          >
-            <Button onClick={() => {setOpen(false)}} className=" text-blackmail bg-ghost-white hover:text-ghost-white hover:bg-blackmail">
+          <div {...getRootProps({ className: "flex-auto flex flex-row " })} >
+            <input type="file" {...getInputProps()} />
+            <Button className=" text-blackmail bg-ghost-white hover:text-ghost-white hover:bg-blackmail">
               <Upload className="mx-4 size-6" /> Load Account 
             </Button>
           </div>
