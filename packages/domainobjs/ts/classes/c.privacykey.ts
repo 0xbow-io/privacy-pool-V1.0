@@ -1,19 +1,19 @@
-import type { Hex } from "viem"
-import type { PubKey } from "maci-domainobjs"
-import { generatePrivateKey } from "viem/accounts"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Point } from "@zk-kit/baby-jubjub"
-import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
-import { Commitment, createNewCommitment } from "@privacy-pool-v1/domainobjs"
-import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
-import { RecoverCommitment, ConstCommitment } from "@privacy-pool-v1/domainobjs"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
-import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
-import { Keypair, PrivKey } from "maci-domainobjs"
-import { createHash } from "crypto"
-import { hexToBigInt } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
-import { hashLeftRight } from "maci-crypto"
+import type { Hex } from "viem"
+
+import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
+import type { Commitment } from "@privacy-pool-v1/domainobjs"
+
+import {
+  ConstCommitment,
+  createNewCommitment,
+  RecoverCommitment
+} from "@privacy-pool-v1/domainobjs"
+import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
+import { poseidonEncrypt } from "@zk-kit/poseidon-cipher"
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 export type PrivacyKeys = PrivacyKey[]
 
@@ -40,7 +40,7 @@ export class PrivacyKey {
   // note: we do not care about void commitments
   _knownSecrets: Map<bigint, [bigint, bigint, bigint, bigint][]> = new Map()
 
-  constructor(privateKey: Hex, nonce = 0n) {
+  constructor(privateKey: Hex, nonce = BigInt(0)) {
     this._nonce = nonce
     this._pkScalar = deriveSecretScalar(privateKey)
     this._secret = mulPointEscalar(this.Pk, this.pKScalar)
@@ -136,9 +136,6 @@ export class PrivacyKey {
       return
     }
 
-    if (_commitment.isVoid()) {
-      return
-    }
     const _tuple = _commitment.asTuple()
     const _secrets = this._knownSecrets.get(_tuple[1]) ?? []
     _secrets.push([_tuple[0], rawSaltPk[0], rawSaltPk[1], cipherStoreIndex])
@@ -209,25 +206,19 @@ export class PrivacyKey {
         }
       }
     } else {
-      // if no commitments were recovered from existing secrets
-      // we'll push the dummy root commitment
-      const firstCommitment =  createNewCommitment({
-          _pK: this.pKey,
-          _nonce: this.nonce,
-          _scope: _scope,
-          _value: 0n
-        })
-        const secondCommitment =   createNewCommitment({
-          _pK: this.pKey,
-          _nonce: this.nonce,
-          _scope: _scope,
-          _value: 0n
-        })
-      console.log("void commitments insert")
-      commitments.push(firstCommitment)
-      //commitments.push(secondCommitment)
+      // if no commitments were recovered
+      // we'll create 2 void commitments
+      for (let i = 0; i < 2; i++) {
+        commitments.push(
+          createNewCommitment({
+            _pK: this.pKey,
+            _nonce: this.nonce,
+            _scope: _scope,
+            _value: BigInt(0)
+          })
+        )
+      }
     }
-    console.log('returned commitments', commitments)
     return commitments
   }
 }

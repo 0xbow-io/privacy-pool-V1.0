@@ -4,8 +4,6 @@ import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 
 export namespace ICommitment {
-
-
   export interface CommitmentI<
     PubT = {
       scope: bigint | string
@@ -16,6 +14,11 @@ export namespace ICommitment {
       nonce: bigint | string
       value: bigint | string
       secret: Point<bigint> | string[]
+    },
+    RooT = {
+      hash: bigint | string
+      commitmentRoot: bigint | string
+      nullRoot: bigint | string
     },
     JSONT = {
       public: PubT
@@ -28,6 +31,7 @@ export namespace ICommitment {
     setIndex: (mt: LeanIMT) => void
     index: bigint
     isVoid: () => boolean
+    root: () => RooT
     commitmentRoot: bigint
     nullRoot: bigint
     public: () => PubT

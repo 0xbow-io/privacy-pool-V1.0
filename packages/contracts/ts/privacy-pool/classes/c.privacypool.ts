@@ -53,6 +53,7 @@ export namespace CPool {
     static newState = (): IState.StateI => new stateC()
 
     StateSize = (): bigint => BigInt(this.merkleTree.size)
+    StateRoot = (): bigint => this.merkleTree.root
 
     /**
      * @dev UpdateRootSet: insert a set of roots into the rootSet
@@ -213,27 +214,26 @@ export namespace CPool {
             this.meta.address,
             [from, to]
           )
+      // Note:
+      // ciphers[0] => actual ciphertexts
+      // ciphers[1] => salt public keys
+      // ciphers[2] => commitment hashes
+      console.log(`there are ${ciphers[0].length} ciphers to decrypt`)
       for (let i = 0; i < ciphers[0].length; i++) {
-        const rawCipherText = [
-          ciphers[0][i][0],
-          ciphers[0][i][1],
-          ciphers[0][i][2],
-          ciphers[0][i][3],
-          ciphers[0][i][4],
-          ciphers[0][i][5],
-          ciphers[0][i][6]
-        ] as [bigint, bigint, bigint, bigint, bigint, bigint, bigint]
-        const rawSaltPk = [ciphers[1][i][0], ciphers[1][i][1]] as [
-          bigint,
-          bigint
-        ]
-        const commitmentHash = ciphers[2][i]
         for (let j = 0; j < keys.length; j++) {
           decryptionPromises.push(
             keys[j].decryptCipher(
-              rawSaltPk,
-              rawCipherText,
-              commitmentHash,
+              [ciphers[1][i][0], ciphers[1][i][1]],
+              [
+                ciphers[0][i][0],
+                ciphers[0][i][1],
+                ciphers[0][i][2],
+                ciphers[0][i][3],
+                ciphers[0][i][4],
+                ciphers[0][i][5],
+                ciphers[0][i][6]
+              ],
+              ciphers[2][i],
               BigInt(i) + from
             )
           )
