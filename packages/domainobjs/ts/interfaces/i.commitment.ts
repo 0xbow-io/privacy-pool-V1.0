@@ -21,11 +21,13 @@ export namespace ICommitment {
       nullRoot: bigint | string
     },
     JSONT = {
-      public: PubT
-      private: PrivT
+      public: {
+        scope: string
+        cipher: string[]
+        saltPk: string[]
+      }
       hash: string
       cRoot: string
-      nullRoot: string
     }
   > {
     setIndex: (mt: LeanIMT) => void

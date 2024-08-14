@@ -114,7 +114,7 @@ export namespace CPool {
 
     _ciphers?: (
       contract: Address,
-      range: [bigint, bigint] //[from, to]
+      range: [bigint, bigint]
     ) => Promise<
       readonly [
         TPrivacyPool.CipherTexts_T,

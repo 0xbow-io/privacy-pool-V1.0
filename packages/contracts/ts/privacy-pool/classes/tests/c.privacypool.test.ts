@@ -1,7 +1,10 @@
 // run test with:
 // bunx jest ./test/c.privacypool.test.ts
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
-import { createNewCommitment } from "@privacy-pool-v1/domainobjs"
+import {
+  createNewCommitment,
+  RecoverFromJSON
+} from "@privacy-pool-v1/domainobjs"
 import { beforeAll, describe, expect, test } from "@jest/globals"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import {
@@ -32,7 +35,8 @@ const paths = {
     "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
 }
 
-const privateKey: Hex = ""
+const privateKey: Hex =
+  "0xda6d2b432c028c7a03b028b562ea710e393d7e1a2e5fa91a550a807c4e84600d"
 const account = privateKeyToAccount(privateKey)
 const privacyKey = PrivacyKey.from(privateKey, 0n)
 
@@ -67,6 +71,45 @@ describe("Testing Contract Bindings", () => {
     expect(res).toBe(true)
   })
 
+  test("commitment recovery", async () => {
+    const publicAddress = account.address
+    console.log("public address", publicAddress)
+
+    const walletClient = createWalletClient({
+      account,
+      chain: TARGET_CHAIN,
+      transport: rpc !== "" ? http(rpc) : http()
+    }).extend(publicActions)
+
+    const balance = await walletClient.getBalance({ address: publicAddress })
+    const scopeVal = await privacyPool.scope()
+    const synced = await privacyPool.sync()
+    const stateSize = privacyPool.StateSize()
+
+    expect(synced).toBe(true)
+
+    await privacyPool.decryptCiphers([privacyKey])
+    const commits = await privacyKey.recoverCommitments(privacyPool, false)
+
+    console.log("stateSize", stateSize)
+    console.log("stateRoot", privacyPool.StateRoot())
+    console.log(
+      "existing commits",
+      commits.map((c) => c.root())
+    )
+
+    const commitJSONDocs = commits.map((c) => c.toJSON())
+    // attempt to recover commitments from JSON
+    const recoveredCommits = commitJSONDocs.map((c) =>
+      RecoverFromJSON(c, privacyKey.pKScalar, privacyKey.nonce)
+    )
+    console.log(
+      "recovered commits",
+      recoveredCommits.map((c) => c.root())
+    )
+  })
+
+  /*
   test("process() should work for making a new commit ", async () => {
     const publicAddress = account.address
     console.log("public address", publicAddress)
@@ -156,4 +199,5 @@ describe("Testing Contract Bindings", () => {
       })
       .catch((err) => console.log(err))
   })
+   */
 })
