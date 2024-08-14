@@ -142,13 +142,13 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         set((state) => ({
           avilCommits: [
             createNewCommitment({
-              _pK: key.asJSON.privateKey,
+              _pK: key.pKey,
               _value: 0n,
               _scope: poolScope,
               _nonce: 0n
             }),
             createNewCommitment({
-              _pK: key.asJSON.privateKey,
+              _pK: key.pKey,
               _value: 0n,
               _scope: poolScope,
               _nonce: 0n
@@ -231,7 +231,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       }))
     },
     updateSelectedKey: (pK) => {
-      const key = get().keys.find((k) => k.asJSON.privateKey === pK)
+      const key = get().keys.find((k) => k.pKey === pK)
       set((state) => ({
         selectedKey: key
       }))

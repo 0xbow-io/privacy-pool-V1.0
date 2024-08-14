@@ -189,7 +189,7 @@ export const TransactionCard = ({ className }: { className: string }) => {
             <Button
               className="w-full rounded-none border-2 border-blackmail bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
               onClick={() => {
-                const key = keys[0].asJSON.privateKey as Hex
+                const key = keys[0].pKey as Hex
                 console.log("mykey", keys[0].asJSON, key)
 
                 testWorker(key)

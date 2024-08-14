@@ -83,7 +83,7 @@ const makeNewCommit = async (
   outputValues: number[]
 ) => {
   const privacyKey = PrivacyKey.from(privateKey, 0n)
-  const account = privateKeyToAccount(privacyKey.asJSON.privateKey)
+  const account = privateKeyToAccount(privacyKey.pKey)
   const publicAddr = privacyKey.publicAddr
   const { fee, feeCollector } = selectedAsp
 
@@ -187,7 +187,7 @@ const makeNewCommit = async (
 
 const release = async (privacyKey: PrivacyKey, outputValues: bigint[]) => {
   const pkScalar = privacyKey.pKScalar
-  const privateKey = privacyKey.asJSON.privateKey
+  const privateKey = privacyKey.pKey
   const account = privateKeyToAccount(privateKey)
 
   const publicAddress = account.address

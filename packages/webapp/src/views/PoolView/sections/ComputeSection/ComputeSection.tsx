@@ -103,11 +103,11 @@ const ComputeSection = () => {
         console.log("worker is not initialized")
         return
       }
-      console.log("privateKey before", selectedKey?.asJSON.privateKey)
+      console.log("privateKey before", selectedKey?.pKey)
       setTransactionStatus(TransactionStatus.pending)
       worker?.postMessage({
         action: "makeCommit",
-        privateKey: selectedKey?.asJSON.privateKey,
+        privateKey: selectedKey?.pKey,
         selectedASP,
         inCommits,
         outValues: outValues.map((v) => v.toNumber())
@@ -117,7 +117,7 @@ const ComputeSection = () => {
 
   useEffect(() => {
     if (selectedKey) {
-      updateSelectedKey(selectedKey.asJSON.privateKey)
+      updateSelectedKey(selectedKey.pKey)
     }
   }, [selectedKey])
 
