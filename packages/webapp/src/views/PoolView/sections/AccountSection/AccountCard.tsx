@@ -143,6 +143,7 @@ export const AccountCard = ({ className }: { className: string }) => {
           </Button>
           <Button
             onClick={() => connect()}
+            disabled
             className="w-full rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
           >
             <Wallet className="mx-4 size-6" /> Connect Metamask

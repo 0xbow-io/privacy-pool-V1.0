@@ -35,7 +35,7 @@ export const ConfirmationStep = ({
     { header: "Input Wallet", value: inputWallet },
     { header: "Estimated Fee", value: formatEther(fee) },
     { header: "Fee Collector Address", value: feeCollector },
-    { header: "Extra amount", value: publicValue }
+    { header: "Extra amount", value: publicValue.toNumber() }
   ]
 
   const { reason } = isInputValid()
@@ -60,10 +60,10 @@ export const ConfirmationStep = ({
         />
         <CommitmentsInfo
           isInput={false}
-          total={outTotalValue}
+          total={outTotalValue.toNumber()}
           ticker={currUnitRepresentative.ticker}
           reason={outputAmountReasons}
-          outValues={outValues}
+          outValues={outValues.map((v) => v.toNumber())}
         />
       </div>
     </div>

@@ -110,7 +110,7 @@ const ComputeSection = () => {
         privateKey: selectedKey?.asJSON.privateKey,
         selectedASP,
         inCommits,
-        outValues
+        outValues: outValues.map((v) => v.toNumber())
       })
     }
   }, [currentStep])

@@ -5,7 +5,8 @@ import { formatUnits, type Hex } from "viem"
 import {
   CCommitment,
   type Commitment,
-  type ICommitment
+  type ICommitment,
+  RecoverFromJSON
 } from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyKey, createNewCommitment } from "@privacy-pool-v1/domainobjs/ts"
 
@@ -16,6 +17,7 @@ import {
   ChainNameToChain
 } from "@/network/pools"
 import BigNumber from "bignumber.js"
+import { run } from "node:test"
 
 export type AccountState = {
   keys: PrivacyKey[]
@@ -38,12 +40,12 @@ export type AccountState = {
   selectedCommitmentIndexes: [number | undefined, number | undefined]
   inTotalValue: number
 
-  outValues: number[]
+  outValues: BigNumber[]
   outSplits: number[]
-  outTotalValue: number
+  outTotalValue: BigNumber
 
   outPrivacyKeys: PrivacyKey[]
-  publicValue: number
+  publicValue: BigNumber
 
   extraAmountIsValid: boolean
   extraAmountReason: string
@@ -65,7 +67,7 @@ export interface AccountActions {
 
   updateInCommit: (index: number, value: string, commitIndex: number) => void
   refreshInTotalValue: () => void
-  getInTotalValueFormatted: () => number
+  getInTotalValueFormatted: () => BigNumber
   updatePublicValue: (value: number) => void
   updateSelectedKey: (pK: Hex) => void
   updateKeyCommitHashes: (keyToCommitJSONs: {
@@ -101,13 +103,13 @@ export const defaultInitState: AccountState = {
   inCommits: ["", ""],
   selectedCommitmentIndexes: [undefined, undefined],
 
-  publicValue: 0,
+  publicValue: new BigNumber(0),
   inTotalValue: 0,
 
-  outValues: [0.0, 0.0],
+  outValues: [new BigNumber(0), new BigNumber(0)],
   outSplits: [100, 0],
   outPrivacyKeys: [],
-  outTotalValue: 0,
+  outTotalValue: new BigNumber(0),
 
   extraAmountIsValid: true,
   extraAmountReason: "",
@@ -244,15 +246,21 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
           )
         }
       }
+      const keyToCommits: { [key: string]: Commitment[] } = {}
+      const allCommits: Commitment[] = []
 
-      const allCommits = Object.values(keyToCommitJSONs)
-        .flat()
-        .map((commit) => {
-          console.log("commit:", commit)
-          return CCommitment.CommitmentC.recoverFromJSON(commit, {
-            // _hash: BigInt(commit.hash)
-          })
-        })
+      for (const [key, commits] of Object.entries(keyToCommitJSONs)) {
+        const currentKey = get().keys.find((storeKey) => storeKey.pKey == key)
+        const commitments = commits.map((commit) =>
+          RecoverFromJSON(
+            commit,
+            currentKey?.pKScalar || 0n,
+            currentKey?._nonce || 0n
+          )
+        )
+        keyToCommits[key] = commitments
+        allCommits.push(...commitments)
+      }
 
       set((state) => ({
         keyCommitHashes: keyToHashMap,
@@ -308,10 +316,10 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       }))
     },
 
-    getInTotalValueFormatted: (): number => {
+    getInTotalValueFormatted: () => {
       const unitRep = get().currUnitRepresentative
-      return Number(
-        formatUnits(BigInt(get().inTotalValue), Number(unitRep.decimals))
+      return BigNumber(get().inTotalValue).decimalPlaces(
+        Number(unitRep.decimals)
       )
     },
 
@@ -319,17 +327,17 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       // calculate the total output value based on the public value
       // & input value
       const _expected_output = new BigNumber(
-        get().getInTotalValueFormatted() + value
+        get().getInTotalValueFormatted().plus(BigNumber(value))
       )
 
       const firstOutputVal = new BigNumber(
-        (get().outSplits[0] / 100) * _expected_output.toNumber()
-      )
+        get().outSplits[0] / 100
+      ).multipliedBy(_expected_output)
 
       // rebalance the outValues based on the _total_output value & the split values
       const new_outValues = [
-        firstOutputVal.toNumber(),
-        _expected_output.minus(firstOutputVal).toNumber()
+        firstOutputVal,
+        _expected_output.minus(firstOutputVal)
       ]
 
       // reset prev validation messages for outputs
@@ -342,8 +350,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
           _expected_output.toNumber() < 0
             ? "total output value is negative"
             : "",
-        publicValue: value,
-        outTotalValue: _expected_output.toNumber(),
+        publicValue: new BigNumber(value),
+        outTotalValue: _expected_output,
         outValues: new_outValues,
         outputAmountIsValid: curr_outputAmountIsValid,
         outputAmountReasons: curr_outputAmountReasons
@@ -354,12 +362,13 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       // get current values
       const curr_outValues = get().outValues
       // update the value at the specified index
-      curr_outValues[index] = value
+      curr_outValues[index] = new BigNumber(value)
 
       const curr_outSplits = get().outSplits
-      let _total_output = curr_outValues.reduce((acc, val) => acc + val, 0)
-      const _expected_output =
-        get().getInTotalValueFormatted() + get().publicValue
+      let _total_output = BigNumber.sum(...curr_outValues)
+      const _expected_output = get()
+        .getInTotalValueFormatted()
+        .plus(get().publicValue)
 
       // reset prev validation messages
       let curr_outputAmountReasons = ["", ""]
@@ -367,7 +376,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
 
       // total output is negative alert user
       // immediately
-      if (_total_output < 0) {
+      if (_total_output.lt(0)) {
         set((state) => ({
           outputAmountIsValid: [false, false],
           outputAmountReasons: [
@@ -380,16 +389,20 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         if (_total_output != _expected_output) {
           // if less
           // rebalance the output values so that the total output = expected_out
-          const z = _expected_output - value
-          curr_outValues[index == 0 ? 1 : 0] = Math.abs(z)
+          const z = _expected_output.minus(value)
+          curr_outValues[index == 0 ? 1 : 0] = z.abs()
         }
-        _total_output = curr_outValues.reduce((acc, val) => acc + val, 0)
+        _total_output = BigNumber.sum(...curr_outValues)
 
         // otherwise
         // calculate the new output splits
-        const new_outPutSplits = curr_outSplits.map((val, i) => {
-          return Math.round((curr_outValues[i] / _total_output) * 100)
-        })
+        const new_outPutSplits = curr_outSplits.map((val, i) =>
+          new BigNumber(curr_outValues[i])
+            .dividedBy(_total_output)
+            .multipliedBy(100)
+            .decimalPlaces(0)
+            .toNumber()
+        )
         if (new_outPutSplits[0] === 0 && new_outPutSplits[1] === 0) {
           new_outPutSplits[0] = 100
         }
@@ -468,16 +481,17 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         return { ok: false, reason: "All output keys must be set" }
       }
 
-      const _expected_output =
-        get().getInTotalValueFormatted() + get().publicValue
+      const _expected_output = get()
+        .getInTotalValueFormatted()
+        .plus(get().publicValue)
       const curr_outValues = get().outValues
-      const _total_output = curr_outValues.reduce((acc, val) => acc + val, 0)
+      const _total_output = BigNumber.sum(...curr_outValues)
 
-      if (_total_output == 0) {
+      if (_total_output.eq(0)) {
         return { ok: false, reason: "total output amount is 0" }
       }
 
-      if (_total_output != _expected_output) {
+      if (!_total_output.eq(_expected_output)) {
         return {
           ok: false,
           reason: "total output values does not match expected"
