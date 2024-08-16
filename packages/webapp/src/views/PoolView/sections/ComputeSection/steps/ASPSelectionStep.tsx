@@ -9,7 +9,7 @@ import { formatEther } from "viem"
 
 type ASPSelectionStepProps = {
   ASPOptions: ASP[]
-  selectedASP: ASP | null
+  selectedASP: ASP
   onASPSelect: (ASP: ASP) => void
 } & CommonProps
 
@@ -20,12 +20,16 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
   setPrimaryButtonProps
 }) => {
   useEffect(() => {
-    setPrimaryButtonProps &&
-      setPrimaryButtonProps({ disabled: !selectedASP, text: "next" })
-  }, [selectedASP])
+    if (setPrimaryButtonProps) {
+      setPrimaryButtonProps({ disabled: true, text: "next" })
+    }
+  }, [setPrimaryButtonProps])
 
   const handleSelectChange = (value: string) => {
-    onASPSelect(ASPOptions.find(({ id }) => id === value)!)
+    const selectedASP = ASPOptions.find(({ id }) => id === value)
+    if (selectedASP) {
+      onASPSelect(selectedASP)
+    }
   }
 
   return (
@@ -35,10 +39,7 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
         <p className="text-sm">This is a smaller description text.</p>
       </div>
       <div className="w-full flex justify-start mt-4">
-        <Select
-          value={selectedASP?.name || ''}
-          onChange={handleSelectChange}
-        >
+        <Select value={selectedASP?.name || ""} onChange={handleSelectChange}>
           <option value="">Select an ASP</option>
           {ASPOptions.map(({ id, name }, index) => (
             <option key={id} value={id}>
@@ -48,7 +49,7 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
         </Select>
       </div>
       <div
-        className={`flex flex-col justify-start w-full mt-4`}
+        className={"flex flex-col justify-start w-full mt-4"}
         style={{ visibility: selectedASP ? "visible" : "hidden" }}
       >
         <ASPStat header="Fee:" value={formatEther(selectedASP?.fee || 0n)} />

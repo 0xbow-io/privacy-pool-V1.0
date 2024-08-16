@@ -10,6 +10,15 @@ import type { Chain } from "viem/chains"
 export type providerT = PublicClient | TestClient | WalletClient
 export type providersT = providerT[]
 
+export type FEMeta = {
+  name: string
+  type: number // 0 for simple, 1 for complex
+  ticker: string
+  address: Address
+  precision: bigint
+  iconURI: string
+}
+
 export type PrivacyPoolMeta = {
   chain: Chain // network chain
   address: Address // contract address
@@ -17,8 +26,7 @@ export type PrivacyPoolMeta = {
   genesis: bigint // when pool was deployed
   id: string // reference id
   scope: bigint // scope value from the Scope() function
-  fieldElement: string
-  precision: number
+  fieldElement: FEMeta
   minmaxCommit: bigint[]
 }
 

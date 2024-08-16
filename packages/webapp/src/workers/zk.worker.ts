@@ -1,11 +1,12 @@
-import { type circomArtifactPaths } from "@privacy-pool-v1/global/configs/type"
+import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import {
   createPublicClient,
   createWalletClient,
   type Hex,
   http,
   parseEther,
-  publicActions
+  publicActions,
+  numberToHex
 } from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import {
@@ -14,252 +15,194 @@ import {
   createNewCommitment,
   PrivacyKey
 } from "@privacy-pool-v1/domainobjs/ts"
-import type {ICommitment} from "@privacy-pool-v1/domainobjs/ts"
+import type { ICommitment } from "@privacy-pool-v1/domainobjs/ts"
 import {
   ExistingPrivacyPools,
-  getOnChainPrivacyPool,
-  type OnChainPrivacyPool
+  getOnChainPrivacyPool
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { gnosis, sepolia } from "viem/chains"
-import { DEFAULT_RPC_URL, DEFAULT_TARGET_CHAIN } from "@/utils/consts.ts"
-import type { ASP } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
-import CommitmentC = CCommitment.CommitmentC
+import type {
+  OnChainPrivacyPool,
+  TPrivacyPool,
+  PrivacyPoolMeta
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
 
-let privacyPool: OnChainPrivacyPool
-const poolInstance = ExistingPrivacyPools.get(sepolia)
-if (poolInstance === undefined) {
-  throw new Error("Pool Instance is undefined")
-}
-
-console.log('pool instance', poolInstance[0])
-privacyPool = getOnChainPrivacyPool(
-  poolInstance[0],
-  createPublicClient({
-    chain: DEFAULT_TARGET_CHAIN,
-    transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
-  })
-)
-
-const basePath = "/artefacts"
-const paths: circomArtifactPaths = {
+const basePath = "/artifacts"
+const paths = {
   VKEY_PATH: `${basePath}/groth16_vkey.json`,
   WASM_PATH: `${basePath}/PrivacyPool_V1.wasm`,
   ZKEY_PATH: `${basePath}/groth16_pkey.zkey`
 }
 
-const decryptAllKeys = async (privateKeys: Hex[]) => {
-  const keyToCommitJSONs: { [privateKey: Hex]: ReturnType<ICommitment.CommitmentI["toJSON"]>[] } = {}
+const decryptCiphers = async (poolID: string, privateKeys: Hex[]) => {
+  const keyToCommitJSONs: {
+    [privateKey: string]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
+  } = {}
 
-  const privacyKeys = privateKeys.map((privateKey) =>
-    PrivacyKey.from(privateKey, 0n)
-  )
+  // get instance of pool
+  // TODO Optimise this with cache or a DB so that we don't
+  // need to always sync the entire state form scratchs=
+  // get meta from poolID
 
-  console.log('pks', privateKeys, privacyKeys)
-  const synced = await privacyPool.sync()
+  ExistingPrivacyPools.forEach((metas) => {
+    metas.forEach(async (p) => {
+      if (p.id === poolID) {
+        const instance = getOnChainPrivacyPool(
+          p,
+          createPublicClient({
+            chain: p.chain,
+            transport: http()
+          })
+        )
+        const synced = await instance.sync()
+        if (!synced) {
+          throw new Error("sync failed")
+        }
+        const privacyKeys = privateKeys.map((privateKey) =>
+          PrivacyKey.from(privateKey, 0n)
+        )
 
-  if (!synced) {
-    throw new Error("sync failed")
-  }
-
-  await privacyPool.decryptCiphers(privacyKeys)
-
-  for (const key of privacyKeys) {
-    const allKeyCommitments = await key.recoverCommitments(privacyPool)
-    keyToCommitJSONs[key.pKey] = allKeyCommitments.map(
-      (commit) => {
-        console.log('incoming commit', commit, commit.toJSON())
-        return commit.toJSON()
+        await instance.decryptCiphers(privacyKeys)
+        for (const key of privacyKeys) {
+          const allKeyCommitments = await key.recoverCommitments(instance)
+          keyToCommitJSONs[key.pKey] = allKeyCommitments.map((commit) => {
+            return commit.toJSON()
+          })
+        }
       }
-    )
-  }
+    })
+  })
 
   return keyToCommitJSONs
 }
 
-const makeNewCommit = async (
-  privateKey: Hex,
-  selectedAsp: ASP,
-  commitmentsHashes: Hex[],
-  outputValues: number[]
+// we only need 1 function to handle both comomit and releases
+// commit is when Sum Output = Sum Input + External Input
+// release is shen Sum Output = Sum Input - External Output
+const handleRequest = async (
+  poolID: string,
+  accountKey: Hex,
+  _r: TPrivacyPool.RequestT,
+  pKs: Hex[],
+  nonces: bigint[],
+  existingCommitmentJSONs: {
+    public: {
+      scope: string
+      cipher: string[]
+      saltPk: string[]
+    }
+    hash: string
+    cRoot: string
+    pkScalar: Hex
+    nonce: string
+  }[],
+  newCommitmentValues: bigint[]
 ) => {
-  const privacyKey = PrivacyKey.from(privateKey, 0n)
-  const account = privateKeyToAccount(privacyKey.asJSON.privateKey)
-  const publicAddr = privacyKey.publicAddr
-  const { fee, feeCollector } = selectedAsp
+  ExistingPrivacyPools.forEach((metas) => {
+    metas.forEach(async (p) => {
+      if (p.id === poolID) {
+        const instance = getOnChainPrivacyPool(
+          p,
+          createPublicClient({
+            chain: p.chain,
+            transport: http()
+          })
+        )
 
-  const walletClient = createWalletClient({
-    account,
-    chain: DEFAULT_TARGET_CHAIN,
-    transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
-  }).extend(publicActions)
+        const account = privateKeyToAccount(accountKey)
+        const publicAddr = account.address
+        const walletClient = createWalletClient({
+          account,
+          chain: p.chain,
+          transport: http()
+        }).extend(publicActions)
 
-  const balance = await walletClient.getBalance({ address: publicAddr })
-  const defaultCommitVal = parseEther("0.0001")
-  const scopeVal = await privacyPool.scope()
-  const synced = await privacyPool.sync()
+        const synced = await instance.sync()
+        if (!synced) {
+          throw new Error("sync failed")
+        }
 
-  if (!synced) {
-    throw new Error("sync failed")
-  }
+        const scopeVal = await instance.scope()
 
-  await privacyPool.decryptCiphers([privacyKey])
+        if (!synced) {
+          throw new Error("sync failed")
+        }
 
-  const allKeyCommitments = await privacyKey.recoverCommitments(privacyPool)
+        const vKey = await fetch(paths.VKEY_PATH).then((res) => res.text())
+        const wasm = await fetch(paths.WASM_PATH).then((res) =>
+          res.arrayBuffer()
+        )
+        const zKey = await fetch(paths.ZKEY_PATH).then((res) =>
+          res.arrayBuffer()
+        )
 
-  // User can pick 2 void commitments with the same hash, but the
-  // commitment root will be different for them. So we need to
-  // handle the case when the user picks 2 void commitments with the
-  // same hash
+        const pkScalars = [
+          deriveSecretScalar(pKs[1]),
+          deriveSecretScalar(pKs[2]),
+          deriveSecretScalar(pKs[3]),
+          deriveSecretScalar(pKs[3])
+        ]
 
-  let selectedCommitments: [Commitment | undefined, Commitment | undefined] = [
-    undefined,
-    undefined
-  ]
-  console.log(
-    "commits",
-    allKeyCommitments.map((commit) => ({
-      hash: commit.hash().toString(16),
-      root: commit.commitmentRoot.toString(16)
-    })),
-    commitmentsHashes
-  )
-
-  selectedCommitments[0] = allKeyCommitments.find(
-    (commit) => commit.hash().toString(16) === commitmentsHashes[0]
-  )
-  selectedCommitments[1] = allKeyCommitments.find(
-    (commit) =>
-      commit.hash().toString(16) === commitmentsHashes[1] &&
-      commit.commitmentRoot !== selectedCommitments[0]?.commitmentRoot
-  )
-
-  if (!selectedCommitments[0] || !selectedCommitments[1]) {
-    throw new Error("commitments not found")
-  }
-
-  const vKey = await fetch(paths.VKEY_PATH).then((res) => res.text())
-  const wasm = await fetch(paths.WASM_PATH).then((res) => res.arrayBuffer())
-  const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.arrayBuffer())
-
-  await privacyPool
-    .process(
-      walletClient,
-      {
-        src: publicAddr,
-        sink: publicAddr,
-        feeCollector,
-        fee: fee
-      },
-      [
-        privacyKey.pKScalar,
-        privacyKey.pKScalar,
-        privacyKey.pKScalar,
-        privacyKey.pKScalar
-      ],
-      [privacyKey.nonce, privacyKey.nonce, privacyKey.nonce, privacyKey.nonce],
-      selectedCommitments as [CommitmentC, CommitmentC],
-      [
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: parseEther(outputValues[0].toString())
-        }),
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: parseEther(outputValues[1].toString())
-        })
-      ],
-      {
-        vKey: vKey,
-        wasm: new Uint8Array(wasm),
-        zKey: new Uint8Array(zKey)
-      },
-      false
-    )
-    .then((res) => {
-      return res
+        await instance
+          .process(
+            walletClient,
+            {
+              src: publicAddr,
+              sink: _r.sink,
+              feeCollector: _r.feeCollector,
+              fee: _r.fee
+            },
+            pkScalars,
+            nonces,
+            [
+              CCommitment.CommitmentC.recoverFromJSON(
+                existingCommitmentJSONs[0]
+              ),
+              CCommitment.CommitmentC.recoverFromJSON(
+                existingCommitmentJSONs[1]
+              )
+            ],
+            [
+              createNewCommitment({
+                _pK: pKs[2],
+                _nonce: 0n,
+                _scope: scopeVal,
+                _value: parseEther(newCommitmentValues[0].toString())
+              }),
+              createNewCommitment({
+                _pK: pKs[3],
+                _nonce: 0n,
+                _scope: scopeVal,
+                _value: parseEther(newCommitmentValues[1].toString())
+              })
+            ],
+            {
+              vKey: vKey,
+              wasm: new Uint8Array(wasm),
+              zKey: new Uint8Array(zKey)
+            },
+            false
+          )
+          .then((res) => {
+            return res
+          })
+          .catch((err) => console.log(err))
+      }
     })
-    .catch((err) => console.log(err))
-}
-
-const release = async (privacyKey: PrivacyKey, outputValues: bigint[]) => {
-  const pkScalar = privacyKey.pKScalar
-  const privateKey = privacyKey.asJSON.privateKey
-  const account = privateKeyToAccount(privateKey)
-
-  const publicAddress = account.address
-  const walletClient = createWalletClient({
-    account,
-    chain: DEFAULT_TARGET_CHAIN,
-    transport: DEFAULT_RPC_URL !== "" ? http(DEFAULT_RPC_URL) : http()
-  }).extend(publicActions)
-
-  const vKey = await fetch(paths.VKEY_PATH).then((res) => res.text())
-  const wasm = await fetch(paths.WASM_PATH).then((res) => res.arrayBuffer())
-  const zKey = await fetch(paths.ZKEY_PATH).then((res) => res.arrayBuffer())
-  const scopeVal = await privacyPool.scope()
-  const recoveredCommitments = await privacyKey.recoverCommitments(privacyPool)
-
-  await privacyPool
-    .process(
-      walletClient,
-      {
-        src: publicAddress,
-        sink: publicAddress,
-        feeCollector: publicAddress,
-        fee: 0n
-      },
-      [pkScalar, pkScalar, pkScalar, pkScalar],
-      [0n, 0n, 0n, 0n],
-      [
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: 0n
-        }),
-        recoveredCommitments[0]
-      ],
-      [
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: outputValues[0]
-        }),
-        createNewCommitment({
-          _pK: privateKey,
-          _nonce: 0n,
-          _scope: scopeVal,
-          _value: outputValues[1]
-        })
-      ],
-      {
-        vKey: vKey,
-        wasm: new Uint8Array(wasm),
-        zKey: new Uint8Array(zKey)
-      },
-      false
-    )
-    .then((res) => {
-      console.log("got txHash: ", res)
-      return res
-    })
-    .catch((err) => console.log(err))
+  })
 }
 
 self.addEventListener("message", async (event) => {
   // Check if the message is to trigger the performComputation function
   if (event.data.action === "makeCommit") {
     try {
-      const result = await makeNewCommit(
-        event.data.privateKey,
-        event.data.selectedASP,
-        event.data.inCommits,
-        event.data.outValues
+      const result = await handleRequest(
+        event.data.poolID,
+        event.data.accountKey,
+        event.data._r,
+        event.data.pKs,
+        event.data.nonces,
+        event.data.existingCommitmentRoots,
+        event.data.newCommitmentValues
       )
       // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })
@@ -270,24 +213,12 @@ self.addEventListener("message", async (event) => {
     }
   }
 
-  if (event.data.action === "releaseCommit") {
-    try {
-      const result = await release(
-        event.data.privacyKey,
-        event.data.outputValues
-      )
-      // Send the result back to the main thread
-      self.postMessage({ action: "releaseRes", payload: result })
-    } catch (error) {
-      console.error("Error in worker", error)
-      // Send the error back to the main thread
-      self.postMessage({ action: "releaseErr", payload: error })
-    }
-  }
-
   if (event.data.action === "getKeysCommitments") {
     try {
-      const result = await decryptAllKeys(event.data.privateKeys)
+      const result = await decryptCiphers(
+        event.data.poolID,
+        event.data.privateKeys
+      )
       // Send the result back to the main thread
       self.postMessage({ action: "getKeysCommitmentsRes", payload: result })
     } catch (error) {

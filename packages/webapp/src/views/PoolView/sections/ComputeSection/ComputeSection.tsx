@@ -27,7 +27,8 @@ import {
   AccordionTrigger
 } from "@/components/ui/accordion.tsx"
 import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import type { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { numberToHex, hexToBigInt } from "viem"
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(0)
@@ -39,23 +40,27 @@ const ComputeSection = () => {
     keys,
     inCommits,
     outValues,
-    keyCommitHashes,
-    avilCommits,
-    updateKeyCommitHashes,
-    updateSelectedKey
+    keyCommitRoots,
+    availCommits,
+    updateKeyCommitRoots,
+    updateSelectedKey,
+    outPrivacyKeys,
+    currPool
   } = useKeyStore((state) => state)
   const publicKeys = keys.map((key) => key.publicAddr)
   const [selectedKey, setSelectedKey] = useState<PrivacyKey | undefined>(
     undefined
   )
-  const [selectedASP, setSelectedASP] = useState<ASP | null>(null)
+  const [selectedASP, setSelectedASP] = useState<ASP>({
+    name: "",
+    id: "",
+    fee: 0n,
+    feeCollector: "0x00"
+  })
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
     TransactionStatus.pending
   )
   const [worker, setWorker] = useState<Worker | null>(null)
-
-  console.log("keys commits:", keyCommitHashes)
-  console.log("available commits:", avilCommits)
 
   useEffect(() => {
     loadWorkerDynamically().then(setWorker)
@@ -66,7 +71,7 @@ const ComputeSection = () => {
         worker.terminate()
       }
     }
-  }, [])
+  }, [worker])
 
   useEffect(() => {
     if (worker) {
@@ -79,7 +84,7 @@ const ComputeSection = () => {
           console.error("Worker error:", payload)
           setTransactionStatus(TransactionStatus.failure)
         } else if (action === "getKeysCommitmentsRes") {
-          updateKeyCommitHashes(payload)
+          updateKeyCommitRoots(payload)
         }
       }
 
@@ -91,10 +96,12 @@ const ComputeSection = () => {
       // start processing the keys commitments as soon as worker is initialised
       worker?.postMessage({
         action: "getKeysCommitments",
+        // specify the pool of interest
+        pool: currPool.id,
         privateKeys: keys.map((key) => key.pKey)
       })
     }
-  }, [worker])
+  }, [worker, keys, currPool, updateKeyCommitRoots])
 
   useEffect(() => {
     // start processing when user gets to the last step
@@ -105,21 +112,42 @@ const ComputeSection = () => {
       }
       console.log("privateKey before", selectedKey?.asJSON.privateKey)
       setTransactionStatus(TransactionStatus.pending)
+      // argument matches should ocntain the params for as privacyPpool.process()
       worker?.postMessage({
         action: "makeCommit",
-        privateKey: selectedKey?.asJSON.privateKey,
-        selectedASP,
-        inCommits,
-        outValues
+        poolID: currPool.id,
+        accountKey: selectedKey?.asJSON.privateKey,
+        _r: {
+          src: "", // will fill this out later in the worker
+          sink: "", // TODO: handle this for releases
+          fee: selectedASP.fee,
+          feeCollector: selectedASP.feeCollector
+        },
+        pKs: [
+          outPrivacyKeys[0].pKey, // [0] is the first output key hex
+          outPrivacyKeys[1].pKey // [1] is the second output key hex
+        ],
+        nonces: [0n, 0n, 0n, 0n],
+        existingCommitmentRoots: inCommits,
+        newCommitmentValues: outValues
       })
     }
-  }, [currentStep])
+  }, [
+    currPool,
+    currentStep,
+    selectedKey,
+    selectedASP,
+    inCommits,
+    outPrivacyKeys,
+    outValues,
+    worker
+  ])
 
   useEffect(() => {
     if (selectedKey) {
       updateSelectedKey(selectedKey.asJSON.privateKey)
     }
-  }, [selectedKey])
+  }, [selectedKey, updateSelectedKey])
 
   const handleBack = () => {
     setCurrentStep((prevStep) => Math.max(prevStep - 1, 0))
@@ -208,7 +236,7 @@ const ComputeSection = () => {
             />
             <CommitmentsStep setPrimaryButtonProps={setForwardBtnProps} />
             <ConfirmationStep
-              selectedASP={selectedASP!}
+              selectedASP={selectedASP}
               inputWallet={selectedKey?.publicAddr || ""}
             />
             <TransactionProcessingStep

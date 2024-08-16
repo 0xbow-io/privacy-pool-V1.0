@@ -7,6 +7,7 @@ import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { poseidonDecrypt } from "@zk-kit/poseidon-cipher"
 import { hashLeftRight } from "maci-crypto"
 import type { Hex } from "viem"
+import { hexToBigInt, numberToHex } from "viem"
 
 export const createNewCommitment = (args: {
   _pK: Hex
@@ -40,12 +41,11 @@ export const RecoverFromJSON = (
     }
     hash: string
     cRoot: string
+    pkScalar: Hex
+    nonce: string
   },
-  pkScalar: bigint,
-  nonce: bigint,
   len = 4
-): Commitment =>
-  CCommitment.CommitmentC.recoverFromJSON(json, pkScalar, nonce, len)
+): Commitment => CCommitment.CommitmentC.recoverFromJSON(json, len)
 
 export type Commitment = ICommitment.CommitmentI
 export namespace CCommitment {
@@ -169,7 +169,9 @@ export namespace CCommitment {
           saltPk: this._public.saltPk.map((v) => v.toString())
         },
         hash: this.hash().toString(),
-        cRoot: this.commitmentRoot.toString()
+        cRoot: this.commitmentRoot.toString(),
+        pkScalar: numberToHex(this._private.pkScalar),
+        nonce: this._private.nonce.toString()
       }
     }
 
@@ -268,20 +270,20 @@ export namespace CCommitment {
         }
         hash: string
         cRoot: string
+        pkScalar: Hex
+        nonce: string
       },
-      pkScalar: bigint,
-      nonce: bigint,
       len = 4
     ) => {
       return CCommitment.CommitmentC.recover(
         {
-          _pKScalar: pkScalar,
+          _pKScalar: hexToBigInt(json.pkScalar),
           _cipher: json.public.cipher.map((e) => BigInt(e)),
           _saltPk: [
             BigInt(json.public.saltPk[0]),
             BigInt(json.public.saltPk[1])
           ] as Point<bigint>,
-          _nonce: nonce,
+          _nonce: BigInt(json.nonce),
           _len: len
         },
         {

@@ -11,8 +11,9 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
   const {
     isInputValid,
     getInTotalValueFormatted,
-    currUnitRepresentative,
-    inCommits
+    currPool,
+    inCommits,
+    getInCommitRoot
   } = useKeyStore((state) => state)
   const [isInputDialogOpen, setIsInputDialogOpen] = React.useState(false)
   const [targetInputIndex, setTargetInputIndex] = React.useState(0)
@@ -26,10 +27,8 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
           Input Commitments:
         </h2>
       </div>
-      {inCommits.map((c, index) => {
-        const commitVal: string =
-          c === "" ? "0x" : `0x${c.substring(0, 14)}....${c.substring(54)}`
-
+      {inCommits.map((_, index) => {
+        const commitRoot: string = getInCommitRoot(index)
         return (
           <div
             key={`input:${index}`}
@@ -37,7 +36,7 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
             style={{ minHeight: "4rem" }}
           >
             <h2 className="font-semibold text-blackmail ">
-              Input ({index}): {commitVal}
+              Input ({index}): {commitRoot}
             </h2>
             <Button
               onClick={() => {
@@ -56,7 +55,7 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
       <div className="rounded-md border px-4 py-3 text-sm space-y-2">
         <h2 className="font-semibold text-blackmail text-sm">
           Total: {getInTotalValueFormatted().toString()}{" "}
-          {currUnitRepresentative.ticker}{" "}
+          {currPool.fieldElement.ticker}{" "}
         </h2>
         <h2 className="font-semibold text-rust-effect text-sm">{reason}</h2>
       </div>
