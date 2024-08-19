@@ -1,44 +1,42 @@
 import { createStore } from "zustand/vanilla"
 import { downloadJSON } from "@/utils/files"
-import { type Chain, sepolia, gnosis } from "viem/chains"
-import { formatUnits, type Hex } from "viem"
+import { type Chain, gnosis, sepolia } from "viem/chains"
+import { type Hex, numberToHex } from "viem"
+
 import {
-  CCommitment,
   type Commitment,
+  createNewCommitment,
   type ICommitment,
+  PrivacyKey,
+  type PrivacyKeyJSON,
   RecoverFromJSON
 } from "@privacy-pool-v1/domainobjs/ts"
-import { PrivacyKey, createNewCommitment } from "@privacy-pool-v1/domainobjs/ts"
-
-import type { SimpleFEMeta, PrivacyPoolMeta } from "@/network/pools"
 import {
-  PrivacyPools,
-  SupportSimpleFieldElements,
-  ChainNameToChain
-} from "@/network/pools"
+  ChainNameToChain,
+  DEFAULT_CHAIN,
+  ExistingPrivacyPools,
+  getDefaultPool
+} from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
+import type { PrivacyPoolMeta } from "@privacy-pool-v1/contracts/ts/privacy-pool/types"
+
 import BigNumber from "bignumber.js"
-import { run } from "node:test"
 
 export type AccountState = {
   keys: PrivacyKey[]
   selectedKey: PrivacyKey | undefined
   availChains: Chain[]
-  avilPools: Map<Chain, PrivacyPoolMeta[]>
-  supportedSimpleFieldElements: Map<Chain, SimpleFEMeta[]>
+  existingPrivacyPools: Map<Chain, PrivacyPoolMeta[]>
 
   currChain: Chain
   currPool: PrivacyPoolMeta
-  currUnitRepresentative: SimpleFEMeta
 
-  // circuit: PrivacyPoolCircuit
-
-  avilCommits: Commitment[]
-  keyCommitHashes: { [privateKey: Hex]: Hex[] }
+  availCommits: Commitment[]
+  keyCommitRoots: { [privateKey: Hex]: Hex[] }
 
   // relevant input values / objects
-  inCommits: string[] // hash of the commitments chosen as input
+  inCommits: Commitment[]
   selectedCommitmentIndexes: [number | undefined, number | undefined]
-  inTotalValue: number
+  inTotalValue: BigNumber
 
   outValues: BigNumber[]
   outSplits: number[]
@@ -52,9 +50,6 @@ export type AccountState = {
 
   outputAmountIsValid: boolean[]
   outputAmountReasons: string[]
-
-  // TEMP Implementation
-  verifierKey: any
 }
 
 export interface AccountActions {
@@ -65,12 +60,14 @@ export interface AccountActions {
   updateTargetPoolChain: (value: string) => void
   getCurrentPool: () => PrivacyPoolMeta
 
+  getInCommitRoot: (index: number) => string
+  getInCommit: (index: number) => Commitment
   updateInCommit: (index: number, value: string, commitIndex: number) => void
   refreshInTotalValue: () => void
   getInTotalValueFormatted: () => BigNumber
   updatePublicValue: (value: number) => void
   updateSelectedKey: (pK: Hex) => void
-  updateKeyCommitHashes: (keyToCommitJSONs: {
+  updateKeyCommitRoots: (keyToCommitJSONs: {
     [privateKey: Hex]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
   }) => void
 
@@ -87,24 +84,20 @@ export type KeyStore = AccountState & AccountActions
 export const defaultInitState: AccountState = {
   keys: [],
   selectedKey: undefined,
-  verifierKey: null,
   // circuit: NewPrivacyPoolCircuit('',''),
-  keyCommitHashes: {},
+  keyCommitRoots: {},
 
   availChains: [sepolia, gnosis],
-  avilPools: PrivacyPools,
-  supportedSimpleFieldElements: SupportSimpleFieldElements,
+  existingPrivacyPools: ExistingPrivacyPools,
 
   currChain: sepolia,
-  currPool: PrivacyPools.get(sepolia)![0],
-  currUnitRepresentative: SupportSimpleFieldElements.get(sepolia)![0],
-
-  avilCommits: [],
-  inCommits: ["", ""],
+  currPool: getDefaultPool(),
+  availCommits: [],
+  inCommits: [],
   selectedCommitmentIndexes: [undefined, undefined],
 
   publicValue: new BigNumber(0),
-  inTotalValue: 0,
+  inTotalValue: new BigNumber(0),
 
   outValues: [new BigNumber(0), new BigNumber(0)],
   outSplits: [100, 0],
@@ -128,7 +121,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       get().exportToJSON(true)
 
       // update the output keys if they are not set
-      if (get().outPrivacyKeys.length == 0) {
+      if (get().outPrivacyKeys.length === 0) {
         set((state) => ({
           outPrivacyKeys: [key, key]
         }))
@@ -138,9 +131,9 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const poolScope = currentPool.scope
 
       // create void commitments if there is nothing available
-      if (get().avilCommits.length == 0) {
+      if (get().availCommits.length === 0) {
         set((state) => ({
-          avilCommits: [
+          availCommits: [
             createNewCommitment({
               _pK: key.pKey,
               _value: 0n,
@@ -170,14 +163,14 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const scope = get().currPool.scope
 
       const _new_keys = jsonObj.keys.map(
-        (k: any) => new PrivacyKey(k.privateKey)
+        (k: PrivacyKeyJSON) => new PrivacyKey(k.privateKey)
       )
 
       // set default output keys
       set((state) => ({
         keys: _new_keys,
         outPrivacyKeys: [_new_keys[0], _new_keys[1]],
-        avilCommits: [
+        availCommits: [
           createNewCommitment({
             _pK: _new_keys[0].pKey,
             _value: 0n,
@@ -211,23 +204,26 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const poolID = value.split(":")[1]
 
       if (!ChainNameToChain.has(chainName)) {
-        throw new Error("Invalid chain name: " + chainName)
+        throw new Error(`Invalid chain name: ${chainName}`)
       }
 
-      const chain = ChainNameToChain.get(chainName)!
+      const chain = ChainNameToChain.get(chainName) || DEFAULT_CHAIN
+
+      // find pool by chain
+      const pools = get().existingPrivacyPools.get(chain)
+      if (pools === undefined) {
+        throw new Error("unsuppored chain")
+      }
 
       // find pool by id
-      const pool = get()
-        .avilPools.get(chain)!
-        .find((p) => p.id === poolID)
+      const pool = pools.find((p) => p.id === poolID)
       if (pool === undefined) {
         throw new Error("Invalid pool id")
       }
 
       set((state) => ({
         currChain: chain,
-        currPool: pool,
-        currUnitRepresentative: SupportSimpleFieldElements.get(chain)![0]
+        currPool: pool
       }))
     },
     updateSelectedKey: (pK) => {
@@ -236,57 +232,69 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         selectedKey: key
       }))
     },
-    updateKeyCommitHashes: (keyToCommitJSONs) => {
-      const keyToHashMap: { [key: Hex]: Hex[] } = {}
+    // Commitment Roots are unique
+    // whilst Hashes aren't.
+    updateKeyCommitRoots: (keyToCommitJSONs) => {
+      const commitRootMap: { [key: Hex]: Hex[] } = {}
 
       for (const key in keyToCommitJSONs) {
         if (keyToCommitJSONs.hasOwnProperty(key)) {
-          keyToHashMap[key as Hex] = keyToCommitJSONs[key as Hex].map(
-            (commit) => BigInt(commit.hash).toString(16) as Hex
+          commitRootMap[key as Hex] = keyToCommitJSONs[key as Hex].map(
+            (commit) => numberToHex(BigInt(commit.cRoot))
           )
         }
       }
-      const keyToCommits: { [key: string]: Commitment[] } = {}
+      // const keyToCommits: { [key: string]: Commitment[] } = {}
       const allCommits: Commitment[] = []
 
       for (const [key, commits] of Object.entries(keyToCommitJSONs)) {
-        const currentKey = get().keys.find((storeKey) => storeKey.pKey == key)
-        const commitments = commits.map((commit) =>
-          RecoverFromJSON(
-            commit,
-            currentKey?.pKScalar || 0n,
-            currentKey?._nonce || 0n
-          )
-        )
-        keyToCommits[key] = commitments
+        const commitments = commits.map((commit) => RecoverFromJSON(commit))
+        // keyToCommits[key] = commitments
         allCommits.push(...commitments)
       }
 
+
+      console.log('crm', commitRootMap)
+
+
+
       set((state) => ({
-        keyCommitHashes: keyToHashMap,
-        avilCommits: allCommits
+        keyCommitRoots: commitRootMap,
+        availCommits: allCommits
       }))
     },
     getCurrentPool: (): PrivacyPoolMeta => {
       return get().currPool
     },
+    getInCommit: (index: number): Commitment => {
+      const newInCommits = get().inCommits
+      console.log("getInCommit", newInCommits, index)
+      return newInCommits[index]
+    },
+    getInCommitRoot: (index: number): string => {
+      const rootHex = numberToHex(get().getInCommit(index)?.commitmentRoot || 0)
+      return `${rootHex.substring(0, 14)}....${rootHex.substring(54)}`
+    },
     updateInCommit: (inputIndex, value, commitIndex) => {
-      // verify that these commit are still available
       console.log(
-        "my current commits:",
-        get().avilCommits.map((c) => c.hash().toString(16))
+        inputIndex,
+        value,
+        commitIndex,
+        get().availCommits.map((c) => numberToHex(c.commitmentRoot))
       )
-      const commit = get().avilCommits.find(
-        (c) => c.hash().toString(16) === value
+      // verify that these commit are still available
+      // match by commmitRoot
+      const commit = get().availCommits.find(
+        (c) => numberToHex(c.commitmentRoot) === value
       )
 
       if (commit === undefined) {
-        throw new Error("commit not available: " + value)
+        throw new Error("Invalid commitment")
       }
 
       // then update the inCommits
       const newInCommits = get().inCommits
-      newInCommits[inputIndex] = value
+      newInCommits[inputIndex] = commit
 
       const newCommitIndexes = get().selectedCommitmentIndexes
       newCommitIndexes[inputIndex] = commitIndex
@@ -301,15 +309,14 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       get().refreshInTotalValue()
     },
     refreshInTotalValue: () => {
-      const _total_input: number = get().inCommits.reduce((acc, val) => {
-        const commit = get().avilCommits.find(
-          (c) => c.hash().toString(16) === val
-        ) // only add the value if the commit is available
+      const _total_input: BigNumber = get().inCommits.reduce((acc, val) => {
+        // only accumulate the value of the commit if it's still available
+        const commit = get().availCommits.find((c) => c.isEqual(val))
         if (commit !== undefined) {
-          acc += Number(commit.asTuple()[0])
+          return acc.plus(Number(commit.asTuple()[0]))
         }
         return acc
-      }, 0)
+      }, new BigNumber(0))
 
       set((state) => ({
         inTotalValue: _total_input
@@ -317,9 +324,9 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     },
 
     getInTotalValueFormatted: () => {
-      const unitRep = get().currUnitRepresentative
+      const unitRep = get().getCurrentPool().fieldElement
       return BigNumber(get().inTotalValue).decimalPlaces(
-        Number(unitRep.decimals)
+        Number(unitRep.precision)
       )
     },
 
@@ -370,10 +377,6 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         .getInTotalValueFormatted()
         .plus(get().publicValue)
 
-      // reset prev validation messages
-      let curr_outputAmountReasons = ["", ""]
-      let curr_outputAmountIsValid = [true, true]
-
       // total output is negative alert user
       // immediately
       if (_total_output.lt(0)) {
@@ -386,7 +389,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         }))
       } else {
         // rebalance the output values based on the output
-        if (_total_output != _expected_output) {
+        if (_total_output !== _expected_output) {
           // if less
           // rebalance the output values so that the total output = expected_out
           const z = _expected_output.minus(value)
@@ -421,8 +424,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
           set((state) => ({
             outValues: curr_outValues,
             outSplits: new_outPutSplits,
-            outputAmountIsValid: curr_outputAmountIsValid,
-            outputAmountReasons: curr_outputAmountReasons
+            outputAmountIsValid: [true, true],
+            outputAmountReasons: ["", ""]
           }))
         }
       }
@@ -431,7 +434,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       // iterate through keys and find the one with matching pubKeyHash
       const key = get().keys.find((pk) => pk.publicAddr === pubKeySerialized)
       if (key === undefined) {
-        throw new Error("No key found with: " + pubKeySerialized)
+        throw new Error("key not found")
       }
       const curr_outPrivacyKeys = get().outPrivacyKeys
       curr_outPrivacyKeys[index] = key
@@ -449,15 +452,10 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     isInputValid: (): { ok: boolean; reason: string } => {
       // check that all input commitments are set
       // and are available
-      let _all_inputs_valid = [true, true]
-      get().inCommits.forEach((hash, i) => {
-        if (hash === "") {
-          _all_inputs_valid[i] = false
-        }
+      const _all_inputs_valid = [true, true]
+      get().inCommits.forEach((inC, i) => {
         // check if it is available
-        const commit = get().avilCommits.find(
-          (c) => c.hash().toString(16) === hash
-        )
+        const commit = get().availCommits.find((c) => c.isEqual(inC))
         if (commit === undefined) {
           _all_inputs_valid[i] = false
         }
@@ -471,7 +469,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       return { ok: true, reason: "" }
     },
     isOutputValid: (): { ok: boolean; reason: string } => {
-      let _all_keys_exists = [true, true]
+      const _all_keys_exists = [true, true]
       get().outPrivacyKeys.forEach((pK, i) => {
         if (pK === undefined) {
           _all_keys_exists[i] = false
@@ -497,7 +495,6 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
           reason: "total output values does not match expected"
         }
       }
-
       return { ok: true, reason: "" }
     }
   }))

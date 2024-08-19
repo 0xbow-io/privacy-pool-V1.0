@@ -9,8 +9,8 @@ export const OutputCommitments = ({ className }: { className: string }) => {
   const {
     isOutputValid,
     outTotalValue,
-    currUnitRepresentative,
     outValues,
+    currPool,
     outputAmountIsValid
   } = useKeyStore((state) => state)
   const [isOutputDialogOpen, setIsOutputDialogOpen] = React.useState(false)
@@ -37,7 +37,7 @@ export const OutputCommitments = ({ className }: { className: string }) => {
           >
             <h2 className="font-semibold">
               Output ({index}): {value.toString()}{" "}
-              {currUnitRepresentative.ticker}
+              {currPool.fieldElement.ticker}
             </h2>
             <Button
               onClick={() => {
@@ -56,7 +56,7 @@ export const OutputCommitments = ({ className }: { className: string }) => {
       <div className="rounded-md border px-4 py-3 text-sm space-y-2">
         <h2 className="font-semibold  text-sm">
           Expected Total: {outTotalValue.toString()}{" "}
-          {currUnitRepresentative.ticker}{" "}
+          {currPool.fieldElement.ticker}{" "}
         </h2>
         <h2 className="font-semibold text-sm text-rust-effect">{reason}</h2>
       </div>

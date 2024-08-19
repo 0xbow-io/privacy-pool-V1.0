@@ -96,7 +96,7 @@ const SettingsDrawerContent = ({
     getCurrentPool,
     updateTargetPoolChain,
     availChains,
-    avilPools,
+    ExistingPrivacyPools,
     generate,
     importFromJSON
   } = useKeyStore((state) => state)
@@ -154,7 +154,7 @@ const SettingsDrawerContent = ({
                 return (
                   <SelectGroup key={chain.name}>
                     <SelectLabel>{chain.name}</SelectLabel>
-                    {avilPools.get(chain)?.map((pool) => {
+                    {ExistingPrivacyPools.get(chain)?.map((pool) => {
                       return (
                         <SelectItem
                           key={`${pool.chain.name}:${pool.id}`}
@@ -181,7 +181,8 @@ const SettingsDrawerContent = ({
             }}
             className=" text-blackmail bg-ghost-white hover:text-ghost-white hover:bg-blackmail"
           >
-            <Upload className="mx-4 size-6" />Load Account
+            <Upload className="mx-4 size-6" />
+            Load Account
           </Button>
         </div>
         <div className="flex-auto flex flex-row">

@@ -17,7 +17,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 export type PrivacyKeys = PrivacyKey[]
 
-type PrivacyKeyJSON = {
+export type PrivacyKeyJSON = {
   _nonce: string
   privateKey: Hex
   pubAddr: Hex

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select.tsx"
 import React, { useEffect, useState } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import { numberToHex } from "viem"
 
 type InputsDialogProps = {
   className: string
@@ -29,28 +30,21 @@ export const InputsDialog = ({
   targetInputIndex
 }: InputsDialogProps) => {
   const {
-    inCommits,
     keys,
-    avilCommits,
     selectedKey,
     updateInCommit,
     updateSelectedKey,
-    keyCommitHashes,
-    selectedCommitmentIndexes
+    keyCommitRoots,
+    selectedCommitmentIndexes,
+    getInCommitRoot
   } = useKeyStore((state) => state)
 
   const walletSelectOptions = keys.map((key) => key.publicAddr)
+  console.log('kcr', keyCommitRoots)
 
-  const commitsSelectOptions = keyCommitHashes[selectedKey?.pKey || "0x"]
-    .map((hash, index) => ({ hash, index }))
+  const commitsSelectOptions = keyCommitRoots[selectedKey?.pKey || "0x"]
+    .map((root, index) => ({ root, index }))
     .filter((_, index) => index !== selectedCommitmentIndexes[targetInputIndex])
-
-  const currInCommit: string =
-    inCommits[targetInputIndex] === ""
-      ? "0x"
-      : `0x${inCommits[targetInputIndex].substring(0, 14)}....${inCommits[
-          targetInputIndex
-        ].substring(54)}`
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -80,10 +74,10 @@ export const InputsDialog = ({
             </SelectTrigger>
             <SelectContent position="popper">
               {walletSelectOptions.map((publicAddr, index) => {
-                const shortenedHash = `0x${publicAddr.substring(0, 14)}....${publicAddr.substring(54)}`
+                const shortenedRoot = `0x${publicAddr.substring(0, 14)}....${publicAddr.substring(54)}`
                 return (
                   <SelectItem key={index} value={publicAddr}>
-                    {shortenedHash}
+                    {shortenedRoot}
                   </SelectItem>
                 )
               })}
@@ -94,25 +88,27 @@ export const InputsDialog = ({
         <div>Commitment</div>
         <div className="flex-auto">
           <Select
-            value={currInCommit}
+            value={getInCommitRoot(targetInputIndex)}
             onValueChange={(value) => {
-              const { hash, commitIndex } = JSON.parse(value)
-              updateInCommit(targetInputIndex, hash, commitIndex)
+              const { root, commitIndex } = JSON.parse(value)
+              updateInCommit(targetInputIndex, root, commitIndex)
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select">{currInCommit}</SelectValue>
+              <SelectValue placeholder="Select">
+                {getInCommitRoot(targetInputIndex)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
               {commitsSelectOptions.map((commit, index) => {
-                const { hash, index: commitIndex } = commit
-                const shortenedHash = `0x${hash.substring(0, 14)}....${hash.substring(54)}`
+                const { root, index: commitIndex } = commit
+                const shortenedRoot = `0x${root.substring(0, 14)}....${root.substring(54)}`
                 return (
                   <SelectItem
                     key={index}
-                    value={JSON.stringify({ hash, commitIndex })}
+                    value={JSON.stringify({ root, commitIndex })}
                   >
-                    {shortenedHash}
+                    {shortenedRoot}
                   </SelectItem>
                 )
               })}

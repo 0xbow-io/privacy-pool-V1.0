@@ -1,8 +1,9 @@
 import React from "react"
+import BigNumber from "bignumber.js"
 
 type CommitmentsInfoProps = {
   isInput: boolean
-  total: number
+  total: BigNumber
   ticker: string
   reason: string | string[]
   inCommits?: string[]
@@ -26,7 +27,7 @@ export const CommitmentsInfo = ({
       </div>
       <div className="rounded-md border px-4 py-3 text-sm">
         <h2 className="font-semibold text-blackmail text-sm">
-          {isInput ? "Total:" : "Expected total:"} {total} {ticker}{" "}
+          {isInput ? "Total:" : "Expected total:"} {total.toString()} {ticker}{" "}
         </h2>
         <h2 className="font-semibold text-rust-effect text-sm">
           {reason.length ? reason[0] : reason}

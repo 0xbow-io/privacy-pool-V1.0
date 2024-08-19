@@ -49,7 +49,7 @@ export const TransactionProcessingStep = ({
           <LoaderIcon />
           <p className="mt-2 text-sm">Processing...</p>
           <div className="mt-2 text-sm">
-            This may take up to 1min, please don't close or refresh the page
+            This may take up to 1min, please do not close or refresh the page
           </div>
         </div>
       )}

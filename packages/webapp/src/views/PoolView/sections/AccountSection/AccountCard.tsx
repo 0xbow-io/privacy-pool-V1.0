@@ -63,8 +63,6 @@ export const AccountCard = ({ className }: { className: string }) => {
 
   const { getRootProps } = useDropzone({ onDrop })
 
-  console.log("connected:", connected)
-
   return (
     <Card className={cn("", className)}>
       <CardHeader>
@@ -133,7 +131,7 @@ export const AccountCard = ({ className }: { className: string }) => {
 
       <CardContent className="space-y-2">
         <CardTitle>Keys Import:</CardTitle>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 2xl:grid-cols-3 justify-around">
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 justify-around">
           <Button
             {...getRootProps()}
             className="w-full rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"

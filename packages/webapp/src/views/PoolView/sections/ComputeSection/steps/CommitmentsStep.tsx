@@ -20,7 +20,7 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
   useEffect(() => {
     setPrimaryButtonProps &&
       setPrimaryButtonProps({ disabled: !inputsAreValid, text: "next" })
-  }, [extraAmountIsValid, inputsAreValid])
+  }, [inputsAreValid, setPrimaryButtonProps])
 
   return (
     <div className="flex flex-col gap-y-4 laptop:flex-row laptop:items-start laptop:gap-4">

@@ -6,7 +6,7 @@ import type {
   ASP,
   Stat
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
-import { formatEther, parseEther } from "viem"
+import { formatEther, parseEther, numberToHex } from "viem"
 
 type ConfirmationStepProps = {
   selectedASP: ASP
@@ -23,7 +23,7 @@ export const ConfirmationStep = ({
     outTotalValue,
     outputAmountReasons,
     inTotalValue,
-    currUnitRepresentative,
+    currPool,
     publicValue,
     isInputValid
   } = useKeyStore((state) => state)
@@ -31,9 +31,9 @@ export const ConfirmationStep = ({
   const { name, fee, feeCollector } = selectedASP
 
   const stats: Stat[] = [
-    { header: "Selected ASP", value: name },
+    { header: "Selected ASP", value: name as string },
     { header: "Input Wallet", value: inputWallet },
-    { header: "Estimated Fee", value: formatEther(fee) },
+    { header: "Estimated Fee", value: formatEther(fee as bigint) },
     { header: "Fee Collector Address", value: feeCollector },
     { header: "Extra amount", value: publicValue.toNumber() }
   ]
@@ -54,14 +54,16 @@ export const ConfirmationStep = ({
         <CommitmentsInfo
           isInput
           total={inTotalValue}
-          ticker={currUnitRepresentative.ticker}
+          ticker={currPool.fieldElement.ticker}
           reason={reason}
-          inCommits={inCommits}
+          inCommits={inCommits.map((commit) =>
+            numberToHex(commit.commitmentRoot)
+          )}
         />
         <CommitmentsInfo
           isInput={false}
-          total={outTotalValue.toNumber()}
-          ticker={currUnitRepresentative.ticker}
+          total={outTotalValue}
+          ticker={currPool.fieldElement.ticker}
           reason={outputAmountReasons}
           outValues={outValues.map((v) => v.toNumber())}
         />

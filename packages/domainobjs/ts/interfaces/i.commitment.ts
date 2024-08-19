@@ -2,6 +2,7 @@ import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { Point } from "@zk-kit/baby-jubjub"
 import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
+import type { Hex } from "viem"
 
 export namespace ICommitment {
   export interface CommitmentI<
@@ -28,6 +29,8 @@ export namespace ICommitment {
       }
       hash: string
       cRoot: string
+      pkScalar: Hex
+      nonce: string
     }
   > {
     setIndex: (mt: LeanIMT) => void

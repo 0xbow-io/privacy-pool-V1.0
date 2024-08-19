@@ -13,16 +13,16 @@ import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 export const DerivePrivacyKeys =
   (_pK: Hex = generatePrivateKey(), withSalt = true) =>
   (
-    PrivateKey = deriveSecretScalar(_pK),
-    PublicKey = mulPointEscalar(Base8, PrivateKey),
-    Secret = mulPointEscalar(PublicKey, PrivateKey),
-    Salt = withSalt ? genRandomSalt() : 0n,
-    SaltPk = withSalt ? mulPointEscalar(Base8, Salt) : [0n, 0n],
-    Ek = withSalt ? mulPointEscalar(PublicKey, Salt) : [0n, 0n]
+    PrivKScalar = deriveSecretScalar(_pK),
+    PublicKey = mulPointEscalar(Base8, PrivKScalar),
+    Secret = mulPointEscalar(PublicKey, PrivKScalar),
+    Salt = withSalt ? genRandomSalt() : BigInt(0),
+    SaltPk = withSalt ? mulPointEscalar(Base8, Salt) : [BigInt(0), BigInt(0)],
+    Ek = withSalt ? mulPointEscalar(PublicKey, Salt) : [BigInt(0), BigInt(0)]
   ) => {
     return {
       pkHex: _pK,
-      pKScalar: PrivateKey,
+      pKScalar: PrivKScalar,
       Pk: PublicKey,
       SaltPk: SaltPk,
       eK: Ek,
@@ -45,11 +45,11 @@ export namespace FnCommitment {
   export const bindFn =
     (args: { _pK?: Hex; _nonce: bigint; _scope: bigint; _value: bigint }) =>
     (
-      PrivateKey = args._pK
+      PrivKScalar = args._pK
         ? deriveSecretScalar(args._pK)
         : deriveSecretScalar(generatePrivateKey()), // Derive secret scalar from Private Key
-      PublicKey = mulPointEscalar(Base8, PrivateKey), // Derive Public Key
-      Secret = mulPointEscalar(PublicKey, PrivateKey), // ECDH secret from pK & Public Key
+      PublicKey = mulPointEscalar(Base8, PrivKScalar), // Derive Public Key
+      Secret = mulPointEscalar(PublicKey, PrivKScalar), // ECDH secret from pK & Public Key
       Salt = genRandomSalt(), // Generate a random BabyJubJub value
       SaltPk = mulPointEscalar(Base8, Salt), // Derive public key from Salt
       Ek = mulPointEscalar(PublicKey, Salt), // Derive encryption key from ECDH secret & public key
@@ -81,7 +81,7 @@ export namespace FnCommitment {
     } => {
       // Verify computation of encryption key:
       // Recovery of ECDH shared secret using private key and the public key of the Salt.
-      const _eK = mulPointEscalar(SaltPk, PrivateKey)
+      const _eK = mulPointEscalar(SaltPk, PrivKScalar)
       if (Ek[0] !== _eK[0] || Ek[1] !== _eK[1]) {
         throw new Error(
           `Invalid encryption key generated, got ${Ek} expected: ${_eK}`
@@ -89,7 +89,7 @@ export namespace FnCommitment {
       }
       return {
         private: {
-          pkScalar: PrivateKey,
+          pkScalar: PrivKScalar,
           nonce: args._nonce,
           value: args._value,
           secret: Secret
