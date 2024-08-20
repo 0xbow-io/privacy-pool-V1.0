@@ -27,6 +27,7 @@ const paths = {
   ZKEY_PATH: `${basePath}/groth16_pkey.zkey`
 }
 
+
 const decryptCiphers = async (poolID: string, privateKeys: Hex[]) => {
   const keyToCommitJSONs: {
     [privateKey: string]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
@@ -89,11 +90,21 @@ const handleRequest = async (
     pkScalar: Hex
     nonce: string
   }[],
-  newCommitmentValues: string[]
+  newCommitmentValues: string[],
 ) => {
+  console.log('allInputParams:', {
+  poolID,
+  accountKey,
+  _r,
+  pKs,
+  nonces,
+  existingCommitmentJSONs,
+  newCommitmentValues
+  })
   for (const metas of ExistingPrivacyPools.values()) {
     for (const p of metas) {
       if (p.id === poolID) {
+        console.log('pool info:', p)
         const instance = getOnChainPrivacyPool(
           p,
           createPublicClient({
@@ -109,6 +120,8 @@ const handleRequest = async (
           chain: p.chain,
           transport: http()
         }).extend(publicActions)
+
+        console.log('contract address:', instance.meta.address)
 
         const synced = await instance.sync()
         if (!synced) {
@@ -127,12 +140,15 @@ const handleRequest = async (
 
         const pkScalars = pKs.map((pk) => deriveSecretScalar(pk))
 
+        console.log('pubAddr', publicAddr)
+        console.log(walletClient)
+
         await instance
           .process(
             walletClient,
             {
               src: publicAddr,
-              sink: _r.sink,
+              sink: publicAddr,
               feeCollector: _r.feeCollector,
               fee: _r.fee
             },
@@ -187,7 +203,7 @@ self.addEventListener("message", async (event) => {
         event.data.pKs,
         event.data.nonces,
         event.data.existingCommitmentJSONs,
-        event.data.newCommitmentValues
+        event.data.newCommitmentValues,
       )
       // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })

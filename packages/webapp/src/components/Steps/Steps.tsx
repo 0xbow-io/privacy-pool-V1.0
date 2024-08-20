@@ -1,8 +1,10 @@
 import React from "react"
 import type { ForwardButtonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 
 type StepsProps = {
   children: React.ReactNode[]
+  stepNames: string[]
   currentStep: number
   onBack: () => void
   onContinue: () => void
@@ -15,6 +17,7 @@ const Steps: React.FC<StepsProps> = ({
   currentStep,
   onBack,
   onContinue,
+  stepNames,
   backButtonProps = {},
   forwardButtonProps = {}
 }) => {
@@ -23,6 +26,7 @@ const Steps: React.FC<StepsProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
+      <StepsIndicator steps={stepNames} currentStep={currentStep} />
       <div className="w-full">{children[currentStep]}</div>
       <div className="flex justify-between w-full mt-4">
         <button

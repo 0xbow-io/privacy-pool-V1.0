@@ -257,10 +257,14 @@ export namespace CPool {
               throw new Error(`Error in computing scope: ${e}`)
             })
 
-    context = async (_r: TPrivacyPool.RequestT): Promise<bigint> =>
-      this._context
+    context = async (_r: TPrivacyPool.RequestT): Promise<bigint> => {
+
+      console.log('ctx', this.meta.address, this.conn)
+
+     return this._context
         ? this._context(this.meta.address, _r)
         : ContextFn(this.meta.chain, this.conn)(this.meta.address, _r)
+    }
 
     verify = async (
       proof: SnarkJSOutputT
@@ -316,6 +320,17 @@ export namespace CPool {
       simOnly = true
     ): Promise<boolean | Hex> => {
       const scope = await this.scope()
+      console.log('all params process:', {
+        account,
+        scope,
+        context: await this.context(_r),
+        mt: this.merkleTree,
+        maxDepth: this.MAX_MERKLE_DEPTH,
+        pkScalars,
+        nonces,
+        existing: existingCommitment,
+        new: newCommitment
+      })
       const out = (await NewPrivacyPoolCircuit(zkArtifacts)
         .prove({
           scope: await this.scope(), // calculate scope on the fly if value is not cached

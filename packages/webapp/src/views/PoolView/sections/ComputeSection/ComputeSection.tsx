@@ -27,7 +27,6 @@ import {
   AccordionTrigger
 } from "@/components/ui/accordion.tsx"
 import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
-import type { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(0)
@@ -39,16 +38,13 @@ const ComputeSection = () => {
     keys,
     inCommits,
     outValues,
+    selectedKey,
     updateKeyCommitRoots,
     updateSelectedKey,
     outPrivacyKeys,
     currPool
   } = useKeyStore((state) => state)
 
-  const publicKeys = keys.map((key) => key.publicAddr)
-  const [selectedKey, setSelectedKey] = useState<PrivacyKey | undefined>(
-    undefined
-  )
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",
     id: "",
@@ -105,7 +101,7 @@ const ComputeSection = () => {
 
   useEffect(() => {
     // start processing when user gets to the last step
-    if (currentStep === 4) {
+    if (currentStep === 3) {
       if (!worker) {
         console.log("worker is not initialized")
         return
@@ -125,6 +121,8 @@ const ComputeSection = () => {
         },
         pKs: [
           outPrivacyKeys[0].pKey, // [0] is the first output key hex
+          outPrivacyKeys[0].pKey, // [0] is the first output key hex
+          outPrivacyKeys[1].pKey, // [1] is the second output key hex
           outPrivacyKeys[1].pKey // [1] is the second output key hex
         ],
         nonces: [0n, 0n, 0n, 0n],
@@ -209,6 +207,12 @@ const ComputeSection = () => {
           <Steps
             currentStep={currentStep}
             onBack={handleBack}
+            stepNames={[
+              'ASP Selection',
+              'Select Commitments',
+              'Confirm TX details',
+              'Processing'
+            ]}
             onContinue={handleContinue}
             backButtonProps={{ disabled: currentStep === 0 }}
             forwardButtonProps={forwardBtnProps}
@@ -220,20 +224,20 @@ const ComputeSection = () => {
                 {
                   name: "0xbow",
                   id: "0xbow",
-                  fee: 100n,
+                  fee: 0n,
                   feeCollector: "0x533ac3edff3b5a75fb257ea3d8c6e7e2c53d0b6d"
                 }
               ]}
               onASPSelect={(ASP) => setSelectedASP(ASP)}
             />
-            <SourceWalletStep
-              selectedWallet={selectedKey?.publicAddr || ""}
-              setPrimaryButtonProps={setForwardBtnProps}
-              walletOptions={publicKeys}
-              onWalletSelect={(wallet) =>
-                setSelectedKey(keys.find((key) => key.publicAddr === wallet))
-              }
-            />
+            {/*<SourceWalletStep*/}
+            {/*  selectedWallet={selectedKey?.publicAddr || ""}*/}
+            {/*  setPrimaryButtonProps={setForwardBtnProps}*/}
+            {/*  walletOptions={publicKeys}*/}
+            {/*  onWalletSelect={(wallet) =>*/}
+            {/*    setSelectedKey(keys.find((key) => key.publicAddr === wallet))*/}
+            {/*  }*/}
+            {/*/>*/}
             <CommitmentsStep setPrimaryButtonProps={setForwardBtnProps} />
             <ConfirmationStep
               selectedASP={selectedASP}

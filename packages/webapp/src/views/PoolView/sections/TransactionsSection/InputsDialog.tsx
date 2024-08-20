@@ -42,9 +42,11 @@ export const InputsDialog = ({
   const walletSelectOptions = keys.map((key) => key.publicAddr)
   console.log('kcr', keyCommitRoots)
 
-  const commitsSelectOptions = keyCommitRoots[selectedKey?.pKey || "0x"]
+  console.log('crash:', selectedKey, selectedKey?.pKey, keyCommitRoots[selectedKey?.pKey])
+
+  const commitsSelectOptions = selectedKey ? keyCommitRoots[selectedKey.pKey]
     .map((root, index) => ({ root, index }))
-    .filter((_, index) => index !== selectedCommitmentIndexes[targetInputIndex])
+    .filter((_, index) => index !== selectedCommitmentIndexes[targetInputIndex]) : []
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -60,7 +62,7 @@ export const InputsDialog = ({
         <div>Wallet:</div>
         <div className="flex-auto">
           <Select
-            value={selectedKey?.publicAddr}
+            value={selectedKey?.publicAddr || "0x..."}
             onValueChange={(value) => {
               updateSelectedKey(
                 keys.find((key) => key.publicAddr === value)!.pKey
@@ -69,12 +71,12 @@ export const InputsDialog = ({
           >
             <SelectTrigger>
               <SelectValue placeholder="Select">
-                {selectedKey?.publicAddr}
+                {selectedKey?.publicAddr || "Select wallet"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
               {walletSelectOptions.map((publicAddr, index) => {
-                const shortenedRoot = `0x${publicAddr.substring(0, 14)}....${publicAddr.substring(54)}`
+                const shortenedRoot = `${publicAddr.substring(0, 14)}....${publicAddr.substring(54)}`
                 return (
                   <SelectItem key={index} value={publicAddr}>
                     {shortenedRoot}
@@ -102,7 +104,7 @@ export const InputsDialog = ({
             <SelectContent position="popper">
               {commitsSelectOptions.map((commit, index) => {
                 const { root, index: commitIndex } = commit
-                const shortenedRoot = `0x${root.substring(0, 14)}....${root.substring(54)}`
+                const shortenedRoot = `${root.substring(0, 14)}....${root.substring(54)}`
                 return (
                   <SelectItem
                     key={index}
