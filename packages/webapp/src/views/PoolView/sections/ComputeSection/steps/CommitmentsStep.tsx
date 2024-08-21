@@ -4,6 +4,8 @@ import { OutputCommitments } from "@/views/PoolView/sections/TransactionsSection
 import React, { useEffect } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import type { CommonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import BigNumber from "bignumber.js"
+import { parseEther } from "viem"
 
 export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
   const {
@@ -41,7 +43,11 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
           id="extra-amount"
           type="number"
           placeholder={publicValue.toString()}
-          onChange={(e) => updatePublicValue(Number(e.target.value))}
+          onChange={(e) =>
+            updatePublicValue(
+              new BigNumber(parseEther(e.target.value).toString())
+            )
+          }
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail ",
             extraAmountIsValid ? "text-blackmail" : "text-rust-effect"

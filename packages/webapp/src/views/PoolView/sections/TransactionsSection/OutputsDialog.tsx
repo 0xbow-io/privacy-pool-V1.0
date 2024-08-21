@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select.tsx"
 import React from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import { parseEther } from "viem"
+import BigNumber from "bignumber.js"
 
 type OutputsDialogProps = {
   className: string
@@ -67,7 +69,10 @@ export const OutputsDialog = ({
               type="number"
               placeholder={outValues[targetOutputIndex].toString()}
               onChange={(e) =>
-                updateOutputValue(targetOutputIndex, Number(e.target.value))
+                updateOutputValue(
+                  targetOutputIndex,
+                  new BigNumber(parseEther(e.target.value).toString())
+                )
               }
               className={cn(
                 "px-4 py-3 text-sm font-semibold text-blackmail ",

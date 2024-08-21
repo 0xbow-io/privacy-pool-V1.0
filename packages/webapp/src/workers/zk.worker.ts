@@ -27,7 +27,6 @@ const paths = {
   ZKEY_PATH: `${basePath}/groth16_pkey.zkey`
 }
 
-
 const decryptCiphers = async (poolID: string, privateKeys: Hex[]) => {
   const keyToCommitJSONs: {
     [privateKey: string]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
@@ -90,21 +89,21 @@ const handleRequest = async (
     pkScalar: Hex
     nonce: string
   }[],
-  newCommitmentValues: string[],
+  newCommitmentValues: string[]
 ) => {
-  console.log('allInputParams:', {
-  poolID,
-  accountKey,
-  _r,
-  pKs,
-  nonces,
-  existingCommitmentJSONs,
-  newCommitmentValues
+  console.log("allInputParams:", {
+    poolID,
+    accountKey,
+    _r,
+    pKs,
+    nonces,
+    existingCommitmentJSONs,
+    newCommitmentValues
   })
   for (const metas of ExistingPrivacyPools.values()) {
     for (const p of metas) {
       if (p.id === poolID) {
-        console.log('pool info:', p)
+        console.log("pool info:", p)
         const instance = getOnChainPrivacyPool(
           p,
           createPublicClient({
@@ -121,7 +120,7 @@ const handleRequest = async (
           transport: http()
         }).extend(publicActions)
 
-        console.log('contract address:', instance.meta.address)
+        console.log("contract address:", instance.meta.address)
 
         const synced = await instance.sync()
         if (!synced) {
@@ -140,7 +139,7 @@ const handleRequest = async (
 
         const pkScalars = pKs.map((pk) => deriveSecretScalar(pk))
 
-        console.log('pubAddr', publicAddr)
+        console.log("pubAddr", publicAddr)
         console.log(walletClient)
 
         await instance
@@ -167,13 +166,13 @@ const handleRequest = async (
                 _pK: pKs[0],
                 _nonce: 0n,
                 _scope: scopeVal,
-                _value: parseEther(newCommitmentValues[0])
+                _value: BigInt(newCommitmentValues[0])
               }),
               createNewCommitment({
-                _pK: pKs[1],
+                _pK: pKs[3],
                 _nonce: 0n,
                 _scope: scopeVal,
-                _value: parseEther(newCommitmentValues[1])
+                _value: BigInt(newCommitmentValues[1])
               })
             ],
             {
@@ -203,7 +202,7 @@ self.addEventListener("message", async (event) => {
         event.data.pKs,
         event.data.nonces,
         event.data.existingCommitmentJSONs,
-        event.data.newCommitmentValues,
+        event.data.newCommitmentValues
       )
       // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })

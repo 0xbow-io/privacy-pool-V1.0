@@ -35,7 +35,10 @@ export const ConfirmationStep = ({
     { header: "Input Wallet", value: inputWallet },
     { header: "Estimated Fee", value: formatEther(fee as bigint) },
     { header: "Fee Collector Address", value: feeCollector },
-    { header: "Extra amount", value: publicValue.toNumber() }
+    {
+      header: "Extra amount",
+      value: formatEther(BigInt(publicValue.toString()))
+    }
   ]
 
   const { reason } = isInputValid()
@@ -65,7 +68,7 @@ export const ConfirmationStep = ({
           total={outTotalValue}
           ticker={currPool.fieldElement.ticker}
           reason={outputAmountReasons}
-          outValues={outValues.map((v) => v.toNumber())}
+          outValues={outValues}
         />
       </div>
     </div>

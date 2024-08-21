@@ -65,13 +65,13 @@ export interface AccountActions {
   updateInCommit: (index: number, value: string) => void
   refreshInTotalValue: () => void
   getInTotalValueFormatted: () => BigNumber
-  updatePublicValue: (value: number) => void
+  updatePublicValue: (value: BigNumber) => void
   updateSelectedKey: (pK: Hex) => void
   updateKeyCommitRoots: (keyToCommitJSONs: {
     [privateKey: Hex]: ReturnType<ICommitment.CommitmentI["toJSON"]>[]
   }) => void
 
-  updateOutputValue: (index: number, value: number) => void
+  updateOutputValue: (index: number, value: BigNumber) => void
   updateOutputPrivacyKey: (index: number, pubKeyHash: string) => void
   getOutputPubKeyHash: (index: number) => string
 
@@ -330,11 +330,11 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       )
     },
 
-    updatePublicValue: (value: number): void => {
+    updatePublicValue: (value: BigNumber): void => {
       // calculate the total output value based on the public value
       // & input value
       const _expected_output = new BigNumber(
-        get().getInTotalValueFormatted().plus(BigNumber(value))
+        get().getInTotalValueFormatted().plus(value)
       )
 
       const firstOutputVal = new BigNumber(
@@ -365,11 +365,12 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       }))
     },
 
-    updateOutputValue: (index: number, value: number): void => {
+    updateOutputValue: (index: number, value: BigNumber): void => {
+      console.log('updateOutputValue', index, value.toString())
       // get current values
       const curr_outValues = get().outValues
       // update the value at the specified index
-      curr_outValues[index] = new BigNumber(value)
+      curr_outValues[index] = value
 
       const curr_outSplits = get().outSplits
       let _total_output = BigNumber.sum(...curr_outValues)

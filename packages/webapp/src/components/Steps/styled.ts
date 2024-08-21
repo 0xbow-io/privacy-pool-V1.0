@@ -6,6 +6,7 @@ export const StepsIndContainer = styled.div`
   justify-content: space-between;
   width: 100%;
   position: relative;
+  margin: 0.5rem 0;
 `
 
 export const Step = styled.div<{ isActive: boolean }>`

@@ -4,6 +4,7 @@ import { ChevronRightSquareIcon, ChevronsUpDown } from "lucide-react"
 import React from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import { OutputsDialog } from "@/views/PoolView/sections/TransactionsSection/OutputsDialog.tsx"
+import { formatEther } from "viem"
 
 export const OutputCommitments = ({ className }: { className: string }) => {
   const {
@@ -36,7 +37,7 @@ export const OutputCommitments = ({ className }: { className: string }) => {
             style={{ minHeight: "4rem" }}
           >
             <h2 className="font-semibold">
-              Output ({index}): {value.toString()}{" "}
+              Output ({index}): {formatEther(BigInt(value.toString()))}{" "}
               {currPool.fieldElement.ticker}
             </h2>
             <Button
@@ -55,7 +56,7 @@ export const OutputCommitments = ({ className }: { className: string }) => {
       })}
       <div className="rounded-md border px-4 py-3 text-sm space-y-2">
         <h2 className="font-semibold  text-sm">
-          Expected Total: {outTotalValue.toString()}{" "}
+          Expected Total: {formatEther(BigInt(outTotalValue.toString()))}{" "}
           {currPool.fieldElement.ticker}{" "}
         </h2>
         <h2 className="font-semibold text-sm text-rust-effect">{reason}</h2>

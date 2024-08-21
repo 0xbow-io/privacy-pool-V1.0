@@ -3,6 +3,7 @@ import { ChevronRightSquareIcon, ChevronsUpDown } from "lucide-react"
 import React, { useState } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
 import { InputsDialog } from "@/views/PoolView/sections/TransactionsSection/InputsDialog.tsx"
+import { formatEther, parseEther } from "viem"
 
 type InputCommitmentsProps = {
   className: string
@@ -49,7 +50,7 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
       })}
       <div className="rounded-md border px-4 py-3 text-sm space-y-2">
         <h2 className="font-semibold text-blackmail text-sm">
-          Total: {getInTotalValueFormatted().toString()}{" "}
+          Total: {formatEther(BigInt(getInTotalValueFormatted().toString()))}{" "}
           {currPool.fieldElement.ticker}{" "}
         </h2>
         <h2 className="font-semibold text-rust-effect text-sm">{reason}</h2>
