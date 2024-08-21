@@ -20,16 +20,15 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card.tsx"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion.tsx"
 import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
+import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
+import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/types.ts"
+import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
 
 const ComputeSection = () => {
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentStep, setCurrentStep] = useState(
+    ComputeSectionSteps.ASPSelection
+  )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
     text: "next"
@@ -101,7 +100,7 @@ const ComputeSection = () => {
 
   useEffect(() => {
     // start processing when user gets to the last step
-    if (currentStep === 3) {
+    if (currentStep === ComputeSectionSteps.TransactionProcessing) {
       if (!worker) {
         console.log("worker is not initialized")
         return
@@ -127,7 +126,7 @@ const ComputeSection = () => {
         ],
         nonces: [0n, 0n, 0n, 0n],
         existingCommitmentJSONs: inCommits.map((c) => c.toJSON()),
-        newCommitmentValues: outValues.map(n => n.toString())
+        newCommitmentValues: outValues.map((n) => n.toString())
       })
     }
   }, [
@@ -152,7 +151,9 @@ const ComputeSection = () => {
   }
 
   const handleContinue = () => {
-    setCurrentStep((prevStep) => prevStep + 1)
+    setCurrentStep((prevStep) =>
+      Math.min(prevStep + 1, ComputeSectionSteps.TransactionProcessing)
+    )
   }
 
   return (
@@ -161,43 +162,16 @@ const ComputeSection = () => {
         <CardTitle>Compute Commitments & Releases</CardTitle>
         <CardDescription>
           <div className="flex-auto">
-            <Accordion type="single" collapsible>
-              <AccordionItem
-                key="how_it_works"
-                value="how_it_works"
-                className=" "
-              >
-                <AccordionTrigger className="mt-4 border border-blackmail px-2  hover:bg-toxic-orange">
-                  <h2 className="text-blackmail "> How does it work? </h2>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-row relative p-6">
-                    <div className="flex-auto">
-                      <p>
-                        Privacy Pool utilises a 2 Inputs to 2 Outputs
-                        transaction scheme where you are computing two{" "}
-                        <span className="text-toxic-orange">
-                          {" "}
-                          new commitments{" "}
-                        </span>{" "}
-                        from two commitments that you own. A commitment is an
-                        encrypted value represented by an entry (commitment
-                        hash) in the Pool&apos;s Merkle Tree.{" "}
-                        <span className="text-toxic-orange">
-                          {" "}
-                          Void input commitment{" "}
-                        </span>{" "}
-                        has 0 value and is used as a placeholder for when you
-                        don&apos;t want to use an existing commitment. <br />
-                        <br />
-                        Total sum of the output commitment values need to match
-                        the sum of the input commitment values + public value.
-                      </p>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <StepsIndicator
+              steps={[
+                "ASP Selection",
+                "Select Commitments",
+                "Confirm TX details",
+                "Processing"
+              ]}
+              currentStep={currentStep}
+            />
+            <StepsHelperAccordion currentStep={currentStep} />
           </div>
         </CardDescription>
       </CardHeader>
@@ -207,12 +181,6 @@ const ComputeSection = () => {
           <Steps
             currentStep={currentStep}
             onBack={handleBack}
-            stepNames={[
-              'ASP Selection',
-              'Select Commitments',
-              'Confirm TX details',
-              'Processing'
-            ]}
             onContinue={handleContinue}
             backButtonProps={{ disabled: currentStep === 0 }}
             forwardButtonProps={forwardBtnProps}

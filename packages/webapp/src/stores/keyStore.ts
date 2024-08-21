@@ -62,7 +62,7 @@ export interface AccountActions {
 
   getInCommitRoot: (index: number) => string
   getInCommit: (index: number) => Commitment
-  updateInCommit: (index: number, value: string, commitIndex: number) => void
+  updateInCommit: (index: number, value: string) => void
   refreshInTotalValue: () => void
   getInTotalValueFormatted: () => BigNumber
   updatePublicValue: (value: number) => void

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select.tsx"
 import React, { useEffect, useState } from "react"
 import { useKeyStore } from "@/providers/global-store-provider.tsx"
-import { numberToHex } from "viem"
+import { type Hex, numberToHex } from "viem"
 
 type InputsDialogProps = {
   className: string
@@ -35,18 +35,26 @@ export const InputsDialog = ({
     updateInCommit,
     updateSelectedKey,
     keyCommitRoots,
-    selectedCommitmentIndexes,
+    inCommits,
     getInCommitRoot
   } = useKeyStore((state) => state)
 
   const walletSelectOptions = keys.map((key) => key.publicAddr)
-  console.log('kcr', keyCommitRoots)
+  console.log("kcr", keyCommitRoots)
 
-  console.log('crash:', selectedKey, selectedKey?.pKey, keyCommitRoots[selectedKey?.pKey])
+  console.log(
+    "crash:",
+    selectedKey,
+    selectedKey?.pKey,
+    keyCommitRoots[selectedKey?.pKey]
+  )
 
-  const commitsSelectOptions = selectedKey ? keyCommitRoots[selectedKey.pKey]
-    .map((root, index) => ({ root, index }))
-    .filter((_, index) => index !== selectedCommitmentIndexes[targetInputIndex]) : []
+  const commitsSelectOptions = selectedKey
+    ? keyCommitRoots[selectedKey.pKey].filter(
+        (root: Hex) =>
+          !inCommits.map((c) => numberToHex(c.commitmentRoot)).includes(root)
+      )
+    : []
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -92,8 +100,7 @@ export const InputsDialog = ({
           <Select
             value={getInCommitRoot(targetInputIndex)}
             onValueChange={(value) => {
-              const { root, commitIndex } = JSON.parse(value)
-              updateInCommit(targetInputIndex, root, commitIndex)
+              updateInCommit(targetInputIndex, value)
             }}
           >
             <SelectTrigger>
@@ -102,14 +109,10 @@ export const InputsDialog = ({
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
-              {commitsSelectOptions.map((commit, index) => {
-                const { root, index: commitIndex } = commit
+              {commitsSelectOptions.map((root, index) => {
                 const shortenedRoot = `${root.substring(0, 14)}....${root.substring(54)}`
                 return (
-                  <SelectItem
-                    key={index}
-                    value={JSON.stringify({ root, commitIndex })}
-                  >
+                  <SelectItem key={index} value={root}>
                     {shortenedRoot}
                   </SelectItem>
                 )
