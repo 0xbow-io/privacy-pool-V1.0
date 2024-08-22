@@ -60,7 +60,7 @@ const Steps: React.FC<StepsProps> = ({
           }
           {...forwardButtonProps}
         >
-          Continue
+          {forwardButtonProps?.text || "Continue"}
         </button>
       </div>
     </div>

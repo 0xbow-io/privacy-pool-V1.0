@@ -31,7 +31,7 @@ const ComputeSection = () => {
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
-    text: "next"
+    text: "Continue"
   })
   const {
     keys,
@@ -54,6 +54,7 @@ const ComputeSection = () => {
     TransactionStatus.pending
   )
   const [worker, setWorker] = useState<Worker | null>(null)
+  const [transactionSent, setTransactionSent] = useState(false)
 
   useEffect(() => {
     console.log("loading worker")
@@ -100,13 +101,17 @@ const ComputeSection = () => {
 
   useEffect(() => {
     // start processing when user gets to the last step
-    if (currentStep === ComputeSectionSteps.TransactionProcessing) {
+    if (
+      currentStep === ComputeSectionSteps.TransactionProcessing &&
+      !transactionSent
+    ) {
       if (!worker) {
         console.log("worker is not initialized")
         return
       }
       console.log("privateKey before", selectedKey?.pKey)
       setTransactionStatus(TransactionStatus.pending)
+      setTransactionSent(true)
       // argument matches should contain the params for as privacyPool.process()
       worker?.postMessage({
         action: "makeCommit",
@@ -137,7 +142,8 @@ const ComputeSection = () => {
     inCommits,
     outPrivacyKeys,
     outValues,
-    worker
+    worker,
+    transactionSent
   ])
 
   useEffect(() => {
@@ -215,6 +221,11 @@ const ComputeSection = () => {
               status={transactionStatus}
               errorDetails={""}
               outcome={{ a: 1 }}
+              setPrimaryButtonProps={setForwardBtnProps}
+              onRestartCb={() => {
+                setTransactionSent(false)
+                setCurrentStep(0)
+              }}
             />
           </Steps>
         </div>

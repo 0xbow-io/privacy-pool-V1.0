@@ -35,7 +35,6 @@ export type AccountState = {
 
   // relevant input values / objects
   inCommits: Commitment[]
-  selectedCommitmentIndexes: [number | undefined, number | undefined]
   inTotalValue: BigNumber
 
   outValues: BigNumber[]
@@ -77,6 +76,7 @@ export interface AccountActions {
 
   isInputValid: () => { ok: boolean; reason: string }
   isOutputValid: () => { ok: boolean; reason: string }
+  resetComputeState: () => void
 }
 
 export type KeyStore = AccountState & AccountActions
@@ -94,7 +94,6 @@ export const defaultInitState: AccountState = {
   currPool: getDefaultPool(),
   availCommits: [],
   inCommits: [],
-  selectedCommitmentIndexes: [undefined, undefined],
 
   publicValue: new BigNumber(0),
   inTotalValue: new BigNumber(0),
@@ -253,10 +252,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         allCommits.push(...commitments)
       }
 
-
-      console.log('crm', commitRootMap)
-
-
+      console.log("crm", commitRootMap)
 
       set((state) => ({
         keyCommitRoots: commitRootMap,
@@ -275,11 +271,10 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const rootHex = numberToHex(get().getInCommit(index)?.commitmentRoot || 0)
       return `${rootHex.substring(0, 14)}....${rootHex.substring(54)}`
     },
-    updateInCommit: (inputIndex, value, commitIndex) => {
+    updateInCommit: (inputIndex, value) => {
       console.log(
         inputIndex,
         value,
-        commitIndex,
         get().availCommits.map((c) => numberToHex(c.commitmentRoot))
       )
       // verify that these commit are still available
@@ -296,13 +291,9 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const newInCommits = get().inCommits
       newInCommits[inputIndex] = commit
 
-      const newCommitIndexes = get().selectedCommitmentIndexes
-      newCommitIndexes[inputIndex] = commitIndex
-
       // set the new inCommits
       set((state) => ({
         inCommits: newInCommits,
-        selectedCommitmentIndexes: newCommitIndexes
       }))
 
       // update the total input value
@@ -313,7 +304,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         // only accumulate the value of the commit if it's still available
         const commit = get().availCommits.find((c) => c.isEqual(val))
         if (commit !== undefined) {
-          return acc.plus(Number(commit.asTuple()[0]))
+          return acc.plus(BigNumber(commit.asTuple()[0].toString()))
         }
         return acc
       }, new BigNumber(0))
@@ -355,7 +346,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         extraAmountIsValid: _expected_output.toNumber() >= 0,
         extraAmountReason:
           _expected_output.toNumber() < 0
-            ? "total output value is negative"
+            ? "Total output value is negative"
             : "",
         publicValue: new BigNumber(value),
         outTotalValue: _expected_output,
@@ -366,8 +357,7 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
     },
 
     updateOutputValue: (index: number, value: BigNumber): void => {
-      console.log('updateOutputValue', index, value.toString())
-      // get current values
+      // get current valus
       const curr_outValues = get().outValues
       // update the value at the specified index
       curr_outValues[index] = value
@@ -384,8 +374,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
         set((state) => ({
           outputAmountIsValid: [false, false],
           outputAmountReasons: [
-            "total output value is negative",
-            "total output value is negative"
+            "Total output value is negative",
+            "Total output value is negative"
           ]
         }))
       } else {
@@ -417,8 +407,8 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
           set((state) => ({
             outputAmountIsValid: [false, false],
             outputAmountReasons: [
-              "total output is more than expected, adjust external amount or lower output amount",
-              "total output is more than expected, adjust external amount or lower output amount"
+              "Total output is more than expected, adjust external amount or lower output amount",
+              "Total output is more than expected, adjust external amount or lower output amount"
             ]
           }))
         } else {
@@ -487,15 +477,30 @@ export const createKeyStore = (initState: AccountState = defaultInitState) =>
       const _total_output = BigNumber.sum(...curr_outValues)
 
       if (_total_output.eq(0)) {
-        return { ok: false, reason: "total output amount is 0" }
+        return { ok: false, reason: "Total output amount is 0" }
       }
 
       if (!_total_output.eq(_expected_output)) {
         return {
           ok: false,
-          reason: "total output values does not match expected"
+          reason: "Total output values does not match expected"
         }
       }
       return { ok: true, reason: "" }
+    },
+    resetComputeState: () => {
+      set(state => ({
+        inCommits: [],
+        inTotalValue: new BigNumber(0),
+        outValues: [new BigNumber(0), new BigNumber(0)],
+        outSplits: [100, 0],
+        outPrivacyKeys: [],
+        outTotalValue: new BigNumber(0),
+        publicValue: new BigNumber(0),
+        extraAmountIsValid: true,
+        extraAmountReason: "",
+        outputAmountIsValid: [false, false],
+        outputAmountReasons: ["no encryption key set", "no encryption key set"]
+      }))
     }
   }))

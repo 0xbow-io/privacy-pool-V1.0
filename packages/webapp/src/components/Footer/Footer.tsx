@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
   return (
     <StyledFooter>
       <div className="w-full h-full grid grid-cols-2 items-center justify-end tablet:px-6 tablet:grid-cols-6 laptop:grid-cols-6 2xl:grid-cols-12">
-        <div className="flex h-full flex-col justify-around gap-y-5 col-span-2 phone:col-start-1 tablet:col-start-2 tablet:col-span-5 laptop:col-span-3 laptop:col-start-3 2xl:col-span-4 2xl:col-start-6">
+        <div className="flex h-full flex-col items-end justify-around gap-y-5 col-span-2 phone:col-start-1 tablet:col-start-2 tablet:col-span-5 laptop:col-span-3 laptop:col-start-3 2xl:col-span-4 2xl:col-start-6">
           <PoolRootContainer>
             Current pool root:{" "}
             {stateRoot

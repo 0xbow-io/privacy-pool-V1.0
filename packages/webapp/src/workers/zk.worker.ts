@@ -40,6 +40,7 @@ const decryptCiphers = async (poolID: string, privateKeys: Hex[]) => {
   for (const [chain, metas] of ExistingPrivacyPools.entries()) {
     for (const p of metas) {
       if (p.id === poolID) {
+        console.log("decrypt pool id", p.id)
         const instance = getOnChainPrivacyPool(
           p,
           createPublicClient({
@@ -185,7 +186,9 @@ const handleRequest = async (
           .then((res) => {
             return res
           })
-          .catch((err) => console.log(err))
+          .catch((err) =>
+            self.postMessage({ action: "makeCommitErr", payload: err })
+          )
       }
     }
   }
@@ -204,11 +207,8 @@ self.addEventListener("message", async (event) => {
         event.data.existingCommitmentJSONs,
         event.data.newCommitmentValues
       )
-      // Send the result back to the main thread
       self.postMessage({ action: "makeCommitRes", payload: result })
     } catch (error) {
-      console.error("Error in worker", error)
-      // Send the error back to the main thread
       self.postMessage({ action: "makeCommitErr", payload: error })
     }
   }

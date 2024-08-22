@@ -4,8 +4,9 @@ export type CommonProps = {
 
 export type ForwardButtonProps = {
   disabled?: boolean
-  text: string
+  text?: string
   [key: string]: any
+  onClick?: () => void
 }
 
 export type ASP = {

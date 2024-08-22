@@ -21,7 +21,7 @@ export const SourceWalletStep = ({
 
   useEffect(() => {
     setPrimaryButtonProps &&
-      setPrimaryButtonProps({ disabled: !selectedWallet, text: "next" })
+      setPrimaryButtonProps({ disabled: !selectedWallet })
   }, [setPrimaryButtonProps, selectedWallet])
 
   // const selectedWallet = walletOptions.find((value) => value === selectedOption);

@@ -9,9 +9,11 @@ import {
   LoaderIcon
 } from "@/views/PoolView/sections/ComputeSection/steps/styled.ts"
 import { BadgeCheck, CircleAlert } from "lucide-react"
+import { useKeyStore } from "@/providers/global-store-provider.tsx"
 
 type TransactionProcessingStepProps = {
   status: TransactionStatus
+  onRestartCb: (step: number) => void
   errorDetails?: string
   outcome?: object
 }
@@ -20,8 +22,11 @@ export const TransactionProcessingStep = ({
   status,
   errorDetails,
   outcome,
-  setPrimaryButtonProps
+  setPrimaryButtonProps,
+  onRestartCb
 }: TransactionProcessingStepProps & CommonProps) => {
+  const { resetComputeState } = useKeyStore((state) => state)
+
   useEffect(() => {
     setPrimaryButtonProps &&
       setPrimaryButtonProps({
@@ -41,6 +46,23 @@ export const TransactionProcessingStep = ({
     downloadAnchorNode.click()
     downloadAnchorNode.remove()
   }
+
+  useEffect(() => {
+    if (
+      status === TransactionStatus.success ||
+      status === TransactionStatus.failure
+    ) {
+      resetComputeState()
+    }
+    if (status === TransactionStatus.success) {
+      setPrimaryButtonProps &&
+        setPrimaryButtonProps({
+          disabled: false,
+          text: "Compute Another Commitment",
+          onClick: () => onRestartCb(0)
+        })
+    }
+  }, [status])
 
   return (
     <Container>

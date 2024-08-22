@@ -21,15 +21,15 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
     extraAmountIsValid && isInputValid().ok && isOutputValid().ok
   useEffect(() => {
     setPrimaryButtonProps &&
-      setPrimaryButtonProps({ disabled: !inputsAreValid, text: "next" })
+    setPrimaryButtonProps({ disabled: !inputsAreValid })
   }, [inputsAreValid, setPrimaryButtonProps])
 
   return (
-    <div className="flex flex-col gap-y-4 laptop:flex-row laptop:items-start laptop:gap-4">
-      <div className="flex-auto">
+    <div className="grid grid-cols-1 gap-4 laptop:grid-cols-8">
+      <div className="col-span-1 laptop:col-span-3">
         <InputCommitments className="" />
       </div>
-      <div className="flex-auto flex flex-col gap-y-2 tablet:pt-6">
+      <div className="col-span-1 laptop:col-span-2">
         <label
           htmlFor="extra-amount"
           className={cn(
@@ -49,7 +49,7 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
             )
           }
           className={cn(
-            "px-4 py-3 text-sm font-semibold text-blackmail ",
+            "px-4 py-3 text-sm font-semibold text-blackmail w-full",
             extraAmountIsValid ? "text-blackmail" : "text-rust-effect"
           )}
         />
@@ -57,8 +57,8 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
           {extraAmountReason}
         </h2>
       </div>
-      <div className="flex-auto">
-        {<OutputCommitments className="border-2" />}
+      <div className="col-span-1 laptop:col-span-3">
+        <OutputCommitments className="border-2" />
       </div>
     </div>
   )

@@ -23,7 +23,7 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
 
   useEffect(() => {
     if (setPrimaryButtonProps) {
-      setPrimaryButtonProps({ disabled: !selectedASP.id, text: "next" })
+      setPrimaryButtonProps({ disabled: !selectedASP.id })
     }
   }, [setPrimaryButtonProps, selectedASP])
 
