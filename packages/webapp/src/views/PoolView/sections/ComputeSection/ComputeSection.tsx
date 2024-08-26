@@ -77,7 +77,7 @@ const ComputeSection = () => {
           console.log("Message from worker:", payload)
           setTransactionStatus(TransactionStatus.success)
         } else if (action === "makeCommitErr") {
-          console.error("Worker error:", payload)
+          console.error("Worker error(compute section):", payload)
           setTransactionStatus(TransactionStatus.failure)
         } else if (action === "getKeysCommitmentsRes") {
           updateKeyCommitRoots(payload)

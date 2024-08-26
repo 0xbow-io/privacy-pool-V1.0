@@ -31,7 +31,7 @@ export const InputCommitments = ({ className }: InputCommitmentsProps) => {
             className="rounded-md border my-2 px-4 py-3 text-sm items-center justify-between flex flex-row w-full"
             style={{ minHeight: "4rem" }}
           >
-            <h2 className="font-semibold text-blackmail ">
+            <h2 className="font-semibold text-blackmail break-all ">
               Input ({index}): {commitRoot}
             </h2>
             <Button

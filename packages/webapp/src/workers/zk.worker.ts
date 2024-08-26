@@ -143,7 +143,7 @@ const handleRequest = async (
         console.log("pubAddr", publicAddr)
         console.log(walletClient)
 
-        await instance
+       return await instance
           .process(
             walletClient,
             {
@@ -207,7 +207,8 @@ self.addEventListener("message", async (event) => {
         event.data.existingCommitmentJSONs,
         event.data.newCommitmentValues
       )
-      self.postMessage({ action: "makeCommitRes", payload: result })
+      console.log('request result', result)
+      result && self.postMessage({ action: "makeCommitRes", payload: result })
     } catch (error) {
       self.postMessage({ action: "makeCommitErr", payload: error })
     }
