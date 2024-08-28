@@ -19,12 +19,14 @@ export type FEMeta = {
   iconURI: string
 }
 
-export type PrivacyPoolMeta = {
-  chain: Chain // network chain
+export type PoolMeta = {
+  id: string // unique id
+  name: string // human readable name of the pool
+
+  chainID: number // chain id
   address: Address // contract address
-  verifier: Address
+  verifier: Address // verifier address
   genesis: bigint // when pool was deployed
-  id: string // reference id
   scope: bigint // scope value from the Scope() function
   fieldElement: FEMeta
   minmaxCommit: bigint[]
@@ -120,4 +122,18 @@ export namespace TPrivacyPool {
     IPrivacyPool_Contract["abi"],
     "Record"
   >
+}
+
+/**
+  @todo Depreciate this
+*/
+export type PrivacyPoolMeta = {
+  chain: Chain // network chain
+  address: Address // contract address
+  verifier: Address
+  genesis: bigint // when pool was deployed
+  id: string // reference id
+  scope: bigint // scope value from the Scope() function
+  fieldElement: FEMeta
+  minmaxCommit: bigint[]
 }

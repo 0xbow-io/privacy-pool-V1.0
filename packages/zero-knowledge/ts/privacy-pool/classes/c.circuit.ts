@@ -55,6 +55,30 @@ export namespace CCircuit {
           )
         : Promise.reject("verifier not initialized")
 
+    _prove = async <
+      argsT extends TPrivacyPool.GetCircuitInArgsT,
+      outputT extends SnarkJSOutputT | CircomOutputT | StdPackedGroth16ProofT,
+      resT extends
+        | boolean
+        | outputT
+        | { verified: boolean; packedProof: outputT }
+    >(
+      circuitIn: TPrivacyPool.InT,
+      onOk?: (args: { c: ICircuit.circuitI; out: outputT }) => Promise<resT>,
+      verify = true
+    ) =>
+      this._prover
+        ? await this._prover(circuitIn)
+            .then(async (output) =>
+              verify
+                ? await this.verify(output as outputT, onOk)
+                : (output as resT)
+            )
+            .catch((e) => {
+              throw new Error(`proof generation failed, cause: ${e}`)
+            })
+        : Promise.reject("prover not initialized")
+
     prove =
       <
         argsT extends TPrivacyPool.GetCircuitInArgsT,
@@ -64,22 +88,17 @@ export namespace CCircuit {
           | outputT
           | { verified: boolean; packedProof: outputT }
       >(
-        args: argsT,
+        args?: argsT,
         verify = true
       ) =>
       async (
+        circuitIn?: TPrivacyPool.InT,
         onOk?: (args: { c: ICircuit.circuitI; out: outputT }) => Promise<resT>
       ): Promise<resT> =>
-        this._prover
-          ? await this._prover(FnPrivacyPool.getCircuitInFn(args)().inputs)
-              .then(async (output) =>
-                verify
-                  ? await this.verify(output as outputT, onOk)
-                  : (output as resT)
-              )
-              .catch((e) => {
-                throw new Error(`proof generation failed, cause: ${e}`)
-              })
-          : Promise.reject("prover not initialized")
+        args !== undefined
+          ? await this._prove(FnPrivacyPool.getCircuitInFn(args)().inputs, onOk)
+          : circuitIn === undefined
+            ? Promise.reject("no inputs given")
+            : await this._prove(circuitIn as TPrivacyPool.InT, onOk)
   }
 }

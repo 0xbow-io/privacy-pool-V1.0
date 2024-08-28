@@ -1,6 +1,9 @@
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { Point } from "@zk-kit/baby-jubjub"
-import type { TCommitment } from "@privacy-pool-v1/domainobjs"
+import type {
+  TCommitment,
+  MembershipProofJSON
+} from "@privacy-pool-v1/domainobjs"
 import type { LeanIMT } from "@zk-kit/lean-imt"
 import type { Hex } from "viem"
 
@@ -20,17 +23,6 @@ export namespace ICommitment {
       hash: bigint | string
       commitmentRoot: bigint | string
       nullRoot: bigint | string
-    },
-    JSONT = {
-      public: {
-        scope: string
-        cipher: string[]
-        saltPk: string[]
-      }
-      hash: string
-      cRoot: string
-      pkScalar: Hex
-      nonce: string
     }
   > {
     setIndex: (mt: LeanIMT) => void
@@ -43,6 +35,7 @@ export namespace ICommitment {
     isEqual: (c: CommitmentI) => boolean
     asTuple: () => TCommitment.TupleT
     hash: () => bigint
-    toJSON: () => JSONT
+    toJSON: () => TCommitment.CommitmentJSON
+    membershipProof: (mt: LeanIMT) => MembershipProofJSON
   }
 }

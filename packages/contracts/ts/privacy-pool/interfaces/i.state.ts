@@ -3,12 +3,12 @@ import type { LeanIMT } from "@zk-kit/lean-imt"
 
 export namespace IState {
   export interface StateI<
-    MerkleT = LeanIMT,
-    NullifierT = bigint,
-    ProofT = InclusionProofT
+    //MerkleT = LeanIMT,
+    //NullifierT = bigint,
+    //ProofT = InclusionProofT
   > {
     MAX_MERKLE_DEPTH: bigint | number
-    merkleTree: MerkleT
+    // merkleTree: MerkleT
     /**
      * @dev rootSet is a set of commitment-roots & null-roots derived from ciphers
      * null-roots function as nullifiers to the commitment-roots
@@ -16,12 +16,13 @@ export namespace IState {
      * null-roots are computed using zk
      * @note: Using the EnumerableSet library for easy iteration over set elements.
      */
-    rootSet: Set<bigint>
+    _rootSet: Set<bigint>
     UpdateRootSet: (roots: bigint[]) => bigint
   }
 }
 
 /*
+//
 
 zkCircuit?: ICircuit.circuitI
 

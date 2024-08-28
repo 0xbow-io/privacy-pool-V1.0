@@ -2,14 +2,14 @@
 // bunx jest ./test/c.privacypool.test.ts
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
 import {
-  createNewCommitment,
+  CreateNewCommitment,
   RecoverFromJSON
 } from "@privacy-pool-v1/domainobjs"
 import { beforeAll, describe, expect, test } from "@jest/globals"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import {
   ExistingPrivacyPools,
-  getOnChainPrivacyPool
+  GetOnChainPrivacyPool
 } from "@privacy-pool-v1/contracts"
 import type { Hex } from "viem"
 import {
@@ -22,8 +22,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts"
 import { sepolia, gnosis } from "viem/chains"
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs"
-const rpc: string =
-  ""
+const rpc: string = ""
 const TARGET_CHAIN = sepolia
 
 const paths = {
@@ -35,8 +34,7 @@ const paths = {
     "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
 }
 
-const privateKey: Hex =
-  ""
+const privateKey: Hex = ""
 const account = privateKeyToAccount(privateKey)
 const privacyKey = PrivacyKey.from(privateKey, 0n)
 
@@ -53,7 +51,7 @@ describe("Testing Contract Bindings", () => {
     if (poolInstance === undefined) {
       throw new Error("Pool Instance is undefined")
     }
-    privacyPool = getOnChainPrivacyPool(
+    privacyPool = GetOnChainPrivacyPool(
       poolInstance[0],
       createPublicClient({
         chain: TARGET_CHAIN,
@@ -159,13 +157,13 @@ describe("Testing Contract Bindings", () => {
           privacyKey.nonce
         ],
         [
-          createNewCommitment({
+          CreateNewCommitment({
             _pK: privateKey,
             _nonce: 0n,
             _scope: scopeVal,
             _value: 0n
           }),
-          createNewCommitment({
+          CreateNewCommitment({
             _pK: privateKey,
             _nonce: 0n,
             _scope: scopeVal,
@@ -173,13 +171,13 @@ describe("Testing Contract Bindings", () => {
           })
         ],
         [
-          createNewCommitment({
+          CreateNewCommitment({
             _pK: privateKey,
             _nonce: 0n,
             _scope: scopeVal,
             _value: parseEther("0.0005")
           }),
-          createNewCommitment({
+          CreateNewCommitment({
             _pK: privateKey,
             _nonce: 0n,
             _scope: scopeVal,

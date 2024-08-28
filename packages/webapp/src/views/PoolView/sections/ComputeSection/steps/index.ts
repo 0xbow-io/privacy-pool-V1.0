@@ -1,5 +1,5 @@
-export {ASPSelectionStep} from './ASPSelectionStep'
-export {CommitmentsStep} from './CommitmentsStep.tsx'
-export {ConfirmationStep} from './ConfirmationStep.tsx'
-export {SourceWalletStep} from './SourceWalletStep.tsx'
-export {TransactionProcessingStep} from './TransactionProcessingStep.tsx'
+export { ASPSelectionStep } from "./ASPSelectionStep"
+export { CommitmentsStep } from "./CommitmentsStep.tsx"
+export { ConfirmationStep } from "./ConfirmationStep.tsx"
+export { SignerSelectionStep } from "./SignerSelectionStep.tsx"
+export { TransactionProcessingStep } from "./TransactionProcessingStep.tsx"

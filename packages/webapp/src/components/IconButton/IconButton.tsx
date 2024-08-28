@@ -1,10 +1,11 @@
 import styled from "@emotion/styled"
-import React from "react"
+import React, { type MouseEventHandler } from "react"
 import { Button } from "@/components/ui/button.tsx"
 
 interface IconButtonProps {
   icon: React.ReactNode
-  onClick?: () => void
+  disabled: boolean
+  onClick?: MouseEventHandler<HTMLButtonElement>
   children: React.ReactNode
 }
 
@@ -16,13 +17,18 @@ const StyledButton = styled(Button)`
   color: #220066;
 
   &:hover {
-    background: rgba(255, 96, 55,1);
+    background: rgba(255, 96, 55, 1);
   }
 `
 
-const IconButton: React.FC<IconButtonProps> = ({ icon, onClick, children }) => {
+const IconButton: React.FC<IconButtonProps> = ({
+  icon,
+  onClick,
+  disabled,
+  children
+}) => {
   return (
-    <StyledButton onClick={onClick}>
+    <StyledButton onClick={onClick} disabled={disabled}>
       {icon}
       {children}
     </StyledButton>

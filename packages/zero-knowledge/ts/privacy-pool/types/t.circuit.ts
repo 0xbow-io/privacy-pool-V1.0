@@ -99,6 +99,8 @@ export type CircomOutputT = {
   publicSignals: PublicSignalsT
 }
 
+export type PrivacyPoolCircuitInput = TPrivacyPool.InT
+
 export namespace TPrivacyPool {
   export type PubInT<T = bigint> = {
     scope: T

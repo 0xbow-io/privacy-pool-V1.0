@@ -15,16 +15,12 @@ export const WelcomeSection = ({
         <div className="relative col-span-2 row-span-3 row-start-3 flex flex-col items-start justify-start border-l-2 border-ghost-white pl-4 text-ghost-white  ">
           <div className="relative flex ">
             <h2 className=" text-balance text-start font-bold leading-relaxed text-ghost-white text-xl tablet:text-3xl laptop:text-4xl">
-              Regulatory Compliant Privacy Protocol for the EVM
+              A Privacy-Preserving Protocol for the EVM.
             </h2>
           </div>
           <div className="flex py-6">
             <p className=" z-10 text-pretty text-justify leading-relaxed text-ghost-white text-xs tablet:text-base laptop:text-lg ">
-              Privacy pools extends previous zero-knowledge proofs (ZKPs)
-              privacy tools by allowing users to publicly publish an additional
-              ZKP to prove that the funds they commit to the protocol are not
-              associated with illicit funds from other users, helping to isolate
-              illicit funds.
+              Privacy pools is a zero-knoweldge protocol.
               <br />
               <br />
               You can start on Accounts tab where you can{" "}

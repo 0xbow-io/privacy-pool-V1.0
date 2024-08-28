@@ -1,22 +1,128 @@
-import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs"
-import { groth16 } from "snarkjs"
 import type {
-  TPrivacyPool,
-  SnarkJSOutputT,
-  CircomOutputT,
-  Groth16_VKeyJSONT,
-  CircomArtifactT,
-  StdPackedGroth16ProofT
-} from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
-import type { TCommitment, InclusionProofT } from "@privacy-pool-v1/domainobjs"
+  InclusionProofT,
+  Commitment,
+  TCommitment,
+  MembershipProofJSON
+} from "@privacy-pool-v1/domainobjs"
+
 import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/domainobjs"
-import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
 import {
   fetchJsonWithRetry,
   loadBytesFromUrl
 } from "@privacy-pool-v1/global/utils/fetch"
+import { isUrlOrFilePath } from "@privacy-pool-v1/global/utils/path"
+import type {
+  CircomArtifactT,
+  CircomOutputT,
+  Groth16_VKeyJSONT,
+  SnarkJSOutputT,
+  StdPackedGroth16ProofT,
+  TPrivacyPool
+} from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
+import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs"
+import { groth16 } from "snarkjs"
+import { hexToBigInt, type IntegerOutOfRangeErrorType } from "viem"
+
+export const GetNewSum = (
+  args: {
+    new: Commitment[]
+    existing: Commitment[]
+  },
+  externIO: [bigint, bigint]
+): {
+  expected: bigint
+  actual: bigint
+} => FnPrivacyPool.getNewSum(args, externIO)
+
+export const GetOutputVals = (
+  args: {
+    new: Commitment[]
+    existing: Commitment[]
+  },
+  externIO: [bigint, bigint]
+): [bigint, bigint] => FnPrivacyPool.getOutputValsFn(args, externIO)
+
+export const ComputeExternIO = (args: {
+  new: Commitment[]
+  existing: Commitment[]
+}): [bigint, bigint] => FnPrivacyPool.getExternIOFn(args)()
 
 export namespace FnPrivacyPool {
+  export const getNewSum = <
+    argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>
+  >(
+    args: argsT,
+    externIO: [bigint, bigint]
+  ): {
+    expected: bigint
+    actual: bigint
+  } => {
+    const existingVals = args.existing
+      ? args.existing.map((commitment) => commitment.asTuple()[0])
+      : [0n, 0n]
+
+    const newVals = args.new
+      ? args.new.map((commitment) => commitment.asTuple()[0])
+      : [0n, 0n]
+
+    return {
+      expected:
+        existingVals.reduce((acc, val) => acc + val, 0n) +
+        externIO[0] -
+        externIO[1],
+      actual: newVals.reduce((acc, val) => acc + val, 0n)
+    }
+  }
+
+  // given the externIO values
+  // assuming static values for existing commitments
+  // compute the values of the new commitments
+  // if a new commitment exists with non zero values
+  // adjust these values to ensure the sum of the new commitments
+  // is equal to the sum of the existing commitments
+  export const getOutputValsFn = <
+    argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>
+  >(
+    args: argsT,
+    externIO: [bigint, bigint]
+  ): [bigint, bigint] => {
+    const newVals = args.new
+      ? args.new.map((commitment) => commitment.asTuple()[0])
+      : [0n, 0n]
+
+    const existingVals = args.existing
+      ? args.existing.map((commitment) => commitment.asTuple()[0])
+      : [0n, 0n]
+
+    const sumNew = newVals.reduce((acc, val) => acc + val, 0n)
+    const expectedSumNew =
+      existingVals.reduce((acc, val) => acc + val, 0n) +
+      externIO[0] -
+      externIO[1]
+
+    if (expectedSumNew < 0n) {
+      return [-1n, -1n]
+    }
+
+    const adjustednewVals = newVals.map((val) =>
+      sumNew === 0n ? 0n : (val * expectedSumNew) / sumNew
+    ) as [bigint, bigint]
+
+    console.log(
+      `NewVals: ${newVals}`,
+      `AdjustedNewVals: ${adjustednewVals}`,
+      `ExternIO: ${externIO}`
+    )
+
+    if (adjustednewVals[0] === 0n) {
+      adjustednewVals[0] = expectedSumNew
+    }
+    return adjustednewVals
+  }
+
+  // TODO - getExternIOFn is biased to one side (input or output)
+  // So any set externIO values could be reset to 0
+  // This is not ideal when user whishes to have both input and output values
   export const getExternIOFn =
     <
       argsT extends Partial<Readonly<TPrivacyPool.GetCircuitInArgsT>>,
@@ -47,53 +153,75 @@ export namespace FnPrivacyPool {
       InputsT extends Required<TPrivacyPool.CircuitInT>,
       ioT = [bigint, bigint]
     >(
-      args: argsT
+      args: argsT,
+      externIO?: ioT
     ) =>
     (
       // calculate public value & isCommit
-      externIO: ioT = getExternIOFn(args)() as ioT,
-      // compute merkle proofs
-      merkleProofs: InclusionProofT[] = MerkleTreeInclusionProofs(
-        args
-      )() as InclusionProofT[]
+      io: ioT = externIO ?? (getExternIOFn(args)() as ioT),
+      newCommitments: TCommitment.CommitmentJSON[] = args.new.map((c) =>
+        c.toJSON()
+      ),
+      membershipProofs: MembershipProofJSON[] = args.existing.map((c) =>
+        c.membershipProof(args.mt)
+      )
     ): InputsT => {
-      /// To-Do add some verification checks here
       return {
         inputs: {
-          scope: args.scope,
-          actualTreeDepth: BigInt(args.mt.depth),
+          scope: hexToBigInt(membershipProofs[0].public.scope.hex),
+          actualTreeDepth: BigInt(
+            Math.max(
+              Number(membershipProofs[0].private.inclusion.stateDepth),
+              Number(membershipProofs[1].private.inclusion.stateDepth)
+            )
+          ),
           context: args.context,
-          externIO: externIO,
-          existingStateRoot: args.mt.root || 0n,
-          newSaltPublicKey: args.new.map(
-            (c) => c.public().saltPk as [bigint, bigint]
+          externIO: io,
+          existingStateRoot:
+            args.existing.findIndex((c) => c.isVoid()) !== 0
+              ? hexToBigInt(membershipProofs[0].private.inclusion.stateRoot.hex)
+              : hexToBigInt(
+                  membershipProofs[1].private.inclusion.stateRoot.hex
+                ),
+          newSaltPublicKey: newCommitments.map(
+            (c) => c.public.saltPk.map((x) => BigInt(x)) as [bigint, bigint]
           ),
-          newCiphertext: args.new.map((c) =>
-            c.public().cipher.map((x) => x as bigint)
+          newCiphertext: newCommitments.map((c) =>
+            c.public.cipher.map((x) => BigInt(x))
           ) as TCommitment.CipherT[],
-          privateKey: args.pkScalars,
-          nonce: args.nonces,
-          exSaltPublicKey: args.existing.map(
-            (c) => c.public().saltPk as [bigint, bigint]
+          privateKey: membershipProofs
+            .map((p) => hexToBigInt(p.private.pkScalar.hex))
+            .concat(newCommitments.map((c) => hexToBigInt(c.pkScalar))),
+          nonce: membershipProofs
+            .map((p) => BigInt(p.private.nonce))
+            .concat(newCommitments.map((c) => BigInt(c.nonce))),
+          exSaltPublicKey: membershipProofs.map(
+            (c) => c.public.saltPk.map((x) => BigInt(x)) as [bigint, bigint]
           ),
-          exCiphertext: args.existing.map((c) =>
-            c.public().cipher.map((x) => x as bigint)
+          exCiphertext: membershipProofs.map((c) =>
+            c.public.cipher.map((x) => BigInt(x))
           ) as TCommitment.CipherT[],
-          exIndex: merkleProofs.map((p) => BigInt(p.index)),
-          exSiblings: merkleProofs.map((p) => p.siblings)
+          exIndex: membershipProofs.map((p) =>
+            BigInt(p.private.inclusion.index)
+          ),
+          exSiblings: membershipProofs.map((p, i) =>
+            !args.existing[i].isVoid()
+              ? p.private.inclusion.siblings.map((x) => BigInt(x))
+              : Array(32).fill(0n)
+          )
         } as TPrivacyPool.InT,
         expectedOut: {
           newNullRoot: [
-            ...args.existing.map((c) => c.nullRoot),
-            ...args.new.map((c) => c.nullRoot)
+            ...membershipProofs.map((c) => hexToBigInt(c.private.null.hex)),
+            ...newCommitments.map((c) => hexToBigInt(c.nullRoot))
           ],
           newCommitmentRoot: [
-            ...args.existing.map((c) => c.commitmentRoot),
-            ...args.new.map((c) => c.commitmentRoot)
+            ...membershipProofs.map((c) => hexToBigInt(c.private.root.hex)),
+            ...newCommitments.map((c) => hexToBigInt(c.cRoot))
           ],
           newCommitmentHash: [
-            ...args.existing.map((c) => c.hash()),
-            ...args.new.map((c) => c.hash())
+            ...membershipProofs.map((c) => hexToBigInt(c.public.hash.hex)),
+            ...newCommitments.map((c) => BigInt(c.hash))
           ]
         } as TPrivacyPool.PublicOutT
       } as InputsT
@@ -147,8 +275,7 @@ export namespace FnPrivacyPool {
       ) => Promise<artifactT> = FetchArtifactFn()
     ) =>
     async (inputs: CircuitSignals): Promise<proofT> => {
-
-console.log('inputs', inputs)
+      console.log("inputs", inputs)
       return Promise.all([artifactsFetcher(wasm), artifactsFetcher(zKey)])
         .then(
           async ([_wasm, _zkey]) =>

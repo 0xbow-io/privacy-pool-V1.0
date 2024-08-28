@@ -2,12 +2,12 @@
 // bunx jest ./tests/circom/privacy-pool/domain.stateTree.test.ts
 
 import { cleanThreads } from "@privacy-pool-v1/global/utils/utils"
-import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge"
+import { PrivacyPool } from "@privacy-pool-v1/zero-knowledge/ts/circuit"
 import { generatePrivateKey } from "viem/accounts"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import {
-  NewCommitment,
+  CreateNewCommitment,
   MerkleTreeInclusionProof
 } from "@privacy-pool-v1/domainobjs"
 import type { InclusionProofT } from "@privacy-pool-v1/domainobjs"
@@ -48,7 +48,7 @@ describe("Testing MerkleTreeInclusionProof", () => {
     // since we are pushing the commitmentRoot & nullroot
     for (let i = 0; i < cycles; i++) {
       const c = Array.from({ length: 2 }, () => {
-        const _c = NewCommitment({
+        const _c = CreateNewCommitment({
           _pK: generatePrivateKey(),
           _nonce: BigInt(i),
           _scope: randomBigint(0n, 1000n),

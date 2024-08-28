@@ -1,12 +1,15 @@
 import React from "react"
-import type { ForwardButtonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import type {
+  ForwardButtonProps,
+  BackButtonProps
+} from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 
 type StepsProps = {
   children: React.ReactNode[]
   currentStep: number
   onBack: () => void
   onContinue: () => void
-  backButtonProps?: { disabled?: boolean }
+  backButtonProps?: BackButtonProps
   forwardButtonProps?: ForwardButtonProps
 }
 
@@ -41,7 +44,7 @@ const Steps: React.FC<StepsProps> = ({
           }
           {...forwardButtonProps}
         >
-          Continue
+          {forwardButtonProps.text || "Continue"}
         </button>
       </div>
     </div>

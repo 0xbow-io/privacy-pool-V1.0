@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/accordion.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import React, { useCallback, useState } from "react"
-import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import { useGlobalStore } from "@/stores/global-store.ts"
 import { CirclePlus, Download, Upload, Wallet } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
+import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { keys, generate, importFromJSON, exportToJSON } = useKeyStore(
+  const { privKeys, addKey, importKeys, exportKeys } = useGlobalStore(
     (state) => state
   )
   const [account, setAccount] = useState<string>()
@@ -51,19 +52,17 @@ export const AccountCard = ({ className }: { className: string }) => {
           }
           if (d.target.result) {
             const content = d.target.result
-            importFromJSON(content.toString())
+            importKeys(content.toString())
           } else {
             throw new Error("Failed to read file")
           }
         }
       }
     },
-    [importFromJSON]
+    [importKeys]
   )
 
   const { getRootProps } = useDropzone({ onDrop })
-
-  console.log("connected:", connected)
 
   return (
     <Card className={cn("", className)}>
@@ -78,17 +77,17 @@ export const AccountCard = ({ className }: { className: string }) => {
           </div>
         )}
         <Accordion type="single" collapsible>
-          {keys && keys.length ? (
-            keys.map((key) => {
-              const jsonKey = key.asJSON
+          {privKeys.length ? (
+            privKeys.map((k) => {
+              const key = PrivacyKey.from(k, 0n)
               return (
                 <AccordionItem
-                  key={jsonKey.pubAddr}
-                  value={jsonKey.pubAddr}
+                  key={key.publicAddr}
+                  value={key.publicAddr}
                   className=""
                 >
                   <AccordionTrigger className="border-b border-gray-50 text-blackmail hover:bg-toxic-orange pl-2 text-xs">
-                    {jsonKey.pubAddr}
+                    {key.publicAddr}
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="relative grid grid-cols-1 items-start justify-start gap-y-4 text-wrap pt-4">
@@ -98,7 +97,7 @@ export const AccountCard = ({ className }: { className: string }) => {
                         </div>
                         <div>
                           <h2 className="text-xs text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.privateKey}
+                            {key.pKey}
                           </h2>
                         </div>
                       </div>
@@ -109,7 +108,7 @@ export const AccountCard = ({ className }: { className: string }) => {
                         </div>
                         <div>
                           <h2 className="text-xs text-doctor transition-all duration-300 ease-in group-hover:text-blackmail">
-                            {jsonKey.pubAddr}
+                            {key.publicAddr}
                           </h2>
                         </div>
                       </div>
@@ -120,50 +119,44 @@ export const AccountCard = ({ className }: { className: string }) => {
             })
           ) : (
             <div className="text-md flex justify-center">
-              You don't have any imported keys
+              You do not have any imported keys
             </div>
           )}
         </Accordion>
         <div className="flex justify-center mt-10">
-          <IconButton onClick={generate} icon={<CirclePlus />}>
-            {keys && !!keys.length ? "Add new key" : "Create account"}
+          <IconButton onClick={addKey} icon={<CirclePlus />} disabled={false}>
+            {privKeys && !!privKeys.length ? "Add new key" : "Create account"}
           </IconButton>
         </div>
       </CardContent>
 
       <CardContent className="space-y-2">
-        <CardTitle>Keys Import:</CardTitle>
-        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 2xl:grid-cols-3 justify-around">
-          <Button
-            {...getRootProps()}
-            className="w-full rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
-          >
-            <Upload className="mx-4 size-6" />
-            Import from JSON
-          </Button>
-          <Button
-            onClick={() => connect()}
-            disabled
-            className="w-full rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
-          >
-            <Wallet className="mx-4 size-6" /> Connect Metamask
-          </Button>
+        <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3 2xl:grid-cols-3 justify-around">
+          <div className="flex justify-center mt-10">
+            <IconButton {...getRootProps()} icon={<Upload />} disabled={false}>
+              Import Keys
+            </IconButton>
+          </div>
+          <div className="flex justify-center mt-10">
+            <IconButton
+              onClick={() => exportKeys()}
+              icon={<Download />}
+              disabled={privKeys && privKeys.length === 0}
+            >
+              Export Keys
+            </IconButton>
+          </div>
+          <div className="flex justify-center mt-10">
+            <IconButton
+              onClick={() => connect()}
+              icon={<Wallet />}
+              disabled={true}
+            >
+              Connect To Metamask
+            </IconButton>
+          </div>
         </div>
       </CardContent>
-      {keys && !!keys.length && (
-        <CardContent className="space-y-2">
-          <CardTitle>Keys Export:</CardTitle>
-          <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 2xl:grid-cols-3 justify-around">
-            <Button
-              onClick={() => exportToJSON(true)}
-              className="w-full rounded-none border-0 bg-doctor text-lg font-bold text-blackmail hover:bg-blackmail hover:text-doctor"
-            >
-              <Download className="mx-4 size-6" />
-              Export to JSON
-            </Button>
-          </div>
-        </CardContent>
-      )}
     </Card>
   )
 }

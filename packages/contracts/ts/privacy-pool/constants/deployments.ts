@@ -1,9 +1,14 @@
 import type { Address } from "viem"
 import type { Chain } from "viem/chains"
-import { sepolia, gnosis } from "viem/chains"
-import type { PrivacyPoolMeta, FEMeta } from "@privacy-pool-v1/contracts"
+import { sepolia, mainnet, gnosis } from "viem/chains"
+import type {
+  PrivacyPoolMeta,
+  PoolMeta,
+  FEMeta,
+  OnChainPrivacyPool
+} from "@privacy-pool-v1/contracts"
 
-export const SUPPORTED_CHAINS = [sepolia, gnosis]
+export const SUPPORTED_CHAINS = [sepolia, mainnet, gnosis]
 export const DEFAULT_CHAIN = sepolia
 
 export const ETH_Simple_FieldElement: FEMeta = {
@@ -26,8 +31,99 @@ export const XDAI_Simple_FieldElement: FEMeta = {
   iconURI: "https://gnosisscan.io/assets/xdai/images/svg/logos/token-light.svg"
 }
 
+export const ChainNameToChain: Map<string, Chain> = new Map<string, Chain>([
+  ["Sepolia", sepolia],
+  ["Gnosis", gnosis]
+])
+
+export const ChainNameIDToChain: Map<number, Chain> = new Map<number, Chain>([
+  [sepolia.id, sepolia],
+  [gnosis.id, gnosis]
+])
+
+export const ChainIDToPoolIDs: Map<number, string[]> = new Map<
+  number,
+  string[]
+>([
+  [sepolia.id, ["SEPOLIA_ETH_POOL_1", "SEPOLIA_ETH_POOL_2"]],
+  [gnosis.id, ["GNOSIS_ETH_POOL_1"]]
+])
+
+// Flat Map of Pool ID to Pool Meta
+export const PrivacyPools: Map<string, PoolMeta> = new Map<string, PoolMeta>([
+  [
+    "SEPOLIA_ETH_POOL_1",
+    {
+      id: "SEPOLIA_ETH_POOL_1",
+      name: "Sepolia Eth Pool 1",
+      chainID: sepolia.id,
+      address: "0x35F9acbaD838b12AA130Ef6386C14d847bdC1642" as Address,
+      verifier: "0x3eFc6308888bC3EC39c596c8776846fA5C0bFDA7" as Address,
+      scope:
+        11049869816642268564454296009173568684966369147224378104485796423384633924130n,
+      genesis: 6311941n,
+      fieldElement: ETH_Simple_FieldElement,
+      minmaxCommit: [0n, 1000000000000000000n]
+    }
+  ],
+  [
+    "SEPOLIA_ETH_POOL_2",
+    {
+      id: "SEPOLIA_ETH_POOL_2",
+      name: "Sepolia Eth Pool 2",
+      chainID: sepolia.id,
+      address: "0x35F9acbaD838b12AA130Ef6386C14d847bdC1642" as Address,
+      verifier: "0x3eFc6308888bC3EC39c596c8776846fA5C0bFDA7" as Address,
+      scope:
+        11049869816642268564454296009173568684966369147224378104485796423384633924130n,
+      genesis: 6311941n,
+      fieldElement: ETH_Simple_FieldElement,
+      minmaxCommit: [0n, 1000000000000000000n]
+    }
+  ],
+  [
+    "GNOSIS_ETH_POOL_1",
+    {
+      id: "GNOSIS_ETH_POOL_1",
+      name: "Gnosis xDAI Pool 1",
+      chainID: gnosis.id,
+      address: "0x0C606138Aa02600c55e0d427cf4B2a7319a808fe" as Address,
+      verifier: "0xD925FC406cAaD1186f0Fc91C0c04bf65878EF68a" as Address,
+      scope:
+        1594601211935923806427821481643004967624986397998197460555337643549018639657n,
+      genesis: 6311941n,
+      fieldElement: XDAI_Simple_FieldElement,
+      minmaxCommit: [0n, 1000000000000000000n]
+    }
+  ]
+])
+
+export const getDefaultPoolIDForChainID = (chainID: number): string => {
+  const pools = ChainIDToPoolIDs.get(chainID)
+  if (pools && pools.length > 0) {
+    return pools[0]
+  }
+  return ""
+}
+
+export const getDefaultPoolMetaForChainID = (chain: number): PoolMeta => {
+  return (
+    PrivacyPools.get(getDefaultPoolIDForChainID(chain)) ?? {
+      id: "",
+      name: "",
+      chainID: 0,
+      address: "" as Address,
+      verifier: "" as Address,
+      scope: 0n,
+      genesis: 0n,
+      fieldElement: ETH_Simple_FieldElement,
+      minmaxCommit: [0n, 0n]
+    }
+  )
+}
+
 /**
-  @todo Somehow autogenerate mapping with deployment script
+  @todo Depreciate this
 */
 export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
   Chain,
@@ -78,6 +174,9 @@ export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
   ]
 ])
 
+/**
+  @todo Depreciate this
+*/
 export const getDefaultPool = (): PrivacyPoolMeta => {
   if (ExistingPrivacyPools.has(DEFAULT_CHAIN)) {
     const _metas = ExistingPrivacyPools.get(DEFAULT_CHAIN)
@@ -85,8 +184,3 @@ export const getDefaultPool = (): PrivacyPoolMeta => {
   }
   throw new Error("No default pool found")
 }
-
-export const ChainNameToChain: Map<string, Chain> = new Map<string, Chain>([
-  ["Sepolia", sepolia],
-  ["Gnosis", gnosis]
-])

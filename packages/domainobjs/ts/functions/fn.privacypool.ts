@@ -20,11 +20,11 @@ export const MerkleTreeInclusionProofs =
     ) => (idx: bigint | number) => OuT = FnPrivacyPool.merkleProofFn
   ) =>
   (
-    dummyPredicate: (c: Commitment) => boolean = (c: Commitment) => c.isVoid()
+    voidPredicate: (c: Commitment) => boolean = (c: Commitment) => c.isVoid()
   ): OuT[] =>
     args.existing
       ? args.existing.map((commitment) =>
-          dummyPredicate(commitment)
+          voidPredicate(commitment)
             ? (DummyMerkleProof as OuT)
             : (merkleProof(args)(commitment.index) as OuT)
         )

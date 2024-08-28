@@ -1,40 +1,20 @@
-import { cn } from "@/lib/utils.ts"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs.tsx"
+import { cn } from "@/lib/utils.ts"
+import { useGlobalStore } from "@/stores/global-store.ts"
 import { AccountCard } from "@/views/PoolView/sections/AccountSection/AccountCard.tsx"
-import React, { useState } from "react"
-import { useKeyStore } from "@/providers/global-store-provider.tsx"
-import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"
-import { TransactionCard } from "@/views/PoolView/sections/TransactionsSection/TransactionCard.tsx"
 import ComputeSection from "@/views/PoolView/sections/ComputeSection/ComputeSection.tsx"
+import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"
+import { useState } from "react"
 
-export enum TabsValue {
-  Account = "account",
-  Compute = "compute",
-  Asp = "asp",
-  Records = "records",
-  Settings = "settings"
-}
-
-type PoolTabsProps = {
-  currentTab: TabsValue
-  onTabChange: (tab: TabsValue) => void
-  // className?: string
-  onSettingsClick: () => void
-}
-
-export const PoolTabs = ({
-  currentTab,
-  onTabChange,
-  onSettingsClick
-}: PoolTabsProps) => {
-  const { notEmpty } = useKeyStore((state) => state)
-  const hasWallet = notEmpty()
+export const PoolTabs = () => {
   const [isWelcomeScreen, setIsWelcomeScreen] = useState(true)
+
+  const { onTabChange, currentTab, privKeys } = useGlobalStore((state) => state)
 
   return (
     <div className={cn("relative", "flex-auto z-10 w-full")}>
@@ -44,7 +24,7 @@ export const PoolTabs = ({
             <TabsTrigger
               onClick={() => {
                 setIsWelcomeScreen(false)
-                onTabChange(TabsValue.Account)
+                onTabChange("account")
               }}
               value="account"
               className="text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white"
@@ -52,24 +32,24 @@ export const PoolTabs = ({
               Account
             </TabsTrigger>
             <TabsTrigger
-              disabled={!hasWallet}
-              onClick={() => onTabChange(TabsValue.Compute)}
+              disabled={!privKeys.length}
+              onClick={() => onTabChange("compute")}
               value="compute"
               className="text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white"
             >
               Compute
             </TabsTrigger>
             <TabsTrigger
-              disabled={!hasWallet}
-              onClick={() => onTabChange(TabsValue.Asp)}
+              disabled={!privKeys.length}
+              onClick={() => onTabChange("asp")}
               value="asp"
               className="text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white"
             >
               ASP
             </TabsTrigger>
             <TabsTrigger
-              disabled={!hasWallet}
-              onClick={() => onTabChange(TabsValue.Records)}
+              disabled={!privKeys.length}
+              onClick={() => onTabChange("records")}
               value="records"
               className="text-xs tablet:text-base laptop:text-md data-[state=active]:bg-blackmail data-[state=active]:text-ghost-white"
             >
@@ -88,7 +68,7 @@ export const PoolTabs = ({
               <WelcomeSection
                 onProceedClick={() => {
                   setIsWelcomeScreen(false)
-                  onTabChange(TabsValue.Account)
+                  onTabChange("account")
                 }}
                 className=""
               />

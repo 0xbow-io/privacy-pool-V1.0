@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import { Upload, UserRoundPlus } from "lucide-react"
 import React, { useCallback } from "react"
-import { useKeyStore } from "@/providers/global-store-provider.tsx"
+import { useGlobalStore } from "@/stores/global-store.ts"
 import {
   Drawer,
   DrawerClose,
@@ -31,22 +31,19 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog.tsx"
+import {
+  DEFAULT_CHAIN,
+  getDefaultPoolIDForChainID,
+  PrivacyPools,
+  ChainIDToPoolIDs
+} from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
 
-type SettingsSectionProps = {
-  className: string
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-}
-
-export const SettingsDrawer = ({
-  className,
-  onOpenChange,
-  isOpen
-}: SettingsSectionProps) => {
+export const SettingsDrawer = () => {
   const isNotMobile = useMediaQuery("(min-width: 768px)")
+  const { _settingsDrawer, settingsDrawer } = useGlobalStore((state) => state)
 
   return isNotMobile ? (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={_settingsDrawer} onOpenChange={settingsDrawer}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
@@ -55,13 +52,13 @@ export const SettingsDrawer = ({
           </DialogDescription>
         </DialogHeader>
         <SettingsDrawerContent
-          onClose={() => onOpenChange(false)}
-          className={className}
+          onClose={() => settingsDrawer(false)}
+          className=""
         />
       </DialogContent>
     </Dialog>
   ) : (
-    <Drawer open={isOpen} onOpenChange={onOpenChange}>
+    <Drawer open={_settingsDrawer} onOpenChange={settingsDrawer}>
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>Settings</DrawerTitle>
@@ -70,12 +67,12 @@ export const SettingsDrawer = ({
           </DrawerDescription>
         </DrawerHeader>
         <SettingsDrawerContent
-          className={className}
-          onClose={() => onOpenChange(false)}
+          className=""
+          onClose={() => settingsDrawer(false)}
         />
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
-            <Button onClick={() => onOpenChange(false)} variant="outline">
+            <Button onClick={() => settingsDrawer(false)} variant="outline">
               Done
             </Button>
           </DrawerClose>
@@ -92,14 +89,9 @@ const SettingsDrawerContent = ({
   onClose: () => void
   className: string
 }) => {
-  const {
-    getCurrentPool,
-    updateTargetPoolChain,
-    availChains,
-    ExistingPrivacyPools,
-    generate,
-    importFromJSON
-  } = useKeyStore((state) => state)
+  const { currPoolID, setTargetPool, addKey, importKeys } = useGlobalStore(
+    (state) => state
+  )
 
   // on file drop to load local account
   const onDrop = useCallback(
@@ -114,14 +106,14 @@ const SettingsDrawerContent = ({
           }
           if (d.target.result) {
             const content = d.target.result
-            importFromJSON(content.toString())
+            importKeys(content.toString())
           } else {
             throw new Error("Failed to read file")
           }
         }
       }
     },
-    [importFromJSON]
+    [importKeys]
   )
 
   const { getRootProps } = useDropzone({ onDrop })
@@ -134,33 +126,28 @@ const SettingsDrawerContent = ({
         </div>
         <div className="flex-auto flex-col space-y-1.5">
           <Select
-            value={getCurrentPool().id}
-            onValueChange={(value) => updateTargetPoolChain(value)}
+            value={currPoolID}
+            onValueChange={(value) => setTargetPool(value)}
           >
             <SelectTrigger
               id="input_commitment_1"
               className="bg-royal-nightfall text-ghost-white border-0  underline decoration-1 underline-offset-4 text-xs laptop:text-base "
             >
-              <SelectValue placeholder="Select">
-                {getCurrentPool().id}
-              </SelectValue>
+              <SelectValue placeholder="Select">{currPoolID}</SelectValue>
             </SelectTrigger>
-
             <SelectContent
               position="popper"
               className="bg-royal-nightfall text-ghost-white"
             >
-              {availChains.map((chain) => {
+              {Array.from(ChainIDToPoolIDs.entries()).map((entry) => {
                 return (
-                  <SelectGroup key={chain.name}>
-                    <SelectLabel>{chain.name}</SelectLabel>
-                    {ExistingPrivacyPools.get(chain)?.map((pool) => {
+                  <SelectGroup key={entry[0]}>
+                    <SelectLabel>{entry[0]}</SelectLabel>
+                    {entry[1].map((poolId) => {
+                      const pool = PrivacyPools.get(poolId)
                       return (
-                        <SelectItem
-                          key={`${pool.chain.name}:${pool.id}`}
-                          value={`${pool.chain.name}:${pool.id}`}
-                        >
-                          {pool.id}
+                        <SelectItem key={`${poolId}`} value={`${poolId}`}>
+                          {pool?.name}
                         </SelectItem>
                       )
                     })}
@@ -188,7 +175,7 @@ const SettingsDrawerContent = ({
         <div className="flex-auto flex flex-row">
           <Button
             onClick={() => {
-              generate()
+              addKey()
               onClose()
             }}
             className=" text-blackmail bg-ghost-white hover:text-ghost-white hover:bg-blackmail"

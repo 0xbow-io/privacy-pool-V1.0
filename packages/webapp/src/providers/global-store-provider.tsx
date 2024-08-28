@@ -1,34 +1,28 @@
 "use client"
 
 import { type ReactNode, createContext, useRef, useContext } from "react"
-import { useStore } from "zustand"
+import { useStore, type StoreApi } from "zustand"
 
-import { createKeyStore, type KeyStore } from "@/stores/keyStore.ts"
+import { useGlobalStore, type GlobalStore } from "@/stores/global-store.ts"
 
-export type KeyStoreApi = ReturnType<typeof createKeyStore>
+export type GlobalStoreApi = StoreApi<GlobalStore>
 
-export const KeyStoreContext = createContext<KeyStoreApi | undefined>(undefined)
+export const GlobalStoreContext = createContext<GlobalStoreApi | undefined>(
+  undefined
+)
 
-export interface KeyStoreProviderProps {
+export interface GlobalStoreProviderProps {
   children: ReactNode
 }
 
-export const KeyStoreProvider = ({ children }: KeyStoreProviderProps) => {
-  const storeRef = useRef<KeyStoreApi>()
+export const GlobalStoreProvider = ({ children }: GlobalStoreProviderProps) => {
+  const storeRef = useRef<GlobalStoreApi>()
   if (!storeRef.current) {
-    storeRef.current = createKeyStore()
+    storeRef.current = useGlobalStore
   }
   return (
-    <KeyStoreContext.Provider value={storeRef.current}>
+    <GlobalStoreContext.Provider value={storeRef.current}>
       {children}
-    </KeyStoreContext.Provider>
+    </GlobalStoreContext.Provider>
   )
-}
-
-export const useKeyStore = <T,>(selector: (store: KeyStore) => T): T => {
-  const keyStoreContext = useContext(KeyStoreContext)
-  if (!keyStoreContext) {
-    throw new Error("useKeyStore must be used within KeyStoreProvider")
-  }
-  return useStore(keyStoreContext, selector)
 }

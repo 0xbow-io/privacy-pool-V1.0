@@ -2,7 +2,7 @@
 
 import React, { type ReactNode } from "react"
 import { MetaMaskProvider } from "@metamask/sdk-react"
-import { KeyStoreProvider } from "@/providers/global-store-provider.tsx"
+//import { GlobalStoreProvider } from "@/stores/global-store.ts"
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   return (
@@ -16,7 +16,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         infuraAPIKey: process.env.INFURA_PROJECT_ID
       }}
     >
-      <KeyStoreProvider>{children}</KeyStoreProvider>
+      {children}
     </MetaMaskProvider>
   )
 }

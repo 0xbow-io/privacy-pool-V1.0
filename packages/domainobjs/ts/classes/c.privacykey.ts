@@ -1,13 +1,13 @@
 import type { Point } from "@zk-kit/baby-jubjub"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { Hex } from "viem"
-
+import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
 
 import {
   ConstCommitment,
-  createNewCommitment,
+  CreateNewCommitment,
   RecoverCommitment
 } from "@privacy-pool-v1/domainobjs"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
@@ -16,6 +16,27 @@ import { poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 export type PrivacyKeys = PrivacyKey[]
+export const RecoverCommitments = (
+  keys: PrivacyKeys,
+  ciphers: {
+    rawSaltPk: [bigint, bigint]
+    rawCipherText: [bigint, bigint, bigint, bigint, bigint, bigint, bigint]
+    commitmentHash: bigint
+    cipherStoreIndex: bigint
+  }[]
+): Commitment[][] =>
+  keys.map((key) =>
+    ciphers
+      .map((cipher) =>
+        key.decryptCipher(
+          cipher.rawSaltPk,
+          cipher.rawCipherText,
+          cipher.commitmentHash,
+          cipher.cipherStoreIndex
+        )
+      )
+      .filter((v) => v !== undefined)
+  )
 
 export type PrivacyKeyJSON = {
   _nonce: string
@@ -107,15 +128,14 @@ export class PrivacyKey {
    * assuming that the caller of addCommitment
    * has passed down the correct cipherStoreIndex, scope & commitmentHash
    */
-  decryptCipher = async (
+  decryptCipher = (
     rawSaltPk: [bigint, bigint],
     rawCipherText: [bigint, bigint, bigint, bigint, bigint, bigint, bigint],
     commitmentHash: bigint,
     cipherStoreIndex: bigint
-  ): Promise<void> => {
-    let _commitment: Commitment | undefined
+  ): Commitment | void => {
     try {
-      _commitment = RecoverCommitment(
+      const _commitment = RecoverCommitment(
         {
           _pKScalar: this.pKScalar,
           _nonce: this.nonce,
@@ -126,21 +146,20 @@ export class PrivacyKey {
         {
           _hash: commitmentHash
         }
-      ) as Commitment
+      )
+
+      if (_commitment) {
+        const _tuple = _commitment.asTuple()
+        const _secrets = this._knownSecrets.get(_tuple[1]) ?? []
+        _secrets.push([_tuple[0], rawSaltPk[0], rawSaltPk[1], cipherStoreIndex])
+        this._knownSecrets.set(_tuple[1], _secrets)
+
+        return _commitment
+      }
     } catch (e) {
       console.error(`Error decrypting cipherText: ${e}`)
-    }
-
-    if (!_commitment) {
-      console.log("no commitment available")
       return
     }
-
-    const _tuple = _commitment.asTuple()
-    const _secrets = this._knownSecrets.get(_tuple[1]) ?? []
-    _secrets.push([_tuple[0], rawSaltPk[0], rawSaltPk[1], cipherStoreIndex])
-    this._knownSecrets.set(_tuple[1], _secrets)
-    return
   }
 
   /**
@@ -156,6 +175,7 @@ export class PrivacyKey {
     const commitments: Commitment[] = []
     const _scope = await pool.scope()
     const _secrets = this._knownSecrets.get(_scope)
+    let stateTree = pool.stateTree
     if (_secrets) {
       for (let i = 0; i < _secrets.length; i++) {
         const _tuple = [
@@ -188,7 +208,7 @@ export class PrivacyKey {
           // update commitment index
 
           try {
-            _commitment.setIndex(pool.merkleTree)
+            _commitment.setIndex(stateTree)
           } catch (e) {
             console.error(e)
             continue
@@ -198,7 +218,7 @@ export class PrivacyKey {
           // check existence of nullroot in pool rootSet
           // if exists then return undefined
           if (
-            (ignoreNullified && !pool.rootSet.has(_commitment.nullRoot)) ||
+            (ignoreNullified && !stateTree.has(_commitment.nullRoot)) ||
             !ignoreNullified
           ) {
             commitments.push(_commitment)
@@ -210,7 +230,7 @@ export class PrivacyKey {
       // we'll create 2 void commitments
       for (let i = 0; i < 2; i++) {
         commitments.push(
-          createNewCommitment({
+          CreateNewCommitment({
             _pK: this.pKey,
             _nonce: this.nonce,
             _scope: _scope,

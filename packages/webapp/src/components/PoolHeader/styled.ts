@@ -5,6 +5,7 @@ export const Container = styled.div`
   flex-direction: row;
   border: 2px solid;
   border-radius: 1.5rem;
+  justify-content: space-between;
   background-color: #220066;
   color: #f8f8ff;
   padding: 0.75rem 1rem;
@@ -22,14 +23,14 @@ export const HeaderText = styled.h2`
 
 export const PoolRootContainer = styled.div`
     //margin-left: auto;
-   
+
     padding: 0.5rem;
     background-color: #352370;
     color: #f8f8ff;
     height: 100%;
     display: flex;
     align-items: center;
-    
+
     @media (min-width: 460px) {
         height: auto;
         width: auto;

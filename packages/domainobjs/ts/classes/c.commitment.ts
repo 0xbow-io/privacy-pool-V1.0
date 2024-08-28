@@ -1,5 +1,13 @@
-import type { ICommitment, TCommitment } from "@privacy-pool-v1/domainobjs"
-import { ConstCommitment, FnCommitment } from "@privacy-pool-v1/domainobjs"
+import type {
+  ICommitment,
+  TCommitment,
+  MembershipProofJSON
+} from "@privacy-pool-v1/domainobjs"
+import {
+  ConstCommitment,
+  FnCommitment,
+  FnPrivacyPool
+} from "@privacy-pool-v1/domainobjs"
 import type { Point } from "@zk-kit/baby-jubjub"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { LeanIMT } from "@zk-kit/lean-imt"
@@ -9,12 +17,20 @@ import { hashLeftRight } from "maci-crypto"
 import type { Hex } from "viem"
 import { hexToBigInt, numberToHex } from "viem"
 
-export const createNewCommitment = (args: {
+export const CreateNewCommitment = (args: {
   _pK: Hex
   _nonce: bigint
   _scope: bigint
   _value: bigint
 }): Commitment => CCommitment.CommitmentC.new(args)()
+
+export const DummyCommitment = (withValue = 0n): Commitment =>
+  new CCommitment.CommitmentC({
+    pkScalar: 0n,
+    nonce: 0n,
+    value: withValue,
+    secret: [0n, 0n]
+  })
 
 export const RecoverCommitment = (
   args: {
@@ -33,17 +49,7 @@ export const RecoverCommitment = (
 ): Commitment => CCommitment.CommitmentC.recover(args, challenge)()
 
 export const RecoverFromJSON = (
-  json: {
-    public: {
-      scope: string
-      cipher: string[]
-      saltPk: string[]
-    }
-    hash: string
-    cRoot: string
-    pkScalar: Hex
-    nonce: string
-  },
+  json: TCommitment.CommitmentJSON,
   len = 4
 ): Commitment => CCommitment.CommitmentC.recoverFromJSON(json, len)
 
@@ -110,14 +116,17 @@ export namespace CCommitment {
         this._private.pkScalar
       )
 
-      nullSubTree.insert(Pk[0])
-      nullSubTree.insert(Pk[1])
-      nullSubTree.insert(this._private.secret[0])
-      nullSubTree.insert(this._private.secret[1])
-      nullSubTree.insert(this._public.saltPk[0])
-      nullSubTree.insert(this._public.saltPk[1])
-      nullSubTree.insert(Ek[0])
-      nullSubTree.insert(Ek[1])
+      nullSubTree.insertMany([
+        Pk[0],
+        Pk[1],
+        this._private.secret[0],
+        this._private.secret[1],
+        this._public.saltPk[0],
+        this._public.saltPk[1],
+        Ek[0],
+        Ek[1]
+      ])
+
       this._nullRoot = nullSubTree.root
 
       return this._nullRoot
@@ -161,7 +170,72 @@ export namespace CCommitment {
       }
     }
 
-    toJSON = () => {
+    membershipProof = (mt: LeanIMT): MembershipProofJSON => {
+      let inclusion = {
+        stateRoot: {
+          raw: "0",
+          hex: numberToHex(0n)
+        },
+        leafIndex: "0",
+        index: "0",
+        stateDepth: "0",
+        siblings: ["0"]
+      }
+
+      try {
+        if (!this.isVoid()) {
+          this.setIndex(mt)
+          const proof = FnPrivacyPool.merkleProofFn({
+            mt: mt
+          })(this.index)
+          inclusion = {
+            stateRoot: {
+              raw: proof.root.toString(),
+              hex: numberToHex(proof.root)
+            },
+            leafIndex: this.index.toString(),
+            index: proof.index.toString(),
+            stateDepth: proof.actualDepth.toString(),
+            siblings: proof.siblings.map((v) => v.toString())
+          }
+        }
+      } catch (e) {
+        throw new Error(`failed to generate membership proof: ${e}`)
+      }
+
+      return {
+        public: {
+          scope: {
+            raw: this._public.scope.toString(),
+            hex: numberToHex(this._public.scope)
+          },
+          cipher: this._public.cipher.map((v) => v.toString()),
+          saltPk: this._public.saltPk.map((v) => v.toString()),
+          hash: {
+            raw: this.hash().toString(),
+            hex: numberToHex(this.hash())
+          }
+        },
+        private: {
+          inclusion: inclusion,
+          pkScalar: {
+            hex: numberToHex(this._private.pkScalar),
+            raw: this._private.pkScalar.toString()
+          },
+          nonce: this._private.nonce.toString(),
+          root: {
+            raw: this.commitmentRoot.toString(),
+            hex: numberToHex(this.commitmentRoot)
+          },
+          null: {
+            raw: this.nullRoot.toString(),
+            hex: numberToHex(this.nullRoot)
+          }
+        }
+      } as MembershipProofJSON
+    }
+
+    toJSON = (): TCommitment.CommitmentJSON => {
       return {
         public: {
           scope: this._public.scope.toString(),
@@ -169,7 +243,8 @@ export namespace CCommitment {
           saltPk: this._public.saltPk.map((v) => v.toString())
         },
         hash: this.hash().toString(),
-        cRoot: this.commitmentRoot.toString(),
+        cRoot: numberToHex(this.commitmentRoot),
+        nullRoot: numberToHex(this.nullRoot),
         pkScalar: numberToHex(this._private.pkScalar),
         nonce: this._private.nonce.toString()
       }
@@ -261,20 +336,7 @@ export namespace CCommitment {
           }
         ) // wrap binding with commitment class
 
-    static recoverFromJSON = (
-      json: {
-        public: {
-          scope: string
-          cipher: string[]
-          saltPk: string[]
-        }
-        hash: string
-        cRoot: string
-        pkScalar: Hex
-        nonce: string
-      },
-      len = 4
-    ) => {
+    static recoverFromJSON = (json: TCommitment.CommitmentJSON, len = 4) => {
       return CCommitment.CommitmentC.recover(
         {
           _pKScalar: hexToBigInt(json.pkScalar),

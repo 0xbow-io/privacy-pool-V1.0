@@ -40,9 +40,10 @@ export namespace ICircuit {
         | outputT
         | { verified: boolean; packedProof: outputT }
     >(
-      args: argsT,
+      args?: argsT,
       verify?: boolean
     ) => (
+      circuitIn?: TPrivacyPool.InT,
       onOk?: (args: { c: circuitI; out: outputT }) => Promise<resT>
     ) => Promise<resT>
   }

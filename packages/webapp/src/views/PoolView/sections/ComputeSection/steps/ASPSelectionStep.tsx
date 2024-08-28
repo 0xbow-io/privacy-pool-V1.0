@@ -6,6 +6,7 @@ import type {
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import Select from "@/components/Select/Select.tsx"
 import { formatEther } from "viem"
+import { useGlobalStore } from "@/stores/global-store.ts"
 
 type ASPSelectionStepProps = {
   ASPOptions: ASP[]
@@ -19,11 +20,16 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
   onASPSelect,
   setPrimaryButtonProps
 }) => {
+  const { isSyncing } = useGlobalStore((state) => state)
+
   useEffect(() => {
     if (setPrimaryButtonProps) {
-      setPrimaryButtonProps({ disabled: true, text: "next" })
+      setPrimaryButtonProps({
+        disabled: isSyncing,
+        text: isSyncing ? "Syncing..." : "Next"
+      })
     }
-  }, [setPrimaryButtonProps])
+  }, [setPrimaryButtonProps, isSyncing])
 
   const handleSelectChange = (value: string) => {
     const selectedASP = ASPOptions.find(({ id }) => id === value)
@@ -35,7 +41,9 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
   return (
     <div className="flex flex-col items-start w-full h-full">
       <div className="w-full text-left">
-        <h1 className="text-2xl font-bold">Select an ASP</h1>
+        <h1 className="text-2xl font-bold">
+          Select an Association Set Provider (ASP)
+        </h1>
         <p className="text-sm">This is a smaller description text.</p>
       </div>
       <div className="w-full flex justify-start mt-4">

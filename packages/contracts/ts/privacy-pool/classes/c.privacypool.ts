@@ -1,12 +1,15 @@
 import type {
   IState,
-  PrivacyPoolMeta,
+  PoolMeta,
   TGroth16Verifier,
   TPrivacyPool
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import {
   ContextFn,
+  PrivacyPools,
   D_ExternIO_StartIdx,
+  SUPPORTED_CHAINS,
+  DEFAULT_CHAIN,
   FetchCheckpointAtRootFn,
   FetchRootsFn,
   FnGroth16Verifier,
@@ -16,10 +19,12 @@ import {
   UnpackCiphersWithinRangeFn
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import type { Commitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
+import { RecoverCommitments } from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
   SnarkJSOutputT,
-  StdPackedGroth16ProofT
+  StdPackedGroth16ProofT,
+  PrivacyPoolCircuitInput
 } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import {
   FnPrivacyPool,
@@ -28,6 +33,7 @@ import {
 import { LeanIMT } from "@zk-kit/lean-imt"
 import { hashLeftRight } from "maci-crypto"
 import type {
+  Chain,
   Address,
   Client,
   Hex,
@@ -36,24 +42,68 @@ import type {
   WalletActions,
   WalletClient
 } from "viem"
-import { createPublicClient, http } from "viem"
-
-export const getOnChainPrivacyPool = (
-  meta: PrivacyPoolMeta,
-  conn?: PublicClient
-): CPool.poolC => new CPool.poolC(meta, conn)
+import {
+  extractChain,
+  createPublicClient,
+  http,
+  numberToHex,
+  hexToBigInt
+} from "viem"
 
 export type OnChainPrivacyPool = CPool.poolC
+export type PrivacyPoolState = CPool.stateC
+
+export const NewPrivacyPoolSate = (): PrivacyPoolState => new CPool.stateC()
+
+// returns all the privacy pool isntances
+export const GetOnchainPrivacyPools = (): OnChainPrivacyPool[] =>
+  Array.from(PrivacyPools.keys()).map((poolID) =>
+    GetOnChainPrivacyPoolByPoolID(poolID)
+  )
+
+export const GetOnChainPrivacyPoolByPoolID = (poolID: string): CPool.poolC => {
+  const meta = PrivacyPools.get(poolID)
+  if (meta === undefined) {
+    throw new Error("Pool not found")
+  }
+  return new CPool.poolC(meta)
+}
+
+export const GetOnChainPrivacyPool = (meta: PoolMeta): CPool.poolC =>
+  new CPool.poolC(meta)
 
 export namespace CPool {
   export class stateC implements IState.StateI {
     MAX_MERKLE_DEPTH = 32
-    merkleTree = new LeanIMT(hashLeftRight)
-    rootSet: Set<bigint> = new Set()
-    static newState = (): IState.StateI => new stateC()
+    _size = 0
+    _root = 0n
 
-    StateSize = (): bigint => BigInt(this.merkleTree.size)
-    StateRoot = (): bigint => this.merkleTree.root
+    constructor(public _rootSet: Set<bigint> = new Set<bigint>()) {
+      this.syncStateTree()
+    }
+
+    static newState = (rootSet?: Set<bigint>): IState.StateI =>
+      new stateC(rootSet)
+
+    get size(): bigint {
+      return BigInt(this._size)
+    }
+
+    get root(): bigint {
+      return this._root
+    }
+    get stateTree(): LeanIMT<bigint> {
+      return new LeanIMT<bigint>(hashLeftRight, Array.from(this._rootSet))
+    }
+    indexOf = (root: bigint): number => this.stateTree.indexOf(root)
+    has = (root: bigint): boolean => this._rootSet.has(root)
+
+    syncStateTree = (): bigint => {
+      let stateTree = this.stateTree
+      this._root = stateTree.root
+      this._size = stateTree.size
+      return this._root
+    }
 
     /**
      * @dev UpdateRootSet: insert a set of roots into the rootSet
@@ -65,14 +115,56 @@ export namespace CPool {
         // check if root exists in the rootSet
         // if not, add it
         // if yes, throw an error
-        if (this.rootSet.has(root)) {
+        if (this._rootSet.has(root)) {
           throw new Error("Root already exists in the rootSet")
         }
-        this.rootSet.add(root)
+        this._rootSet.add(root)
       }
-      // update the merkle tree
-      this.merkleTree.insertMany(roots)
-      return this.merkleTree.root
+
+      return this.syncStateTree()
+    }
+
+    /***
+     * @dev export: export the current state tree
+     * @note Seems like there is a bug with LeanIMT issue where exporting the whole tree to JSON
+     *       and then importing it, causes leaves to not be the original bigint value...
+     *       So, we instead we are exporting the rootset instead as an array of Hex strings
+     ***/
+    export = (): string =>
+      JSON.stringify({
+        rootset: Array.from(this._rootSet).map((x) => numberToHex(x))
+      })
+
+    import = (data: string): { root: bigint; size: number } => {
+      this._rootSet = new Set(
+        JSON.parse(data).rootset.map((x: Hex) => hexToBigInt(x))
+      )
+      this.syncStateTree()
+      return { root: this._root, size: this._size }
+    }
+
+    BuildCircuitInputs = (
+      scope: bigint,
+      context: TPrivacyPool.ContextFn_out_T,
+      pkScalars: bigint[],
+      nonces: bigint[],
+      existingCommitment: Commitment[],
+      newCommitment: Commitment[],
+      externIO?: [bigint, bigint]
+    ) => {
+      return FnPrivacyPool.getCircuitInFn(
+        {
+          scope: scope,
+          context: context,
+          mt: this.stateTree,
+          maxDepth: this.MAX_MERKLE_DEPTH,
+          pkScalars: pkScalars,
+          nonces: nonces,
+          existing: existingCommitment,
+          new: newCommitment
+        },
+        externIO
+      )().inputs
     }
   }
 
@@ -122,34 +214,45 @@ export namespace CPool {
         TPrivacyPool.CommitmentHashes_T
       ]
     >
-
-    constructor(
-      public meta: PrivacyPoolMeta,
-      public conn?: PublicClient
-    ) {
+    _conn?: PublicClient
+    constructor(public meta: PoolMeta) {
       super()
-      // set con to the std public client if it is not set
-      this.conn =
-        this.conn ??
-        createPublicClient({
-          chain: this.meta.chain,
-          transport: http()
-        })
-
       // bindings to the contract functions
-      this._scope = ScopeFn(meta.chain, this.conn)
-      this._context = ContextFn(meta.chain, this.conn)
-      this._stateSize = GetStateSizeFn(meta.chain, this.conn)
-      this._roots = FetchRootsFn(meta.chain, this.conn)
-      this._checkpoint = FetchCheckpointAtRootFn(meta.chain, this.conn)
-      this._ciphers = UnpackCiphersWithinRangeFn(meta.chain, this.conn)
+      this._scope = ScopeFn(this.chain, this.conn)
+      this._context = ContextFn(this.chain, this.conn)
+      this._stateSize = GetStateSizeFn(this.chain, this.conn)
+      this._roots = FetchRootsFn(this.chain, this.conn)
+      this._checkpoint = FetchCheckpointAtRootFn(this.chain, this.conn)
+      this._ciphers = UnpackCiphersWithinRangeFn(this.chain, this.conn)
 
       // binding to on-chain verifier
       this._onChainGroth16Verifier = FnGroth16Verifier.verifyProofFn(
-        meta.chain,
+        this.chain,
         this.conn
       )
     }
+
+    get chain(): Chain {
+      return (
+        SUPPORTED_CHAINS.find((chain) => chain.id === this.meta.chainID) ??
+        DEFAULT_CHAIN
+      )
+    }
+
+    get conn(): PublicClient {
+      if (!this._conn) {
+        this._conn = createPublicClient({
+          chain: this.chain,
+          transport: http() // TODO: support for custom transport
+        })
+      }
+      return this._conn
+    }
+
+    set conn(conn: PublicClient) {
+      this._conn = conn
+    }
+
     /**
      * @dev sync: sync the state of the privacy pool with the on-chain state
      * @returns true if the sync is successful, false otherwise
@@ -159,23 +262,23 @@ export namespace CPool {
     sync = async (): Promise<boolean> => {
       const chainStateSize = this._stateSize
         ? await this._stateSize(this.meta.address)
-        : await GetStateSizeFn(this.meta.chain)(this.meta.address)
+        : await GetStateSizeFn(this.chain)(this.meta.address)
 
-      if (chainStateSize < this.StateSize()) {
+      if (chainStateSize < this.size) {
         throw new Error(
           "On-chain state size is less than the current state size"
         )
       }
 
       //TODO Make this batched to avoid hitting block gas limit
-      const sizeDiff = chainStateSize - this.StateSize()
+      const sizeDiff = chainStateSize - this.size
       // prevents spamming the contract with requests
       if (sizeDiff > 0n) {
-        const ToFrom: [bigint, bigint] = [this.StateSize(), chainStateSize - 1n]
+        const ToFrom: [bigint, bigint] = [this.size, chainStateSize - 1n]
         const roots = (
           this._roots
             ? await this._roots(this.meta.address, ToFrom)
-            : await FetchRootsFn(this.meta.chain, this.conn)(
+            : await FetchRootsFn(this.chain, this.conn)(
                 this.meta.address,
                 ToFrom
               )
@@ -184,7 +287,7 @@ export namespace CPool {
         // check that there is a checkpoint exisiting for the new root
         const _checkpoint = this._checkpoint
           ? await this._checkpoint(this.meta.address, _newRoot)
-          : await FetchCheckpointAtRootFn(this.meta.chain, this.conn)(
+          : await FetchCheckpointAtRootFn(this.chain, this.conn)(
               this.meta.address,
               _newRoot
             )
@@ -192,6 +295,63 @@ export namespace CPool {
       }
       return true
     }
+
+    getCiphers = async (
+      range?: [bigint, bigint]
+    ): Promise<
+      | {
+          rawSaltPk: [bigint, bigint]
+          rawCipherText: [
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint
+          ]
+          commitmentHash: bigint
+          cipherStoreIndex: bigint
+        }[]
+      | void
+    > => {
+      if (range === undefined) {
+        range = [0n, this.size / 2n - 1n]
+      }
+      if (range[0] === 0n && range[1] === -1n) {
+        return
+      }
+
+      const res = this._ciphers
+        ? await this._ciphers(this.meta.address, range)
+        : await UnpackCiphersWithinRangeFn(this.chain, this.conn)(
+            this.meta.address,
+            range
+          )
+      if (res) {
+        // Note:
+        // ciphers[0] => actual ciphertexts
+        // ciphers[1] => salt public keys
+        // ciphers[2] => commitment hashes
+        return res[0].map((cipher, i) => {
+          return {
+            rawSaltPk: [res[1][i][0], res[1][i][1]],
+            rawCipherText: [
+              cipher[0],
+              cipher[1],
+              cipher[2],
+              cipher[3],
+              cipher[4],
+              cipher[5],
+              cipher[6]
+            ],
+            commitmentHash: res[2][i],
+            cipherStoreIndex: range[0] + BigInt(i)
+          }
+        })
+      }
+    }
+
     /**
      * @dev decryptCiphers: iterates through ciphertexts and try to decrypt them
         based on the provided keys. The decrypted secrets are stored in the key state.
@@ -200,46 +360,16 @@ export namespace CPool {
     decryptCiphers = async (
       keys: PrivacyKeys,
       from = 0n,
-      to = this.StateSize() / 2n - 1n
+      to = this.size / 2n - 1n
     ) => {
       const decryptionPromises: Promise<void>[] = []
-
-      if (from === 0n && to === -1n) {
-        return
-      }
-
-      const ciphers = this._ciphers
-        ? await this._ciphers(this.meta.address, [from, to])
-        : await UnpackCiphersWithinRangeFn(this.meta.chain, this.conn)(
-            this.meta.address,
-            [from, to]
-          )
-      // Note:
-      // ciphers[0] => actual ciphertexts
-      // ciphers[1] => salt public keys
-      // ciphers[2] => commitment hashes
-      console.log(`there are ${ciphers[0].length} ciphers to decrypt`)
-      for (let i = 0; i < ciphers[0].length; i++) {
-        for (let j = 0; j < keys.length; j++) {
-          decryptionPromises.push(
-            keys[j].decryptCipher(
-              [ciphers[1][i][0], ciphers[1][i][1]],
-              [
-                ciphers[0][i][0],
-                ciphers[0][i][1],
-                ciphers[0][i][2],
-                ciphers[0][i][3],
-                ciphers[0][i][4],
-                ciphers[0][i][5],
-                ciphers[0][i][6]
-              ],
-              ciphers[2][i],
-              BigInt(i) + from
-            )
-          )
+      await this.getCiphers([from, to]).then(async (ciphers) => {
+        if (!ciphers) {
+          return
         }
-        await Promise.all(decryptionPromises)
-      }
+        console.log(`there are ${ciphers.length} ciphers to decrypt`)
+        RecoverCommitments(keys, ciphers)
+      })
     }
 
     scope = async (): Promise<bigint> =>
@@ -247,7 +377,7 @@ export namespace CPool {
         ? this.scopeval // otherwise, compute the value and cache it
         : (this._scope
             ? this._scope(this.meta.address)
-            : ScopeFn(this.meta.chain)(this.meta.address)
+            : ScopeFn(this.chain)(this.meta.address)
           )
             .then((v) => {
               this.scopeval = v
@@ -260,29 +390,31 @@ export namespace CPool {
     context = async (_r: TPrivacyPool.RequestT): Promise<bigint> =>
       this._context
         ? this._context(this.meta.address, _r)
-        : ContextFn(this.meta.chain, this.conn)(this.meta.address, _r)
+        : ContextFn(this.chain, this.conn)(this.meta.address, _r)
 
     verify = async (
-      proof: SnarkJSOutputT
+      proof?: SnarkJSOutputT,
+      // pack the proof for on-chain verification
+      packed = FnPrivacyPool.parseOutputFn("pack")(
+        proof as SnarkJSOutputT
+      ) as StdPackedGroth16ProofT<bigint>
     ): Promise<{
       verified: boolean
       packedProof: StdPackedGroth16ProofT<bigint>
-    }> => {
-      // pack the proof for on-chain verification
-      const packed = FnPrivacyPool.parseOutputFn("pack")(
-        proof as SnarkJSOutputT
-      ) as StdPackedGroth16ProofT<bigint>
-
-      return {
-        verified: this._onChainGroth16Verifier
-          ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
-          : await FnGroth16Verifier.verifyProofFn(this.meta.chain, this.conn)(
-              this.meta.verifier,
-              packed
-            ),
-        packedProof: packed
-      }
-    }
+    }> =>
+      // if proof is provided, verify it
+      proof
+        ? {
+            verified: this._onChainGroth16Verifier
+              ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
+              : await FnGroth16Verifier.verifyProofFn(this.chain, this.conn)(
+                  this.meta.verifier,
+                  packed
+                ),
+            packedProof: packed
+          }
+        : // otherwise, reject the promise
+          Promise.reject("No proof provided")
 
     processOnChain = async (
       account: PublicActions & WalletActions & Client,
@@ -305,6 +437,29 @@ export namespace CPool {
         simOnly
       )
 
+    computeProof = async (
+      circuitIn: PrivacyPoolCircuitInput,
+      zkArtifacts: CircomArtifactsT,
+      prover = NewPrivacyPoolCircuit(zkArtifacts).prove()
+    ): Promise<{
+      verified: boolean
+      packedProof: StdPackedGroth16ProofT<bigint>
+    }> =>
+      await prover(
+        circuitIn,
+        async ({ out }) => await this.verify(out as SnarkJSOutputT)
+      )
+        .then(
+          (res) =>
+            res as {
+              verified: boolean
+              packedProof: StdPackedGroth16ProofT<bigint>
+            }
+        )
+        .catch((e) => {
+          throw new Error(`Error in building proof: ${e}`)
+        })
+
     process = async (
       account: PublicActions & WalletActions & Client,
       _r: TPrivacyPool.RequestT,
@@ -314,31 +469,32 @@ export namespace CPool {
       newCommitment: Commitment[],
       zkArtifacts: CircomArtifactsT,
       simOnly = true
-    ): Promise<boolean | Hex> => {
-      const scope = await this.scope()
-      const out = (await NewPrivacyPoolCircuit(zkArtifacts)
-        .prove({
-          scope: await this.scope(), // calculate scope on the fly if value is not cached
-          context: await this.context(_r), // query contract to get context value based on _r
-          mt: this.merkleTree,
-          maxDepth: this.MAX_MERKLE_DEPTH,
-          pkScalars: pkScalars,
-          nonces: nonces,
-          existing: existingCommitment,
-          new: newCommitment
-        })(
-          // callback fn to verify output on-chain
-          async ({ out }) => this.verify(out as SnarkJSOutputT)
-        )
+    ): Promise<boolean | Hex> =>
+      await this.computeProof(
+        this.BuildCircuitInputs(
+          await this.scope(),
+          await this.context(_r),
+          pkScalars,
+          nonces,
+          existingCommitment,
+          newCommitment
+        ),
+        zkArtifacts
+      )
+        .then(async (res) => {
+          if (res.verified) {
+            return await this.processOnChain(
+              account,
+              _r,
+              res.packedProof,
+              simOnly
+            )
+          } else {
+            return false
+          }
+        })
         .catch((e) => {
-          throw new Error(`Error in processing request: ${e}`)
-        })) as {
-        verified: boolean
-        packedProof: StdPackedGroth16ProofT<bigint>
-      }
-      return out.verified
-        ? await this.processOnChain(account, _r, out.packedProof, simOnly)
-        : false
-    }
+          throw new Error(`Error in processing: ${e}`)
+        })
   }
 }
