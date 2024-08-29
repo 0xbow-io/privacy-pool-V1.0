@@ -28,11 +28,12 @@ export const PoolRootContainer = styled.div`
     background-color: #352370;
     color: #f8f8ff;
     height: 100%;
+    width: 100%;
     display: flex;
     align-items: center;
 
     @media (min-width: 460px) {
         height: auto;
-        width: auto;
+        width: fit-content;
         border: 2px solid;
 `

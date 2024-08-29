@@ -1,12 +1,14 @@
 import React from "react"
+import BigNumber from "bignumber.js"
+import { formatEther } from "viem"
 
 type CommitmentsInfoProps = {
   isInput: boolean
-  total: number
+  total: BigNumber
   ticker: string
   reason: string | string[]
   inCommits?: string[]
-  outValues?: number[]
+  outValues?: BigNumber[]
 }
 
 export const CommitmentsInfo = ({
@@ -26,7 +28,8 @@ export const CommitmentsInfo = ({
       </div>
       <div className="rounded-md border px-4 py-3 text-sm">
         <h2 className="font-semibold text-blackmail text-sm">
-          {isInput ? "Total:" : "Expected total:"} {total} {ticker}{" "}
+          {isInput ? "Total:" : "Expected total:"}{" "}
+          {formatEther(BigInt(total.toString()))} {ticker}{" "}
         </h2>
         <h2 className="font-semibold text-rust-effect text-sm">
           {reason.length ? reason[0] : reason}
@@ -56,7 +59,8 @@ export const CommitmentsInfo = ({
               className="rounded-md border my-2 px-4 py-3 text-sm items-center justify-between flex flex-row w-full"
             >
               <h2 className="font-semibold text-blackmail ">
-                Output ({index}): {value} {ticker}
+                Output ({index}): {formatEther(BigInt(value.toString()))}{" "}
+                {ticker}
               </h2>
             </div>
           )

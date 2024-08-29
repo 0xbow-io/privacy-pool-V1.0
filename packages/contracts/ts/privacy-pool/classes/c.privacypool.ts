@@ -387,8 +387,11 @@ export namespace CPool {
               throw new Error(`Error in computing scope: ${e}`)
             })
 
-    context = async (_r: TPrivacyPool.RequestT): Promise<bigint> =>
-      this._context
+    context = async (_r: TPrivacyPool.RequestT): Promise<bigint> => {
+
+      console.log('ctx', this.meta.address, this.conn)
+
+     return this._context
         ? this._context(this.meta.address, _r)
         : ContextFn(this.chain, this.conn)(this.meta.address, _r)
 

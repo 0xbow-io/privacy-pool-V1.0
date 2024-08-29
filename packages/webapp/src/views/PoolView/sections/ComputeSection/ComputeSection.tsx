@@ -32,7 +32,9 @@ import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { numberToHex, hexToBigInt } from "viem"
 
 const ComputeSection = () => {
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentStep, setCurrentStep] = useState(
+    ComputeSectionSteps.ASPSelection
+  )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
     text: "Continue"

@@ -131,6 +131,7 @@ export const AccountCard = ({ className }: { className: string }) => {
       </CardContent>
 
       <CardContent className="space-y-2">
+            disabled
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3 2xl:grid-cols-3 justify-around">
           <div className="flex justify-center mt-10">
             <IconButton {...getRootProps()} icon={<Upload />} disabled={false}>

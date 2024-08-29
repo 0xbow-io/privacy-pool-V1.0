@@ -38,6 +38,23 @@ export const TransactionProcessingStep = ({
     return `${chain.blockExplorers!.default.url}/tx/${txHash}`
   }
 
+  useEffect(() => {
+    if (
+      status === TransactionStatus.success ||
+      status === TransactionStatus.failure
+    ) {
+      resetComputeState()
+    }
+    if (status === TransactionStatus.success) {
+      setPrimaryButtonProps &&
+        setPrimaryButtonProps({
+          disabled: false,
+          text: "Compute Another Commitment",
+          onClick: () => onRestartCb(0)
+        })
+    }
+  }, [status])
+
   return (
     <Container>
       {reqStatus === "pending" && (

@@ -4,28 +4,46 @@ import type {
   BackButtonProps
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 
-type StepsProps = {
+type StepsPropsBase = {
   children: React.ReactNode[]
   currentStep: number
   onBack: () => void
   onContinue: () => void
   backButtonProps?: BackButtonProps
   forwardButtonProps?: ForwardButtonProps
+  showStepsIndicator?: boolean
 }
+
+type StepsPropsWithIndicator = StepsPropsBase & {
+  showStepsIndicator: true
+  stepNames: string[]
+}
+
+type StepsPropsWithoutIndicator = StepsPropsBase & {
+  showStepsIndicator?: false
+  stepNames?: never
+}
+
+type StepsProps = StepsPropsWithIndicator | StepsPropsWithoutIndicator
 
 const Steps: React.FC<StepsProps> = ({
   children,
   currentStep,
   onBack,
   onContinue,
+  stepNames,
   backButtonProps = {},
-  forwardButtonProps = {}
+  forwardButtonProps = {},
+  showStepsIndicator
 }) => {
   const isForwardDisabled =
-    currentStep === children.length - 1 || forwardButtonProps.disabled
+    currentStep === children.length - 1 || forwardButtonProps?.disabled
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
+      {showStepsIndicator && (
+        <StepsIndicator steps={stepNames} currentStep={currentStep} />
+      )}
       <div className="w-full">{children[currentStep]}</div>
       <div className="flex justify-between w-full mt-4">
         <button
