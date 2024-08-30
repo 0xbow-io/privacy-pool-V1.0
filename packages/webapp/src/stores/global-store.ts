@@ -113,6 +113,8 @@ export interface GlobalStore {
   applyFee: (fee: bigint, feeCollectorAddr: Hex, feeCollectorID: string) => void
   computeProof: () => void
   executeRequest: () => void
+  getTotalNew: () => bigint
+  getTotalExisting: () => bigint
 }
 
 /*** Global Store ***/
@@ -193,7 +195,9 @@ export const useGlobalStore = create<GlobalStore>((set, get) => ({
   applyFee: (feeAmt: bigint, feeCollectorAddr: Hex, feeCollectorID: string) =>
     applyFee(set, feeAmt, feeCollectorAddr, feeCollectorID),
   computeProof: () => computeProof(get, set),
-  executeRequest: () => executeRequest(get, set)
+  executeRequest: () => executeRequest(get, set),
+  getTotalNew: () => getTotalNew(get),
+  getTotalExisting: () => getTotalExisting(get)
 }))
 
 /*** UTILITIES ***/
@@ -451,6 +455,25 @@ const applyFee = (
     _r.feeCollectorID = feeCollectorID
     return { ...state, request: _r }
   })
+
+const getTotalExisting = (
+  get: zustand.StoreApi<GlobalStore>["getState"]
+): bigint => {
+  const request = get().request
+  return (
+    request.existing.reduce((acc, val) => acc + val.asTuple()[0], 0n) +
+    request.externIO[0]
+  )
+}
+
+const getTotalNew = (
+  get: zustand.StoreApi<GlobalStore>["getState"]
+): bigint => {
+  const request = get().request
+  return (
+    request.newValues.reduce((acc, val) => acc + val, 0n) + request.externIO[1]
+  )
+}
 
 const computeProof = (
   get: zustand.StoreApi<GlobalStore>["getState"],

@@ -12,19 +12,18 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { useGlobalStore } from "@/stores/global-store.ts"
 import { formatUnits, numberToHex, type Hex } from "viem"
 import {
   PrivacyKey,
   type Commitment,
-  type TCommitment
 } from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils.ts"
+import { Label } from "@/components/ui/label.tsx"
 import { BinaryIcon, SigmaIcon } from "lucide-react"
-import IconButton from "@/components/IconButton/IconButton"
+import IconButton from "@/components/IconButton/IconButton.tsx"
 type SelectionDialogProps = {
   className: string
   isOpen: boolean
@@ -46,15 +45,15 @@ export const ExistingSelectionDialog = ({
     currPoolID,
     downloadMembershipProof
   } = useGlobalStore((state) => state)
-  const poolCommmitments = commitments.get(currPoolID) || []
+  const poolCommitments = commitments.get(currPoolID) || []
   const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
 
   const fe = PrivacyPools.get(currPoolID)?.fieldElement
 
-  const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
+  const [targetKeyIndex, setTargetKeyIndex] = React.useState(-1)
 
   const getAvailCommitments = (): Commitment[] =>
-    poolCommmitments[targetKeyIndex] ?? []
+    poolCommitments[targetKeyIndex] ?? []
 
   const shortForm = (str: Hex): string => {
     return `${str.substring(0, 14)}....${str.substring(54)}`
@@ -70,7 +69,8 @@ export const ExistingSelectionDialog = ({
         <DialogHeader>
           <DialogTitle>Select Available Commitment</DialogTitle>
           <DialogDescription>
-            Select Privacy Key and an avaiable commitment from that Privacy Key.
+            Select Privacy Key and an available commitment from that Privacy
+            Key.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-auto">
@@ -83,7 +83,11 @@ export const ExistingSelectionDialog = ({
         </div>
         <div className="flex-auto">
           <Select
-            value={shortForm(privacyKeys[targetKeyIndex].pubAddr)}
+            value={
+              targetKeyIndex === -1
+                ? ""
+                : shortForm(privacyKeys[targetKeyIndex].pubAddr)
+            }
             onValueChange={(value) => {
               setTargetKeyIndex(
                 privacyKeys.findIndex((key) => key.pubAddr === value)!
@@ -91,8 +95,10 @@ export const ExistingSelectionDialog = ({
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select">
-                {shortForm(privacyKeys[targetKeyIndex].pubAddr)}
+              <SelectValue placeholder="Select Wallet">
+                {targetKeyIndex === -1
+                  ? ""
+                  : shortForm(privacyKeys[targetKeyIndex].pubAddr)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">

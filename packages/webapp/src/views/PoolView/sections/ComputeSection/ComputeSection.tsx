@@ -30,6 +30,9 @@ import {
 
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { numberToHex, hexToBigInt } from "viem"
+import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/types.ts"
+import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
+import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -94,54 +97,19 @@ const ComputeSection = () => {
         <CardTitle>Compute Commitments</CardTitle>
         <CardDescription>
           <div className="flex-auto">
-            <Accordion type="single" collapsible>
-              <AccordionItem
-                key="how_it_works"
-                value="how_it_works"
-                className=" "
-              >
-                <AccordionTrigger className="mt-4 border border-blackmail px-2  hover:bg-toxic-orange">
-                  <h2 className="text-blackmail "> How does it work? </h2>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="flex flex-row relative p-6">
-                    <div className="flex-auto font-bold text-base">
-                      <p>
-                        Consider Privacy Pool as a self-custody vault where
-                        confidential valuables are securely stored within{" "}
-                        <span className="text-toxic-orange">commitments</span>.{" "}
-                        <br />
-                        <br />
-                        With a Privacy Key you can access your{" "}
-                        <span className="text-toxic-orange">
-                          commitments
-                        </span>{" "}
-                        and retrieve your valuables without revealing its
-                        contents nor its origins to anyone. <br />
-                        <br />
-                        The Vault does not know the contents or origins of the
-                        valuables. Your commitments are secure as long as your
-                        Privacy Keys are kept secret.
-                        <br />
-                        <br />
-                        Private transfer of value ownerships or secret sharing
-                        between multiple keys is possible with the use of{" "}
-                        <span className="text-toxic-orange">
-                          zero-knowledge proof
-                        </span>
-                        .
-                        <br />
-                        <br />
-                      </p>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <StepsIndicator
+              steps={[
+                "Select Commitments",
+                "ASP Selection",
+                "Confirm TX details",
+                "Processing"
+              ]}
+              currentStep={currentStep}
+            />
+            <StepsHelperAccordion currentStep={currentStep} />
           </div>
         </CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-2">
         <div className="compute-section">
           <Steps
@@ -150,6 +118,7 @@ const ComputeSection = () => {
             onContinue={handleContinue}
             backButtonProps={backButtonProps}
             forwardButtonProps={forwardBtnProps}
+            showStepsIndicator={false}
           >
             <CommitmentsStep setPrimaryButtonProps={setForwardBtnProps} />
             <ASPSelectionStep

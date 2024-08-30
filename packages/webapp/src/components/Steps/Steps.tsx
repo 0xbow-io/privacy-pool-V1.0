@@ -3,6 +3,7 @@ import type {
   ForwardButtonProps,
   BackButtonProps
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 
 type StepsPropsBase = {
   children: React.ReactNode[]
