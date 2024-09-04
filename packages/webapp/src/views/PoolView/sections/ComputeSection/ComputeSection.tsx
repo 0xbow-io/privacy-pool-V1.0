@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState } from "react"
 import Steps from "@/components/Steps/Steps.tsx"
 import {
   ASPSelectionStep,
@@ -10,8 +10,7 @@ import {
 import {
   type ASP,
   type BackButtonProps,
-  type ForwardButtonProps,
-  TransactionStatus
+  type ForwardButtonProps
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import { useGlobalStore } from "@/stores/global-store.ts"
 import {
@@ -21,35 +20,26 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card.tsx"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion.tsx"
 
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
-import { numberToHex, hexToBigInt } from "viem"
 import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/types.ts"
 import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(
-    ComputeSectionSteps.ASPSelection
+    ComputeSectionSteps.Confirmation
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
     text: "Continue"
   })
-  const [backButtonProps, setbackButtonProps] = useState<BackButtonProps>({
+  const [backButtonProps, setBackButtonProps] = useState<BackButtonProps>({
     disabled: false,
     text: "Back"
   })
   const {
     privKeys,
-    signerKey,
-    setSigner,
     request,
     sync,
     applyFee,
@@ -59,16 +49,16 @@ const ComputeSection = () => {
   } = useGlobalStore((state) => state)
 
   useEffect(() => {
-    if (currentStep == 0) {
+    if (currentStep == ComputeSectionSteps.Commitments) {
       sync(currPoolID)
     }
-    if (currentStep == 3) {
+    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
       computeProof()
     }
   }, [currentStep, sync, computeProof, request, currPoolID])
 
   const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n))
-  const publicKeys = privacyKeys.map((key) => key.publicAddr)
+  // const publicKeys = privacyKeys.map((key) => key.publicAddr)
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",
@@ -84,7 +74,7 @@ const ComputeSection = () => {
   const handleContinue = () => {
     // User is on the ConfirmationStep
     // and has clicked the "Confirm & Execute" button
-    if (currentStep == 3) {
+    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
       // execute the request
       executeRequest()
     }
@@ -101,6 +91,7 @@ const ComputeSection = () => {
               steps={[
                 "Select Commitments",
                 "ASP Selection",
+                "Signer Key",
                 "Confirm TX details",
                 "Processing"
               ]}

@@ -31,13 +31,16 @@ export const ExistingCommitments = ({
 }: ExistingCommitmentsProps) => {
   const { request, commitments, currPoolID, getTotalNew, getTotalExisting } =
     useGlobalStore((state) => state)
+
+  const { privKeys, updateSrc, setExternIO } = useGlobalStore((state) => state)
+  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
+  const fe = PrivacyPools.get(currPoolID)?.fieldElement
+
   const [isSelectionDialogOpen, setSelectionDialog] = React.useState(false)
   const [existingSlot, setExistingSlot] = React.useState(0)
-  const { privKeys, updateSrc, setExternIO } = useGlobalStore((state) => state)
-
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
-
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
+  const [totalInputValue, setTotalInputValue] = useState(
+    formatUnits(request.externIO[0], Number(fe?.precision))
+  )
 
   return (
     <div className="">
@@ -125,10 +128,24 @@ export const ExistingCommitments = ({
           type="number"
           disabled={request.src === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={formatUnits(request.externIO[0], Number(fe?.precision))}
+          value={totalInputValue}
           onChange={(e) => {
-            let newVal = parseUnits(e.target.value, Number(fe?.precision))
-            setExternIO([newVal < 0n ? 0n : newVal, request.externIO[1]])
+            const value = e.target.value
+            const validNumberPattern = /^-?\d*\.?\d*$/
+
+            if (validNumberPattern.test(value)) {
+              setTotalInputValue(value)
+
+              try {
+                const newVal = parseUnits(value, Number(fe?.precision))
+                if (newVal >= 0n) {
+                  setExternIO([newVal, request.externIO[1]])
+                }
+              } catch (error) {
+                // Handle invalid input (e.g., non-numeric values)
+                console.error("Invalid input value:", error)
+              }
+            }
           }}
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
@@ -152,7 +169,7 @@ export const ExistingCommitments = ({
           htmlFor=""
           className={cn("block text-base font-bold text-blackmail")}
         >
-          Total: {formatValue(getTotalExisting())} {fe?.ticker}{" "}
+          Total: {formatValue(getTotalExisting(), fe?.precision)} {fe?.ticker}{" "}
         </Label>
       </div>
 

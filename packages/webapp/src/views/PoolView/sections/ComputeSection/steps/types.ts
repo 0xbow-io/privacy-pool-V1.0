@@ -22,11 +22,11 @@ export type ASP = {
   fee: bigint
   feeCollector: `0x${string}`
 }
-export type StatValType = string | string[] | number | number[] | Stat
+export type StatValType = string | string[] | number | number[] | boolean
 
 export type Stat = {
   header: string
-  value?: Map<string, StatValType>
+  value?: StatValType
 }
 
 export enum TransactionStatus {

@@ -41,7 +41,6 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
       updateSrc,
       updateSink
     } = state
-
     let status = "valid"
 
     if (request.existing[0].nullRoot === request.existing[1].nullRoot) {
@@ -106,7 +105,7 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
             <div className="col-span-1 laptop:col-start-2">
               <div className="flex-auto flex-col gap-y-4 pt-6 laptop:pt-0">
                 <div className="flex-auto">
-                  {<NewCommitments className="border-2" />}
+                  <NewCommitments className="border-2" />
                 </div>
               </div>
             </div>

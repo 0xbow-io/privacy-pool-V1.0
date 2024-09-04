@@ -5,8 +5,10 @@ import {
   CreateNewCommitment,
   type Commitment
 } from "@privacy-pool-v1/domainobjs/ts"
-import { useEffect } from "react"
+import React, { useEffect } from "react"
 import type { CommonProps } from "./types"
+import { CommitmentsInfo } from "@/components/CommitmentsInfo/CommitmentsInfo.tsx"
+import StatGrid from "@/components/ASPStat/StatGrid.tsx"
 
 export const ConfirmationStep: React.FC<CommonProps> = ({
   setPrimaryButtonProps,
@@ -23,7 +25,6 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
     externIO,
     _new,
     existing,
-    keys,
     sumNewValues,
     fe
   } = useGlobalStore((state) => {
@@ -77,64 +78,69 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         <p className="text-sm">Please review the details below:</p>
       </div>
       <div className="w-full my-4">
-        <h2 className="text-lg font-bold">Existing Commitments</h2>
-        {existing.map((commitment, idx) => (
-          <div key={idx} className="my-2">
-            <h3 className="text-md font-bold">Commitment {idx + 1}</h3>
-            <p>CommitmentRoot: {numberToHex(commitment.commitmentRoot)}</p>
-            <p>NullRoot: {numberToHex(commitment.nullRoot)}</p>
-            <p>Binded To: {keys[idx]}</p>
-            <p>
-              Value: {formatValue(commitment.asTuple()[0])} {fe?.ticker}
-            </p>
-          </div>
-        ))}
+        <CommitmentsInfo isInput={true} commits={existing} />
       </div>
       <div className="w-full my-4">
-        <h2 className="text-lg font-bold">External IO</h2>
-        <p>
-          Input Value: {formatValue(externIO[0])} {fe?.ticker}
-        </p>
-        <p>Input Source: {src}</p>
-        <p>
-          Output Value: {formatValue(externIO[1])} {fe?.ticker}
-        </p>
-        <p>Output Sink: {sink}</p>
+        <h2 className="text-sm mb-2 font-semibold text-blackmail">
+          External IO:
+        </h2>
+        <StatGrid
+          stats={[
+            {
+              header: "Input Value",
+              value: formatValue(externIO[0]) + " " + fe?.ticker
+            },
+            { header: "Input Source", value: src },
+            {
+              header: "Output Value",
+              value: formatValue(externIO[1]) + " " + fe?.ticker
+            },
+            { header: "Output Sink", value: sink }
+          ]}
+        />
       </div>
       <div className="w-full my-4">
-        <h2 className="text-lg font-bold">Value sum for New Commitments</h2>
+        <div className="text-sm mb-2 font-semibold text-blackmail">
+          <CommitmentsInfo isInput={false} commits={_new} />
+        </div>
+      </div>
+      <div className="w-full my-4">
+        <h2 className="text-sm mb-2 font-semibold text-blackmail">
+          Value sum for New Commitments:
+        </h2>
         <p>
           {formatValue(sumNewValues)} {fe?.ticker}
         </p>
       </div>
       <div className="w-full my-4">
-        <h2 className="text-lg font-bold">New Commitments</h2>
-        {_new.map((commitment, idx) => (
-          <div key={idx} className="my-2">
-            <h3 className="text-md font-bold">Commitment {idx + 1}</h3>
-            <p>CommitmentRoot: {numberToHex(commitment.commitmentRoot)}</p>
-            <p>NullRoot: {numberToHex(commitment.nullRoot)}</p>
-            <p>Binded To: {keys[idx + 2]}</p>
-            <p>
-              Value: {formatValue(commitment.asTuple()[0])} {fe?.ticker}
-            </p>
-          </div>
-        ))}
+        <h2 className="text-sm mb-2 font-semibold text-blackmail">
+          Commitment Fee:
+        </h2>
+        <StatGrid
+          stats={[
+            { header: "Fee Collector ID", value: feeCollectorID },
+            {
+              header: "Fee Amount",
+              value: formatValue(feeAmt) + " " + fe?.ticker
+            },
+            { header: "Fee Collector", value: feeCollector }
+          ]}
+        />
       </div>
       <div className="w-full my-4">
-        <h2 className="text-lg font-bold">Commitment Fee</h2>
-        <p>Fee Collector ID: {feeCollectorID}</p>
-        <p>
-          Fee Amount: {formatValue(feeAmt)} {fe?.ticker}
-        </p>
-        <p>Fee Collector: {feeCollector}</p>
+        <h2 className="text-sm mb-2 font-semibold text-blackmail">
+          External IO:
+        </h2>
+        <StatGrid
+          stats={[
+            { header: "Proof Generated", value: !isGeneratingProof && !!proof },
+            {
+              header: "Proof Verified",
+              value: !isGeneratingProof && !!proof?.verified
+            }
+          ]}
+        />
       </div>
-      <h1 className="text-2xl font-bold">
-        Proof Generated: {!isGeneratingProof && proof ? "Yes" : "No"}{" "}
-      </h1>
-      <h1 className="text-2xl font-bold">
-        Proof Verified: {!isGeneratingProof && proof?.verified ? "Yes" : "No"}{" "}
-      </h1>
     </div>
   )
 }

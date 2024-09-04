@@ -143,7 +143,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
           htmlFor=""
           className={cn("block text-base font-bold text-blackmail")}
         >
-          Total: {formatValue(getTotalNew())} {fe?.ticker}{" "}
+          Total: {formatValue(getTotalNew(), fe?.precision)} {fe?.ticker}{" "}
         </Label>
       </div>
 
