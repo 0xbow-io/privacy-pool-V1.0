@@ -9,10 +9,10 @@ include "gates.circom";
 include "../domain/commitment.circom";
 
 template HandleExistingCommitment(maxTreeDepth, cipherLen, tupleLen){
-    signal input scope, stateRoot, actualTreeDepth; 
+    signal input scope, stateRoot, actualTreeDepth;
     signal input privateKey, nonce;
     signal input saltPublicKey[2], ciphertext[cipherLen];
-    signal input index, siblings[maxTreeDepth];
+    signal input index, siblings[maxTreeDepth+1];
 
     // aggregate (nullRoot, commitmentRoot, hash, value)
     // into 1 array output signal

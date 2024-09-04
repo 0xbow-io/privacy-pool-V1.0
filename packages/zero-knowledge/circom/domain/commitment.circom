@@ -186,7 +186,7 @@ template CommitmentMembershipProof(maxTreeDepth){
     signal input actualTreeDepth;
     signal input commitmentRoot;
     signal input index;
-    signal input siblings[maxTreeDepth];
+    signal input siblings[maxTreeDepth+1];
 
     signal output root;
     var computedRoot = LeanIMTInclusionProof( maxTreeDepth )(

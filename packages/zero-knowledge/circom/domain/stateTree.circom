@@ -17,7 +17,7 @@ include "hashers.circom";
  * Calculates the path indices required for Merkle proof verifications.
  * Given a node index within an IMT and the total tree levels, it outputs the path indices leading to that node.
  * The template handles the modulo and division operations to break down the tree index into its constituent path indices.
- 
+
  */
 template MerkleGeneratePathIndices(levels) {
     var BASE = 2;
@@ -54,7 +54,7 @@ template MerkleGeneratePathIndices(levels) {
     Ts version: https://github.com/privacy-scaling-explorations/zk-kit/blob/main/packages/lean-imt/src/lean-imt.ts#L293C1-L317C6
 ***/
 template LeanIMTInclusionProof(maxDepth) {
-    signal input leaf, leafIndex, siblings[maxDepth], actualDepth;
+    signal input leaf, leafIndex, siblings[maxDepth+1], actualDepth;
     signal output out;
 
     // Convert leafIndex to bits
@@ -62,33 +62,44 @@ template LeanIMTInclusionProof(maxDepth) {
 
     signal nodes[maxDepth + 1];
     signal roots[maxDepth];
-    
+
     // let node = leaf
-    nodes[0] <== leaf; 
-    
+    nodes[0] <== leaf;
+
+    var isLessThanMaxDepth = SafeLessThan(6)([actualDepth, maxDepth-1]);
+    isLessThanMaxDepth === 1;
+
+    // siblings[0] should include the actual stateTree depth
+    // since we are using lean IMT,
+    // tree depth will differ from the actual depth
+    var isLessThanActualDepth = SafeLessThan(6)([actualDepth, siblings[0]-1]);
+    isLessThanActualDepth === 1;
+
     var root = 0;
-    // for (let i = 0; i < siblings.length; i += 1)
     for (var i = 0; i < maxDepth; i++) {
-        var isDepth = IsEqual()([actualDepth, i]);
+        var isDepth = IsEqual()([siblings[0], i]);
 
         roots[i] <== isDepth * nodes[i];
         root += roots[i];
 
-        //node = ((index >> i) & 1) ?  hash(siblings[i], node) : hash(node, siblings[i]);
-        var c[2][2] = [ [nodes[i], siblings[i]], [siblings[i], nodes[i]] ];
+        var c[2][2] = [
+            [ nodes[i], siblings[i+1] ],
+            [ siblings[i+1], nodes[i] ]
+        ];
+
         var childNodes[2] = MultiMux1(2)(c, indices[i]);
         nodes[i + 1] <== PoseidonHasher(2)(childNodes);
     }
 
-    var isDepth = IsEqual()([actualDepth, maxDepth]);
-    out <== root + isDepth * nodes[maxDepth];
+    var isMaxDepth = IsEqual()([siblings[0], maxDepth]);
+    out <== root + isMaxDepth * nodes[maxDepth];
 }
 
 
 /***
     Taken from MACI:
     https://github.com/privacy-scaling-explorations/maci/blob/dev/circuits/circom/trees/incrementalMerkleTree.circom
-    Version from NPM has a bug in this line: [computedLevelHashers[i] = PoseidonHasher(2)([computedLevelHashers[k*2], computedLevelHashers[k*2+1]]);]  
+    Version from NPM has a bug in this line: [computedLevelHashers[i] = PoseidonHasher(2)([computedLevelHashers[k*2], computedLevelHashers[k*2+1]]);]
     Instead of computedLevelHashers, its Hashers...
 
     * Constructs a binary merkle tree with a given number of levels.

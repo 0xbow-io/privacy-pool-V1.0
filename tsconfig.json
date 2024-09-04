@@ -19,10 +19,10 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
-      "@privacy-pool-v1/global/*": ["./global/*"],
-      "@privacy-pool-v1/zero-knowledge/*": ["./zero-knowledge/*"],
-      "@privacy-pool-v1/contracts/*": ["./contracts/*"],
-      "@privacy-pool-v1/core-ts/*": ["./core/ts/*"]
+      "@privacy-pool-v1/domainobjs/*": ["./packages/domainobjs/*"],
+      "@privacy-pool-v1/global/*": ["./packages/global/*"],
+      "@privacy-pool-v1/zero-knowledge/*": ["./packages/zero-knowledge/*"],
+      "@privacy-pool-v1/contracts/*": ["./packages/contracts/*"]
     }
   }
 }

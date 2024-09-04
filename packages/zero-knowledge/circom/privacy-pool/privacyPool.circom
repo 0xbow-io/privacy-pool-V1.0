@@ -4,7 +4,7 @@ pragma circom 2.1.9;
 include "comparators.circom";
 
 //Local Imports
-include "./handlers.circom";
+include "handlers.circom";
 
 /**
     A commitment is the binding of value to a domain (indentified by a scope value)
@@ -57,9 +57,7 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
     // Scope is the domain identifier
     // i.e. Keccak256(chainID, contractAddress)
     signal input scope;
-    // The depth of the State Tree
-    // at which the merkleproofs
-    // were generated
+    // The current depth of the State Tree
     signal input actualTreeDepth;
 
     signal input context;
@@ -80,8 +78,11 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
 
     signal input exSaltPublicKey[nExisting][2];
     signal input exCiphertext[nExisting][cipherLen];
+
+    // merkle proof of existing commitments
     signal input exIndex[nExisting];
-    signal input exSiblings[nExisting][maxTreeDepth];
+    // the state depth is inserted at index = 0 of the siblings array
+    signal input exSiblings[nExisting][maxTreeDepth+1];
 
     /// **** End Of Private Signals ****
 
@@ -89,11 +90,18 @@ template PrivacyPool(maxTreeDepth, cipherLen, tupleLen, nExisting, nNew) {
     signal output newCommitmentRoot[nExisting+nNew];
     signal output newCommitmentHash[nExisting+nNew];
 
+    // assert that we
+    // are operating over BN254 / alt_bn128
+    // -1 mod q = q - 1
+    assert(-1 == 21888242871839275222246405745257275088548364400416034343698204186575808495617 - 1);
+
     // ensure that External Input & Output
     // fits within the 252 bits
     var n2bIO[2][252];
     n2bIO[0] = Num2Bits(252)(externIO[0]);
     n2bIO[1] = Num2Bits(252)(externIO[1]);
+
+    // ensure that
 
     signal _newNullRootOut[nNew+nExisting];
     signal _newCommitmentRootOut[nNew+nExisting];
