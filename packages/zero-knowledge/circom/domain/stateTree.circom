@@ -66,13 +66,13 @@ template LeanIMTInclusionProof(maxDepth) {
     // let node = leaf
     nodes[0] <== leaf;
 
-    var isLessThanMaxDepth = SafeLessThan(6)([actualDepth, maxDepth-1]);
+    var isLessThanMaxDepth = SafeLessEqThan(6)([actualDepth, maxDepth]);
     isLessThanMaxDepth === 1;
 
     // siblings[0] should include the actual stateTree depth
     // since we are using lean IMT,
     // tree depth will differ from the actual depth
-    var isLessThanActualDepth = SafeLessThan(6)([actualDepth, siblings[0]-1]);
+    var isLessThanActualDepth = SafeLessEqThan(6)([actualDepth, siblings[0]]);
     isLessThanActualDepth === 1;
 
     var root = 0;
