@@ -55,7 +55,7 @@ export namespace FnPrivacyPool {
           address: contract,
           abi: PrivacyPoolABI,
           functionName: "GetStateSize",
-          account: contract
+          account: "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"
         })
         .then((result) => {
           return result
@@ -82,7 +82,7 @@ export namespace FnPrivacyPool {
           abi: PrivacyPoolABI,
           functionName: "FetchRoots",
           args: args,
-          account: contract
+          account: "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"
         })
         .then((result) => {
           return result
@@ -109,7 +109,7 @@ export namespace FnPrivacyPool {
           abi: PrivacyPoolABI,
           functionName: "FetchCheckpointAtRoot",
           args: [root],
-          account: contract
+          account: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
         })
         .then((result) => {
           return result
@@ -142,7 +142,7 @@ export namespace FnPrivacyPool {
           abi: PrivacyPoolABI,
           functionName: "UnpackCiphersWithinRange",
           args: range,
-          account: contract
+          account: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
         })
         .then((result) => {
           return result
@@ -167,7 +167,7 @@ export namespace FnPrivacyPool {
           address: contract,
           abi: PrivacyPoolABI,
           functionName: "Scope",
-          account: contract
+          account: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
         })
         .then((result) => {
           return result
@@ -194,7 +194,7 @@ export namespace FnPrivacyPool {
           abi: PrivacyPoolABI,
           functionName: "Context",
           args: [Request],
-          account: contract
+          account: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"
         })
         .then((result) => {
           return result

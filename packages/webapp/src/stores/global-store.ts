@@ -242,6 +242,8 @@ const sync = (
     throw new Error("Error: unable to load worker")
   }
 
+  const meta = PrivacyPools.get(poolID)
+
   worker.postMessage({
     cmd: SYNC_POOL_STATE,
     poolID: poolID
@@ -253,50 +255,68 @@ const sync = (
 
   worker.onmessage = (event) => {
     const resp = event.data as WorkerResponse
-    if (
-      resp.cmd === SYNC_POOL_STATE &&
-      resp.ciphers !== undefined &&
-      resp.roots !== undefined
-    ) {
-      const poolState = NewPrivacyPoolSate()
-      const { root, size } = poolState.import(resp.roots)
-
-      console.log(`tree: ${poolState.stateTree.export()}`)
-
-      console.log(`there are ${resp.ciphers.length} ciphers to decrypt,
-          state size of ${root}
-          with root ${size}`)
-
-      set((state) => {
-        let privKeys = state.privKeys
-        let pools = state.pools
-        let commitments = state.commitments
-
-        pools.set(poolID, poolState)
-
-        let poolCommitments = commitments.get(poolID) ?? []
-
-        commitments.set(
-          poolID,
-          poolCommitments
-            .concat(
-              RecoverCommitments(
-                privKeys.map((key) => PrivacyKey.from(key, 0n)),
-                resp.ciphers!
-              )
-            )
-            .map((x) => x.filter((c) => !poolState.has(c.nullRoot)))
-        )
-
-        return {
-          ...state,
-          pools: pools,
-          commitments: commitments,
-          isSyncing: false
-        }
-      })
-      worker.terminate()
+    if (resp.error) {
+      console.log(`caught error ${resp.error}`)
     }
+
+    set((state) => {
+      let privKeys = state.privKeys
+      let pools = state.pools
+      let commitments = state.commitments
+      const poolState = NewPrivacyPoolSate()
+
+      let poolCommitments = privKeys.map((key) => [
+        CreateNewCommitment({
+          _pK: key,
+          // auto set nonce to 0n for now
+          _nonce: 0n,
+          _scope: meta!.scope,
+          _value: 0n
+        }),
+        CreateNewCommitment({
+          _pK: key,
+          // auto set nonce to 0n for now
+          _nonce: 0n,
+          _scope: meta!.scope,
+          _value: 0n
+        })
+      ])
+
+      if (
+        resp.cmd === SYNC_POOL_STATE &&
+        resp.ciphers !== undefined &&
+        resp.roots !== undefined
+      ) {
+        const { root, size } = poolState.import(resp.roots)
+        console.log(`tree: ${poolState.stateTree.export()}`)
+        console.log(`there are ${resp.ciphers.length} ciphers to decrypt,
+            state size of ${root}
+            with root ${size}`)
+
+        RecoverCommitments(
+          privKeys.map((key) => PrivacyKey.from(key, 0n)),
+          resp.ciphers!
+        ).forEach((commits, i) => {
+          poolCommitments[i].concat(commits)
+        })
+      }
+
+      commitments.set(
+        poolID,
+        poolCommitments.map((x) => x.filter((c) => !poolState.has(c.nullRoot)))
+      )
+
+      pools.set(poolID, poolState)
+
+      return {
+        ...state,
+        pools: pools,
+        commitments: commitments,
+        isSyncing: false
+      }
+    })
+
+    worker.terminate()
   }
 }
 

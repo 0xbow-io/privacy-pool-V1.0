@@ -178,7 +178,7 @@ export namespace CCommitment {
         },
         leafIndex: "0",
         index: "0",
-        stateDepth: "0",
+        stateDepth: mt.depth.toString(),
         siblings: ["0"]
       }
 
@@ -195,7 +195,7 @@ export namespace CCommitment {
             },
             leafIndex: this.index.toString(),
             index: proof.index.toString(),
-            stateDepth: proof.actualDepth.toString(),
+            stateDepth: mt.depth.toString(),
             siblings: proof.siblings.map((v) => v.toString())
           }
         }

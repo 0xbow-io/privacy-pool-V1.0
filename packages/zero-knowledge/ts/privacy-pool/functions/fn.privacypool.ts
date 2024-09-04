@@ -170,10 +170,7 @@ export namespace FnPrivacyPool {
         inputs: {
           scope: hexToBigInt(membershipProofs[0].public.scope.hex),
           actualTreeDepth: BigInt(
-            Math.max(
-              Number(membershipProofs[0].private.inclusion.stateDepth),
-              Number(membershipProofs[1].private.inclusion.stateDepth)
-            )
+            membershipProofs[0].private.inclusion.stateDepth
           ),
           context: args.context,
           externIO: io,
@@ -207,7 +204,7 @@ export namespace FnPrivacyPool {
           exSiblings: membershipProofs.map((p, i) =>
             !args.existing[i].isVoid()
               ? p.private.inclusion.siblings.map((x) => BigInt(x))
-              : Array(32).fill(0n)
+              : Array(32 + 1).fill(0n)
           )
         } as TPrivacyPool.InT,
         expectedOut: {

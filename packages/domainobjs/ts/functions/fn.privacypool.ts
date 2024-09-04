@@ -50,16 +50,18 @@ export namespace FnPrivacyPool {
       }
       try {
         const proof = args.mt.generateProof(Number(leafIndex))
-        const depth = proof.siblings.length
+        const siblings: bigint[] = [BigInt(proof.siblings.length)]
         for (let i = 0; i < (args.maxDepth ? args.maxDepth : 32); i += 1) {
           if (proof.siblings[i] === undefined) {
-            proof.siblings[i] = BigInt(0)
+            siblings.push(BigInt(0))
+          } else {
+            siblings.push(BigInt(proof.siblings[i]))
           }
         }
         return {
           root: proof.root,
           index: proof.index,
-          actualDepth: BigInt(depth),
+          actualDepth: BigInt(args.mt.depth),
           siblings: proof.siblings
         } as OuT
       } catch (e) {

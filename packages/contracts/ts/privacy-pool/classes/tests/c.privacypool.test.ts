@@ -27,11 +27,11 @@ const TARGET_CHAIN = sepolia
 
 const paths = {
   WASM_PATH:
-    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/PrivacyPool_V1_js/PrivacyPool_V1.wasm",
+    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/PrivacyPool_V1_js/PrivacyPool_V1.wasm",
   VKEY_PATH:
-    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_vkey.json",
+    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_vkey.json",
   ZKEY_PATH:
-    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/final_core_revision/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
+    "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
 }
 
 const privateKey: Hex = ""

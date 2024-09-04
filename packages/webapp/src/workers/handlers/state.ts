@@ -26,6 +26,7 @@ export const StateSync = async (
   }
   try {
     // sync the pool with the chain
+    console.log("Syncing pool with chain")
     const synced = await pool.sync()
     if (!synced) {
       throw new Error("Sycn Error: unable to sync pool with chain")
