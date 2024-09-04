@@ -11,9 +11,9 @@ import type { StdPackedGroth16ProofT } from "@privacy-pool-v1/zero-knowledge/ts/
 
 // using remote paths for now
 const paths = {
-  wasm: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/PrivacyPool_V1_js/PrivacyPool_V1.wasm",
-  vKey: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_vkey.json",
-  zKey: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
+  wasm: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/packages/global/artifacts/circom/privacy-pool/PrivacyPool_V1/PrivacyPool_V1_js/PrivacyPool_V1.wasm",
+  vKey: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/packages/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_vkey.json",
+  zKey: "https://raw.githubusercontent.com/0xbow-io/privacy-pool-V1.0/dev_webapp_fix/packages/global/artifacts/circom/privacy-pool/PrivacyPool_V1/groth16_pkey.zkey"
 }
 
 // we only need 1 function to handle both commits and releases
