@@ -272,11 +272,10 @@ const sync = (
         resp.ciphers !== undefined &&
         resp.roots !== undefined
       ) {
-        const { root, size } = poolState.import(resp.roots)
-        console.log(`tree: ${poolState.stateTree.export()}`)
+        const { root, size, depth } = poolState.import(resp.roots)
         console.log(`there are ${resp.ciphers.length} ciphers to decrypt,
-            state size of ${root}
-            with root ${size}`)
+            state root of ${root}
+            size of ${size} and depth of ${depth}`)
 
         poolCommitments = RecoverCommitments(
           privKeys.map((key) => PrivacyKey.from(key, 0n)),
@@ -491,7 +490,7 @@ const computeProof = (
 
   let privKeys = get().privKeys
 
-  const newCommitments =
+  request.new =
     request.new ??
     (request.newValues.map((val, i) =>
       CreateNewCommitment({
@@ -517,7 +516,7 @@ const computeProof = (
           request.pkScalars,
           request.nonces,
           request.existing,
-          newCommitments,
+          request.new!,
           request.externIO
         )
       })
@@ -534,7 +533,6 @@ const computeProof = (
     const resp = event.data as WorkerResponse
     if (resp.cmd === COMPUTE_PROOF_CMD && resp.proof !== undefined) {
       console.log(`received proof, verified: ${resp.proof.verified}`)
-      request.new = newCommitments
       set((state) => {
         return {
           ...state,
@@ -543,11 +541,18 @@ const computeProof = (
           request: request
         }
       })
-      worker.terminate()
     }
     if (resp.status == "failed") {
       console.log(`Received Error: ${resp.error}`)
+      set((state) => {
+        return {
+          ...state,
+          isGeneratingProof: false,
+          request: request
+        }
+      })
     }
+    worker.terminate()
   }
 }
 

@@ -77,6 +77,7 @@ export namespace CPool {
     MAX_MERKLE_DEPTH = 32
     _size = 0
     _root = 0n
+    _depth = 0
 
     constructor(public _rootSet: Set<bigint> = new Set<bigint>()) {
       this.syncStateTree()
@@ -102,6 +103,7 @@ export namespace CPool {
       let stateTree = this.stateTree
       this._root = stateTree.root
       this._size = stateTree.size
+      this._depth = stateTree.depth
       return this._root
     }
 
@@ -135,12 +137,12 @@ export namespace CPool {
         rootset: Array.from(this._rootSet).map((x) => numberToHex(x))
       })
 
-    import = (data: string): { root: bigint; size: number } => {
+    import = (data: string): { root: bigint; size: number; depth: number } => {
       this._rootSet = new Set(
         JSON.parse(data).rootset.map((x: Hex) => hexToBigInt(x))
       )
       this.syncStateTree()
-      return { root: this._root, size: this._size }
+      return { root: this._root, size: this._size, depth: this._depth }
     }
 
     BuildCircuitInputs = (
