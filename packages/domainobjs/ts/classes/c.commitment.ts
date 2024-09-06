@@ -174,8 +174,8 @@ export namespace CCommitment {
     membershipProof = (mt: LeanIMT): MembershipProofJSON => {
       let inclusion = {
         stateRoot: {
-          raw: "0",
-          hex: numberToHex(0n)
+          raw: mt.root.toString(),
+          hex: numberToHex(mt.root)
         },
         leafIndex: "0",
         index: "0",
@@ -191,8 +191,8 @@ export namespace CCommitment {
           })(this.index)
           inclusion = {
             stateRoot: {
-              raw: proof.root.toString(),
-              hex: numberToHex(proof.root)
+              raw: mt.root.toString(),
+              hex: numberToHex(mt.root)
             },
             leafIndex: this.index.toString(),
             index: proof.index.toString(),

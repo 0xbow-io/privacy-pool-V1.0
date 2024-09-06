@@ -174,12 +174,7 @@ export namespace FnPrivacyPool {
           ),
           context: args.context,
           externIO: io,
-          existingStateRoot:
-            args.existing.findIndex((c) => c.isVoid()) !== 0
-              ? hexToBigInt(membershipProofs[0].private.inclusion.stateRoot.hex)
-              : hexToBigInt(
-                  membershipProofs[1].private.inclusion.stateRoot.hex
-                ),
+          existingStateRoot: args.mt.root,
           newSaltPublicKey: newCommitments.map(
             (c) => c.public.saltPk.map((x) => BigInt(x)) as [bigint, bigint]
           ),
