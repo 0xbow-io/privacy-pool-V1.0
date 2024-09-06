@@ -2,7 +2,7 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-export default {
+const config = {
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.module.rules.push({
@@ -23,3 +23,4 @@ export default {
     NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS
   }
 }
+export default config

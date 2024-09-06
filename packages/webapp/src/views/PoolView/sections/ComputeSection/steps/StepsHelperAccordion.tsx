@@ -23,7 +23,7 @@ export const StepsHelperAccordion = ({
         <AccordionContent>
           <div className="flex flex-row relative p-6">
             <div className="flex-auto">
-              {stepsHelperAccordionContent[currentStep]}
+              {stepsHelperAccordionContent.get(currentStep) ?? <p> </p>}
             </div>
           </div>
         </AccordionContent>
@@ -32,53 +32,8 @@ export const StepsHelperAccordion = ({
   )
 }
 
-const stepsHelperAccordionContent = {
-  [ComputeSectionSteps.ASPSelection]: (
-    <p>
-      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
-      are computing two{" "}
-      <span className="text-toxic-orange"> new commitments </span> from two
-      commitments that you own. A commitment is an encrypted value represented
-      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
-      <span className="text-toxic-orange"> Void input commitment </span> has 0
-      value and is used as a placeholder for when you don&apos;t want to use an
-      existing commitment. <br />
-      <br />
-      Total sum of the output commitment values need to match the sum of the
-      input commitment values + public value.
-    </p>
-  ),
-  [ComputeSectionSteps.Commitments]: (
-    <p>
-      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
-      are computing two{" "}
-      <span className="text-toxic-orange"> new commitments </span> from two
-      commitments that you own. A commitment is an encrypted value represented
-      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
-      <span className="text-toxic-orange"> Void input commitment </span> has 0
-      value and is used as a placeholder for when you don&apos;t want to use an
-      existing commitment. <br />
-      <br />
-      Total sum of the output commitment values need to match the sum of the
-      input commitment values + public value.
-    </p>
-  ),
-  [ComputeSectionSteps.Confirmation]: (
-    <p>
-      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
-      are computing two{" "}
-      <span className="text-toxic-orange"> new commitments </span> from two
-      commitments that you own. A commitment is an encrypted value represented
-      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
-      <span className="text-toxic-orange"> Void input commitment </span> has 0
-      value and is used as a placeholder for when you don&apos;t want to use an
-      existing commitment. <br />
-      <br />
-      Total sum of the output commitment values need to match the sum of the
-      input commitment values + public value.
-    </p>
-  ),
-  [ComputeSectionSteps.TransactionProcessing]: (
+const ASPSelectionContent = () => {
+  return (
     <p>
       Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
       are computing two{" "}
@@ -94,3 +49,65 @@ const stepsHelperAccordionContent = {
     </p>
   )
 }
+
+const CommitmentsContent = () => {
+  return (
+    <p>
+      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
+      are computing two{" "}
+      <span className="text-toxic-orange"> new commitments </span> from two
+      commitments that you own. A commitment is an encrypted value represented
+      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
+      <span className="text-toxic-orange"> Void input commitment </span> has 0
+      value and is used as a placeholder for when you don&apos;t want to use an
+      existing commitment. <br />
+      <br />
+      Total sum of the output commitment values need to match the sum of the
+      input commitment values + public value.
+    </p>
+  )
+}
+
+const ConfirmationContent = () => {
+  return (
+    <p>
+      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
+      are computing two{" "}
+      <span className="text-toxic-orange"> new commitments </span> from two
+      commitments that you own. A commitment is an encrypted value represented
+      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
+      <span className="text-toxic-orange"> Void input commitment </span> has 0
+      value and is used as a placeholder for when you don&apos;t want to use an
+      existing commitment. <br />
+      <br />
+      Total sum of the output commitment values need to match the sum of the
+      input commitment values + public value.
+    </p>
+  )
+}
+
+const TransactionProcessingContent = () => {
+  return (
+    <p>
+      Privacy Pool utilises a 2 Inputs to 2 Outputs transaction scheme where you
+      are computing two{" "}
+      <span className="text-toxic-orange"> new commitments </span> from two
+      commitments that you own. A commitment is an encrypted value represented
+      by an entry (commitment hash) in the Pool&apos;s Merkle Tree.{" "}
+      <span className="text-toxic-orange"> Void input commitment </span> has 0
+      value and is used as a placeholder for when you don&apos;t want to use an
+      existing commitment. <br />
+      <br />
+      Total sum of the output commitment values need to match the sum of the
+      input commitment values + public value.
+    </p>
+  )
+}
+
+const stepsHelperAccordionContent: Map<ComputeSectionSteps, React.JSX.Element> =
+  new Map<ComputeSectionSteps, React.JSX.Element>([
+    [ComputeSectionSteps.ASPSelection, ASPSelectionContent()],
+    [ComputeSectionSteps.Commitments, CommitmentsContent()],
+    [ComputeSectionSteps.Confirmation, ConfirmationContent()],
+    [ComputeSectionSteps.TransactionProcessing, TransactionProcessingContent()]
+  ])

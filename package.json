@@ -23,6 +23,7 @@
     "circomkit": "^0.2.1",
     "circomlib": "^2.0.5",
     "maci-circuits": "^1.2.5",
-    "snarkjs": "^0.7.4"
+    "snarkjs": "^0.7.4",
+    "poseidon-lite": "^0.3.0"
   }
 }

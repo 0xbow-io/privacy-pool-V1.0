@@ -6,7 +6,7 @@ import { PoolHeader } from "@/components/PoolHeader/PoolHeader.tsx"
 import Footer from "@/components/Footer/Footer.tsx"
 import { PoolTabs } from "@/views/PoolView/sections/PoolTabs.tsx"
 
-export const PoolView = () => {
+export default function PoolView() {
   return (
     <div className="bg-page-background min-w-screen w-full min-h-screen h-full flex mb-12 flex-col">
       <div className="flex-grow">

@@ -28,7 +28,6 @@
     "types": ["bun-types", "node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@/providers/*": ["./src/providers/*"],
       "@/stores/*": ["./src/stores/*"],
       "@/utils/*": ["./src/utils/*"],
       "@sections/*": ["./src/app/sections/*"],

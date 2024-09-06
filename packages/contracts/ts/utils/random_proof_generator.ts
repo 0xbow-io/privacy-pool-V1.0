@@ -1,4 +1,4 @@
-import { NewCommitment } from "@privacy-pool-v1/domainobjs"
+import { CreateNewCommitment } from "@privacy-pool-v1/domainobjs"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
 import { generatePrivateKey } from "viem/accounts"
 import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
@@ -8,11 +8,15 @@ function splitBigIntRandomly(value: bigint): [bigint, bigint] {
     throw new Error("Input must be a positive BigInt")
   }
 
-  const numBytes = Math.ceil(value.toString(16).length / 2);
-  const randomValues = new Uint8Array(numBytes);
-  window.crypto.getRandomValues(randomValues);
-  let hexString = '0x' + Array.from(randomValues).map(b => b.toString(16).padStart(2, '0')).join('');
-  const randomBigInt = BigInt(hexString) % (value + 1n);
+  const numBytes = Math.ceil(value.toString(16).length / 2)
+  const randomValues = new Uint8Array(numBytes)
+  window.crypto.getRandomValues(randomValues)
+  let hexString =
+    "0x" +
+    Array.from(randomValues)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  const randomBigInt = BigInt(hexString) % (value + 1n)
 
   const part1 = randomBigInt
   const part2 = value - part1
@@ -39,7 +43,7 @@ export const randInputGenerator = (args: {
   ]
   const keys = [0, 1, 2, 3].map(() => generatePrivateKey())
   const commits: Commitment[] = [0, 1, 2, 3].map((i) => {
-    const c = NewCommitment({
+    const c = CreateNewCommitment({
       _pK: keys[i],
       _nonce: BigInt(i),
       _scope: args.scope,
