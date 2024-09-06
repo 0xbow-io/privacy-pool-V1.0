@@ -41,6 +41,7 @@ import {
 } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import { generatePrivateKey } from "viem/accounts"
 import * as zustand from "zustand"
+import { M_PLUS_1 } from "next/font/google"
 
 export interface RequestArgs {
   src: Hex
@@ -265,23 +266,7 @@ const sync = (
       let commitments = state.commitments
       const poolState = NewPrivacyPoolSate()
 
-      let poolCommitments = privKeys.map((key) => [
-        CreateNewCommitment({
-          _pK: key,
-          // auto set nonce to 0n for now
-          _nonce: 0n,
-          _scope: meta!.scope,
-          _value: 0n
-        }),
-        CreateNewCommitment({
-          _pK: key,
-          // auto set nonce to 0n for now
-          _nonce: 0n,
-          _scope: meta!.scope,
-          _value: 0n
-        })
-      ])
-
+      let poolCommitments: Commitment[][] = privKeys.map((key) => [])
       if (
         resp.cmd === SYNC_POOL_STATE &&
         resp.ciphers !== undefined &&
@@ -293,12 +278,10 @@ const sync = (
             state size of ${root}
             with root ${size}`)
 
-        RecoverCommitments(
+        poolCommitments = RecoverCommitments(
           privKeys.map((key) => PrivacyKey.from(key, 0n)),
           resp.ciphers!
-        ).forEach((commits, i) => {
-          poolCommitments[i].concat(commits)
-        })
+        )
       }
 
       commitments.set(
@@ -355,12 +338,29 @@ const selectExisting = (
 ) =>
   set((state) => {
     let _r = state.request
+    const meta = PrivacyPools.get(state.currPoolID)
+
     // check if poolID is valid
     let poolCommitments = state.commitments.get(state.currPoolID)
     if (poolCommitments === undefined) {
       throw new Error("Error: emtpy set of pool commitments")
     }
-    let targetCommitment = poolCommitments[keyIdx][commitIdx]
+    /// Generate void commitment as std
+    let targetCommitment: Commitment
+
+    if (commitIdx >= 0) {
+      // otherwise select the commitment at the given index
+      targetCommitment = poolCommitments[keyIdx][commitIdx]
+    } else {
+      targetCommitment = CreateNewCommitment({
+        _pK: state.privKeys[keyIdx],
+        // auto set nonce to 0n for now
+        _nonce: 0n,
+        _scope: meta!.scope,
+        _value: 0n
+      })
+      poolCommitments[keyIdx].push(targetCommitment)
+    }
 
     _r.existing[slot] = targetCommitment
     _r.pkScalars[slot] = hexToBigInt(targetCommitment.toJSON().pkScalar)
@@ -381,7 +381,6 @@ const selectExisting = (
 
     return { ...state, request: _r }
   })
-
 const insertNew = (
   set: zustand.StoreApi<GlobalStore>["setState"],
   keyIdx: number,

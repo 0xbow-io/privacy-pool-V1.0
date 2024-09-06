@@ -4,32 +4,14 @@ import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
 import type { Hex } from "viem"
 import type { Point } from "@zk-kit/baby-jubjub"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
-import { generatePrivateKey } from "viem/accounts"
 
 import { poseidonDecrypt, poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
-import type { TCommitment } from "@privacy-pool-v1/domainobjs"
-
-export const DerivePrivacyKeys =
-  (_pK: Hex = generatePrivateKey(), withSalt = true) =>
-  (
-    PrivKScalar = deriveSecretScalar(_pK),
-    PublicKey = mulPointEscalar(Base8, PrivKScalar),
-    Secret = mulPointEscalar(PublicKey, PrivKScalar),
-    Salt = withSalt ? genRandomSalt() : BigInt(0),
-    SaltPk = withSalt ? mulPointEscalar(Base8, Salt) : [BigInt(0), BigInt(0)],
-    Ek = withSalt ? mulPointEscalar(PublicKey, Salt) : [BigInt(0), BigInt(0)]
-  ) => {
-    return {
-      pkHex: _pK,
-      pKScalar: PrivKScalar,
-      Pk: PublicKey,
-      SaltPk: SaltPk,
-      eK: Ek,
-      secret: Secret
-    }
-  }
-
+import {
+  DerivePrivacyKeys,
+  DeriveSharedSecret,
+  type TCommitment
+} from "@privacy-pool-v1/domainobjs"
 export namespace FnCommitment {
   export const hashFn = (tuple: TCommitment.TupleT) => poseidon4(tuple)
 
@@ -45,22 +27,15 @@ export namespace FnCommitment {
   export const bindFn =
     (args: { _pK?: Hex; _nonce: bigint; _scope: bigint; _value: bigint }) =>
     (
-      PrivKScalar = args._pK
-        ? deriveSecretScalar(args._pK)
-        : deriveSecretScalar(generatePrivateKey()), // Derive secret scalar from Private Key
-      PublicKey = mulPointEscalar(Base8, PrivKScalar), // Derive Public Key
-      Secret = mulPointEscalar(PublicKey, PrivKScalar), // ECDH secret from pK & Public Key
-      Salt = genRandomSalt(), // Generate a random BabyJubJub value
-      SaltPk = mulPointEscalar(Base8, Salt), // Derive public key from Salt
-      Ek = mulPointEscalar(PublicKey, Salt), // Derive encryption key from ECDH secret & public key
+      keys = DerivePrivacyKeys(args._pK)(),
       Tuple = [
         args._value,
         args._scope,
-        Secret[0],
-        Secret[1]
+        keys.Secret[0],
+        keys.Secret[1]
       ] as TCommitment.TupleT, // binding of value to domain (scope) & owernship
       Hash = hashFn(Tuple), // Hash the tuple
-      Ciphertext = poseidonEncrypt(Tuple, Ek, args._nonce) // Encrypt the tuple
+      Ciphertext = poseidonEncrypt(Tuple, keys.EcKey, args._nonce) // Encrypt the tuple
     ): {
       challenges: {
         hash: bigint
@@ -81,28 +56,28 @@ export namespace FnCommitment {
     } => {
       // Verify computation of encryption key:
       // Recovery of ECDH shared secret using private key and the public key of the Salt.
-      const _eK = mulPointEscalar(SaltPk, PrivKScalar)
-      if (Ek[0] !== _eK[0] || Ek[1] !== _eK[1]) {
+      const _eK = DeriveSharedSecret(keys.ScalarPrivKey, keys.SaltPubKey)
+      if (keys.EcKey[0] !== _eK[0] || keys.EcKey[1] !== _eK[1]) {
         throw new Error(
-          `Invalid encryption key generated, got ${Ek} expected: ${_eK}`
+          `Invalid encryption key generated, got ${keys.EcKey} expected: ${_eK}`
         )
       }
       return {
         private: {
-          pkScalar: PrivKScalar,
+          pkScalar: keys.ScalarPrivKey,
           nonce: args._nonce,
           value: args._value,
-          secret: Secret
+          secret: keys.Secret
         },
         public: {
           scope: args._scope,
           cipher: Ciphertext,
-          saltPk: SaltPk
+          saltPk: keys.SaltPubKey
         },
         challenges: {
           hash: Hash,
           tuple: Tuple,
-          eK: Ek
+          eK: keys.EcKey
         }
       }
     }
@@ -127,7 +102,7 @@ export namespace FnCommitment {
       } = {}
     ) =>
     (
-      Ek = mulPointEscalar(args._saltPk, args._pKScalar), // Derive encryption key from salt pubkey & private key (as scalar point)
+      Ek = DeriveSharedSecret(args._pKScalar, args._saltPk), // ECDH secret from pK & Public Key
       Tuple = poseidonDecrypt(args._cipher, Ek, args._nonce, args._len), // ECDH secret from pK & Public Key
       Hash = poseidon4(Tuple)
     ): {

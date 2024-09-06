@@ -144,6 +144,9 @@ export const ExistingSelectionDialog = ({
                   </SelectItem>
                 )
               })}
+              <SelectItem key={"-1"} value={"-1"}>
+                Create New Void Commitment
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

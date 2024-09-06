@@ -57,10 +57,10 @@ export const PrivacyPools: Map<string, PoolMeta> = new Map<string, PoolMeta>([
       id: "GNOSIS_ETH_POOL_1",
       name: "Gnosis xDAI Pool 1",
       chainID: gnosis.id,
-      address: "0xbeff84cbf74fc1d2a437456893ff5f753a734f52" as Address,
-      verifier: "0xc4ab4deb69487bf2c0e64fef92c6b1331835addd" as Address,
+      address: "0x555eb8F3C1C2bEDa8e8eA69F8c51317470Ab8fC1" as Address,
+      verifier: "0x08311Cc0475Eab91DbFDeb2593aC3D859cB9d3f9" as Address,
       scope:
-        11020016376223289915713702189042105698692860098070225092239087136030065917323n,
+        19420586229045152356890556789607410844693215030122143238126523862419003191309n,
       genesis: 35826551,
       fieldElement: XDAI_Simple_FieldElement,
       minmaxCommit: [0n, 1000000000000000000n]

@@ -1,15 +1,16 @@
 import type {
   ICommitment,
-  TCommitment,
-  MembershipProofJSON
+  MembershipProofJSON,
+  TCommitment
 } from "@privacy-pool-v1/domainobjs"
 import {
   ConstCommitment,
+  DeriveEdDSAPubKey,
+  DeriveSharedSecret,
   FnCommitment,
   FnPrivacyPool
 } from "@privacy-pool-v1/domainobjs"
 import type { Point } from "@zk-kit/baby-jubjub"
-import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { poseidonDecrypt } from "@zk-kit/poseidon-cipher"
@@ -109,11 +110,11 @@ export namespace CCommitment {
     computeNRoot(): bigint {
       const nullSubTree = new LeanIMT(hashLeftRight)
       // generate public key of pkScalar
-      const Pk: Point<bigint> = mulPointEscalar(Base8, this._private.pkScalar)
+      const Pk: Point<bigint> = DeriveEdDSAPubKey(this._private.pkScalar)
       // recover encryption key
-      const Ek: Point<bigint> = mulPointEscalar(
-        this._public.saltPk,
-        this._private.pkScalar
+      const Ek: Point<bigint> = DeriveSharedSecret(
+        this._private.pkScalar,
+        this._public.saltPk
       )
 
       nullSubTree.insertMany([

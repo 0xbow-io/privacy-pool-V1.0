@@ -62,7 +62,7 @@ export namespace FnPrivacyPool {
           root: proof.root,
           index: proof.index,
           actualDepth: BigInt(args.mt.depth),
-          siblings: proof.siblings
+          siblings: siblings
         } as OuT
       } catch (e) {
         throw Error(
