@@ -41,6 +41,7 @@ import {
 } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import { generatePrivateKey } from "viem/accounts"
 import * as zustand from "zustand"
+import { M_PLUS_1 } from "next/font/google"
 
 export interface RequestArgs {
   src: Hex
@@ -246,6 +247,8 @@ const sync = (
     throw new Error("Error: unable to load worker")
   }
 
+  const meta = PrivacyPools.get(poolID)
+
   worker.postMessage({
     cmd: SYNC_POOL_STATE,
     poolID: poolID
@@ -257,50 +260,49 @@ const sync = (
 
   worker.onmessage = (event) => {
     const resp = event.data as WorkerResponse
-    if (
-      resp.cmd === SYNC_POOL_STATE &&
-      resp.ciphers !== undefined &&
-      resp.roots !== undefined
-    ) {
-      const poolState = NewPrivacyPoolSate()
-      const { root, size } = poolState.import(resp.roots)
-
-      console.log(`tree: ${poolState.stateTree.export()}`)
-
-      console.log(`there are ${resp.ciphers.length} ciphers to decrypt,
-          state size of ${root}
-          with root ${size}`)
-
-      set((state) => {
-        let privKeys = state.privKeys
-        let pools = state.pools
-        let commitments = state.commitments
-
-        pools.set(poolID, poolState)
-
-        let poolCommitments = commitments.get(poolID) ?? []
-
-        commitments.set(
-          poolID,
-          poolCommitments
-            .concat(
-              RecoverCommitments(
-                privKeys.map((key) => PrivacyKey.from(key, 0n)),
-                resp.ciphers!
-              )
-            )
-            .map((x) => x.filter((c) => !poolState.has(c.nullRoot)))
-        )
-
-        return {
-          ...state,
-          pools: pools,
-          commitments: commitments,
-          isSyncing: false
-        }
-      })
-      worker.terminate()
+    if (resp.error) {
+      console.log(`caught error ${resp.error}`)
     }
+
+    set((state) => {
+      let privKeys = state.privKeys
+      let pools = state.pools
+      let commitments = state.commitments
+      const poolState = NewPrivacyPoolSate()
+
+      let poolCommitments: Commitment[][] = privKeys.map((key) => [])
+      if (
+        resp.cmd === SYNC_POOL_STATE &&
+        resp.ciphers !== undefined &&
+        resp.roots !== undefined
+      ) {
+        const { root, size, depth } = poolState.import(resp.roots)
+        console.log(`there are ${resp.ciphers.length} ciphers to decrypt,
+            state root of ${root}
+            size of ${size} and depth of ${depth}`)
+
+        poolCommitments = RecoverCommitments(
+          privKeys.map((key) => PrivacyKey.from(key, 0n)),
+          resp.ciphers!
+        )
+      }
+
+      commitments.set(
+        poolID,
+        poolCommitments.map((x) => x.filter((c) => !poolState.has(c.nullRoot)))
+      )
+
+      pools.set(poolID, poolState)
+
+      return {
+        ...state,
+        pools: pools,
+        commitments: commitments,
+        isSyncing: false
+      }
+    })
+
+    worker.terminate()
   }
 }
 
@@ -339,12 +341,29 @@ const selectExisting = (
 ) =>
   set((state) => {
     let _r = state.request
+    const meta = PrivacyPools.get(state.currPoolID)
+
     // check if poolID is valid
     let poolCommitments = state.commitments.get(state.currPoolID)
     if (poolCommitments === undefined) {
       throw new Error("Error: emtpy set of pool commitments")
     }
-    let targetCommitment = poolCommitments[keyIdx][commitIdx]
+    /// Generate void commitment as std
+    let targetCommitment: Commitment
+
+    if (commitIdx >= 0) {
+      // otherwise select the commitment at the given index
+      targetCommitment = poolCommitments[keyIdx][commitIdx]
+    } else {
+      targetCommitment = CreateNewCommitment({
+        _pK: state.privKeys[keyIdx],
+        // auto set nonce to 0n for now
+        _nonce: 0n,
+        _scope: meta!.scope,
+        _value: 0n
+      })
+      poolCommitments[keyIdx].push(targetCommitment)
+    }
 
     _r.existing[slot] = targetCommitment
     _r.pkScalars[slot] = hexToBigInt(targetCommitment.toJSON().pkScalar)
@@ -365,7 +384,6 @@ const selectExisting = (
 
     return { ...state, request: _r }
   })
-
 const insertNew = (
   set: zustand.StoreApi<GlobalStore>["setState"],
   keyIdx: number,
@@ -495,7 +513,7 @@ const computeProof = (
 
   let privKeys = get().privKeys
 
-  const newCommitments =
+  request.new =
     request.new ??
     (request.newValues.map((val, i) =>
       CreateNewCommitment({
@@ -521,7 +539,7 @@ const computeProof = (
           request.pkScalars,
           request.nonces,
           request.existing,
-          newCommitments,
+          request.new!,
           request.externIO
         )
       })
@@ -538,7 +556,6 @@ const computeProof = (
     const resp = event.data as WorkerResponse
     if (resp.cmd === COMPUTE_PROOF_CMD && resp.proof !== undefined) {
       console.log(`received proof, verified: ${resp.proof.verified}`)
-      request.new = newCommitments
       set((state) => {
         return {
           ...state,
@@ -547,11 +564,18 @@ const computeProof = (
           request: request
         }
       })
-      worker.terminate()
     }
     if (resp.status == "failed") {
       console.log(`Received Error: ${resp.error}`)
+      set((state) => {
+        return {
+          ...state,
+          isGeneratingProof: false,
+          request: request
+        }
+      })
     }
+    worker.terminate()
   }
 }
 

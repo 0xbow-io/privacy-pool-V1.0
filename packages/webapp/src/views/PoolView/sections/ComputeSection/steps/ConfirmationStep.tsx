@@ -128,9 +128,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         />
       </div>
       <div className="w-full my-4">
-        <h2 className="text-sm mb-2 font-semibold text-blackmail">
-          External IO:
-        </h2>
+        <h2 className="text-sm mb-2 font-semibold text-blackmail">Zk-Proof:</h2>
         <StatGrid
           stats={[
             { header: "Proof Generated", value: !isGeneratingProof && !!proof },

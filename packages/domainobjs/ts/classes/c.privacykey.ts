@@ -8,6 +8,7 @@ import type { Commitment } from "@privacy-pool-v1/domainobjs"
 import {
   ConstCommitment,
   CreateNewCommitment,
+  DerivePrivacyKeys,
   RecoverCommitment
 } from "@privacy-pool-v1/domainobjs"
 import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
@@ -63,8 +64,10 @@ export class PrivacyKey {
 
   constructor(privateKey: Hex, nonce = BigInt(0)) {
     this._nonce = nonce
-    this._pkScalar = deriveSecretScalar(privateKey)
-    this._secret = mulPointEscalar(this.Pk, this.pKScalar)
+
+    const keys = DerivePrivacyKeys(privateKey)()
+    this._pkScalar = keys.ScalarPrivKey
+    this._secret = keys.Secret
     this.pKey = privateKey
   }
 
@@ -103,18 +106,7 @@ export class PrivacyKey {
       _nonce: this._nonce.toString(),
       privateKey: this.pKey,
       pubAddr: this.publicAddr,
-      _knownSecrets: Array.from(this._knownSecrets.entries()).reduce(
-        (acc, [key, value]) => {
-          acc[key.toString()] = value.map(([v1, v2, v3, v4]) => [
-            v1.toString(),
-            v2.toString(),
-            v3.toString(),
-            v4.toString()
-          ])
-          return acc
-        },
-        {}
-      )
+      _knownSecrets: Object.fromEntries(this._knownSecrets)
     }
   }
 

@@ -15,10 +15,7 @@ import {
 import React from "react"
 import { useGlobalStore } from "@/stores/global-store.ts"
 import { formatUnits, numberToHex, type Hex } from "viem"
-import {
-  PrivacyKey,
-  type Commitment,
-} from "@privacy-pool-v1/domainobjs/ts"
+import { PrivacyKey, type Commitment } from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { cn } from "@/lib/utils.ts"
 import { Label } from "@/components/ui/label.tsx"
@@ -150,6 +147,9 @@ export const ExistingSelectionDialog = ({
                   </SelectItem>
                 )
               })}
+              <SelectItem key={"-1"} value={"-1"}>
+                Create New Void Commitment
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

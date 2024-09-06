@@ -1,15 +1,16 @@
 import type {
   ICommitment,
-  TCommitment,
-  MembershipProofJSON
+  MembershipProofJSON,
+  TCommitment
 } from "@privacy-pool-v1/domainobjs"
 import {
   ConstCommitment,
+  DeriveEdDSAPubKey,
+  DeriveSharedSecret,
   FnCommitment,
   FnPrivacyPool
 } from "@privacy-pool-v1/domainobjs"
 import type { Point } from "@zk-kit/baby-jubjub"
-import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 import { LeanIMT } from "@zk-kit/lean-imt"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import { poseidonDecrypt } from "@zk-kit/poseidon-cipher"
@@ -109,11 +110,11 @@ export namespace CCommitment {
     computeNRoot(): bigint {
       const nullSubTree = new LeanIMT(hashLeftRight)
       // generate public key of pkScalar
-      const Pk: Point<bigint> = mulPointEscalar(Base8, this._private.pkScalar)
+      const Pk: Point<bigint> = DeriveEdDSAPubKey(this._private.pkScalar)
       // recover encryption key
-      const Ek: Point<bigint> = mulPointEscalar(
-        this._public.saltPk,
-        this._private.pkScalar
+      const Ek: Point<bigint> = DeriveSharedSecret(
+        this._private.pkScalar,
+        this._public.saltPk
       )
 
       nullSubTree.insertMany([
@@ -173,12 +174,12 @@ export namespace CCommitment {
     membershipProof = (mt: LeanIMT): MembershipProofJSON => {
       let inclusion = {
         stateRoot: {
-          raw: "0",
-          hex: numberToHex(0n)
+          raw: mt.root.toString(),
+          hex: numberToHex(mt.root)
         },
         leafIndex: "0",
         index: "0",
-        stateDepth: "0",
+        stateDepth: mt.depth.toString(),
         siblings: ["0"]
       }
 
@@ -190,12 +191,12 @@ export namespace CCommitment {
           })(this.index)
           inclusion = {
             stateRoot: {
-              raw: proof.root.toString(),
-              hex: numberToHex(proof.root)
+              raw: mt.root.toString(),
+              hex: numberToHex(mt.root)
             },
             leafIndex: this.index.toString(),
             index: proof.index.toString(),
-            stateDepth: proof.actualDepth.toString(),
+            stateDepth: mt.depth.toString(),
             siblings: proof.siblings.map((v) => v.toString())
           }
         }

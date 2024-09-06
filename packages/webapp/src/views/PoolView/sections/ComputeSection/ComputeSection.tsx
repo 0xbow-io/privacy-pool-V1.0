@@ -28,7 +28,7 @@ import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/s
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(
-    ComputeSectionSteps.Confirmation
+    ComputeSectionSteps.Commitments
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
@@ -52,7 +52,7 @@ const ComputeSection = () => {
     if (currentStep == ComputeSectionSteps.Commitments) {
       sync(currPoolID)
     }
-    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
+    if (currentStep == ComputeSectionSteps.Confirmation) {
       computeProof()
     }
   }, [currentStep, sync, computeProof, request, currPoolID])
@@ -74,7 +74,7 @@ const ComputeSection = () => {
   const handleContinue = () => {
     // User is on the ConfirmationStep
     // and has clicked the "Confirm & Execute" button
-    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
+    if (currentStep == ComputeSectionSteps.Confirmation) {
       // execute the request
       executeRequest()
     }
