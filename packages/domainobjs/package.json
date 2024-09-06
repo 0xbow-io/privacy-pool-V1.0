@@ -1,0 +1,19 @@
+{
+  "name": "@privacy-pool-v1/domainobjs",
+  "module": "index.ts",
+  "version": "1.0",
+  "description": "Privacy Pool V1",
+  "repository": "https://github.com/0xbow-io/privacy-pool-V1.0/domainobjs",
+  "license": "MIT",
+  "author": "0xBow",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "test": "bun test"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "ESNext", "ES2020"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "preserve",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "allowImportingTsExtensions": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": ["bun-types", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@sections/*": ["./src/app/sections/*"],
+      "@privacy-pool-v1/circuits/*": ["../circuits/*"],
+      "@privacy-pool-v1/contracts/*": ["../contracts/*"],
+      "@privacy-pool-v1/domainobjs/*": ["../domainobjs/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

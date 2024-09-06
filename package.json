@@ -1,47 +1,29 @@
 {
   "name": "privacy-pool-v1",
   "type": "module",
+  "private": true,
   "version": "1.0",
   "description": "Privacy Pool V1",
-  "repository": "https://github.com/0xbow-io/privacy-pools-v1",
+  "repository": "https://github.com/0xbow-io/privacy-pool-V1.0",
   "license": "MIT",
   "author": "0xBow",
   "workspaces": [
-    "core/ts/*",
-    "zero-knowledge/*",
-    "contracts/*",
-    "*"
+    "packages/*"
   ],
-  "devDependencies": {
-    "@types/bun": "latest",
-    "prettier": "3.3.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5.5.2"
+  "scripts": {
+    "build:privacypool:circom": "bun run ./packages/zero-knowledge/scripts/privacy-pool/buildCircuit.sh",
+    "test:contracts": "bunx jest --testPathPattern=./packages/contracts/ts/privacy-pool/classes/.*\\.test\\.ts$",
+    "test:privacypool:circom": "bun --filter @privacy-pool-v1/zero-knowledge test:privacypool",
+    "contracts:compile": "bun --filter=\"@privacy-pool-v1/contracts\" compile",
+    "contracts:test": "bun --filter=\"@privacy-pool-v1/contracts\" test",
+    "webapp:dev": "bun --filter @privacy-pool-v1/webapp dev"
   },
   "dependencies": {
     "@zk-kit/circuits": "^1.0.0-beta",
-    "@zk-kit/imt": "^2.0.0-beta.5",
-    "@zk-kit/poseidon-cipher.circom": "^1.0.0-beta.1",
-    "@zk-kit/utils": "^1.2.0",
-    "@zk-kit/utils.circom": "^1.0.0-beta.1",
-    "abitype": "^1.0.4",
     "circomkit": "^0.2.1",
     "circomlib": "^2.0.5",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.22.5",
-    "i": "^0.3.7",
     "maci-circuits": "^1.2.5",
-    "poseidon-lite": "^0.2.0",
     "snarkjs": "^0.7.4",
-    "ts-node": "^10.9.2"
-  },
-  "scripts": {
-    "build:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/buildCircuit.sh",
-    "test:privacypool:circom": "bun run ./zero-knowledge/scripts/privacy-pool/testCircuit.sh",
-    "gen:verifier:testdata": "bun run ./zero-knowledge/scripts/privacy-pool/genTestVerifierData.sh",
-    "contracts:compile": "cd ./contracts && bun run compile",
-    "contracts:hardhat:test": "cd ./contracts && bun run hardhat:test",
-    "webapp:dev": "cd ./webapp && bun run dev"
+    "poseidon-lite": "^0.3.0"
   }
 }
