@@ -63,7 +63,7 @@ export const TransactionProcessingStep = ({
         setPrimaryButtonProps({
           disabled: false,
           text: "Compute Another Commitment",
-          onClick: () => onRestartCb(0)
+          onClick: () => onRestartCb()
         })
     }
   }, [reqStatus])

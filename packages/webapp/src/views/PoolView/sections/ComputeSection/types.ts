@@ -1,5 +1,5 @@
 export enum ComputeSectionSteps {
-  Commitments,
+  Commitments = 0,
   ASPSelection,
   SigningKeySelection,
   Confirmation,
