@@ -22,12 +22,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts"
 import type { CompleteStore, RequestSlice } from "@/stores/types.ts"
 
-export const createRequestSlice: StateCreator<
-  CompleteStore,
-  [],
-  [],
-  RequestSlice
-> = (set, get) => ({
+const requestSliceDefaultValue = {
   src: numberToHex(0),
   sink: numberToHex(0),
   feeCollectorID: "",
@@ -51,28 +46,34 @@ export const createRequestSlice: StateCreator<
   // "failed": request failed onchain
   // "success": request success
   reqStatus: "pending",
-  reqTxHash: numberToHex(0),
+  reqTxHash: numberToHex(0)
+}
+
+export const createRequestSlice: StateCreator<
+  CompleteStore,
+  [],
+  [],
+  RequestSlice
+> = (set, get) => ({
+  ...requestSliceDefaultValue,
 
   updateSrc: (address: Hex) => set((state) => ({ ...state, src: address })),
   updateSink: (address: Hex) => set((state) => ({ ...state, sink: address })),
 
   getStatus: () => {
-    let status = "valid"
     const state = get()
     const { existing, externIO, src, sink, newValues } = state
 
-    if (existing[0].nullRoot === existing[1].nullRoot) {
-      status = "duplicate existing commitments"
-    }
+    const isDuplicateCommitments = existing[0].nullRoot === existing[1].nullRoot
+    const isInvalidExternIO = externIO[0] < 0n || externIO[1] < 0n
+    const isInvalidSrc = src === numberToHex(0) && externIO[0] !== 0n
+    const isInvalidSink = sink === numberToHex(0) && externIO[1] !== 0n
 
-    if (externIO[0] < 0n || externIO[1] < 0n) {
-      status = "invalid external input / output"
+    if (isDuplicateCommitments) {
+      return "duplicate existing commitments"
     }
-    if (src === numberToHex(0) && externIO[0] !== 0n) {
-      status = "invalid external input / output"
-    }
-    if (sink === numberToHex(0) && externIO[1] !== 0n) {
-      status = "invalid external input / output"
+    if (isInvalidExternIO || isInvalidSrc || isInvalidSink) {
+      return "invalid external input / output"
     }
 
     const { expected, actual } = GetNewSum(
@@ -84,10 +85,10 @@ export const createRequestSlice: StateCreator<
     )
 
     if (expected !== actual || expected < 0n || actual < 0n) {
-      status = "invalid values"
+      return "invalid values"
     }
 
-    return status
+    return "valid"
   },
   getTotalNew: () =>
     get().newValues.reduce((acc, val) => acc + val, 0n) + get().externIO[1],
@@ -201,6 +202,7 @@ export const createRequestSlice: StateCreator<
       feeCollector: feeCollectorAddr
     }))
   },
+  resetRequestState: () => set(requestSliceDefaultValue),
   executeRequest: () => {
     const state = get()
     const requestSlice = {

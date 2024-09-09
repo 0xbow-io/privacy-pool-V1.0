@@ -28,7 +28,7 @@ export type PoolsSlice = {
   downloadMembershipProof: (slot: number) => void
 }
 
-export type RequestSlice ={
+export type RequestSlice = {
   src: Hex
   sink: Hex
   feeCollectorID: string
@@ -56,6 +56,7 @@ export type RequestSlice ={
   updateSrc: (address: Hex) => void
   updateSink: (address: Hex) => void
 
+  resetRequestState: () => void
   getStatus: () => string
   getTotalNew: () => bigint
   getTotalExisting: () => bigint
@@ -67,7 +68,7 @@ export type RequestSlice ={
   executeRequest: () => void
 }
 
-export type KeysSlice =  {
+export type KeysSlice = {
   signerKey: Hex
   privKeys: Hex[]
 
@@ -87,5 +88,14 @@ export type GlobalStore = {
   computeProof: () => void
 }
 
+export type CompleteStore = RequestSlice &
+  PoolsSlice &
+  KeysSlice &
+  GlobalStore &
+  AppStateSlice
 
-export type CompleteStore = RequestSlice & PoolsSlice & KeysSlice & GlobalStore & AppStateSlice
+export enum requestStatus {
+  Pending,
+  Success,
+  Error
+}

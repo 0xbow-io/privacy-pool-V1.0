@@ -74,9 +74,7 @@ const ComputeSection = () => {
     if (worker) {
       worker.onmessage = (event) => {
         const resp = event.data as WorkerResponse
-        console.log("new worker msg", resp.cmd)
         if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
-          console.log("go into sync func")
           updatePoolSync(currPoolID, resp)
         }
       }
@@ -86,9 +84,6 @@ const ComputeSection = () => {
       worker && worker.terminate()
     }
   }, [])
-
-  // const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n))
-  // const publicKeys = privacyKeys.map((key) => key.publicAddr)
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",
@@ -161,6 +156,9 @@ const ComputeSection = () => {
             <SignerSelectionStep setPrimaryButtonProps={setForwardBtnProps} />
             <ConfirmationStep setPrimaryButtonProps={setForwardBtnProps} />
             <TransactionProcessingStep
+              onRestartCb={() =>
+                setCurrentStep(ComputeSectionSteps.Commitments)
+              }
               setPrimaryButtonProps={setForwardBtnProps}
             />
           </Steps>

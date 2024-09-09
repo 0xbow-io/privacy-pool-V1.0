@@ -93,9 +93,11 @@ export namespace CPool {
     get root(): bigint {
       return this._root
     }
+
     get stateTree(): LeanIMT<bigint> {
       return new LeanIMT<bigint>(hashLeftRight, Array.from(this._rootSet))
     }
+
     indexOf = (root: bigint): number => this.stateTree.indexOf(root)
     has = (root: bigint): boolean => this._rootSet.has(root)
 
@@ -217,6 +219,7 @@ export namespace CPool {
       ]
     >
     _conn?: PublicClient
+
     constructor(public meta: PoolMeta) {
       super()
       // bindings to the contract functions
@@ -281,18 +284,18 @@ export namespace CPool {
           this._roots
             ? await this._roots(this.meta.address, ToFrom)
             : await FetchRootsFn(this.chain, this.conn)(
-                this.meta.address,
-                ToFrom
-              )
+              this.meta.address,
+              ToFrom
+            )
         ) as bigint[]
         const _newRoot = this.UpdateRootSet(roots)
         // check that there is a checkpoint exisiting for the new root
         const _checkpoint = this._checkpoint
           ? await this._checkpoint(this.meta.address, _newRoot)
           : await FetchCheckpointAtRootFn(this.chain, this.conn)(
-              this.meta.address,
-              _newRoot
-            )
+            this.meta.address,
+            _newRoot
+          )
         return _checkpoint[0]
       }
       return true
@@ -302,19 +305,19 @@ export namespace CPool {
       range?: [bigint, bigint]
     ): Promise<
       | {
-          rawSaltPk: [bigint, bigint]
-          rawCipherText: [
-            bigint,
-            bigint,
-            bigint,
-            bigint,
-            bigint,
-            bigint,
-            bigint
-          ]
-          commitmentHash: bigint
-          cipherStoreIndex: bigint
-        }[]
+      rawSaltPk: [bigint, bigint]
+      rawCipherText: [
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        bigint
+      ]
+      commitmentHash: bigint
+      cipherStoreIndex: bigint
+    }[]
       | void
     > => {
       if (range === undefined) {
@@ -327,9 +330,9 @@ export namespace CPool {
       const res = this._ciphers
         ? await this._ciphers(this.meta.address, range)
         : await UnpackCiphersWithinRangeFn(this.chain, this.conn)(
-            this.meta.address,
-            range
-          )
+          this.meta.address,
+          range
+        )
       if (res) {
         // Note:
         // ciphers[0] => actual ciphertexts
@@ -356,7 +359,7 @@ export namespace CPool {
 
     /**
      * @dev decryptCiphers: iterates through ciphertexts and try to decrypt them
-        based on the provided keys. The decrypted secrets are stored in the key state.
+     based on the provided keys. The decrypted secrets are stored in the key state.
      * @param Request: the set of keys to be used for decryption
      */
     decryptCiphers = async (
@@ -380,20 +383,19 @@ export namespace CPool {
         : (this._scope
             ? this._scope(this.meta.address)
             : ScopeFn(this.chain)(this.meta.address)
-          )
-            .then((v) => {
-              this.scopeval = v
-              return v
-            })
-            .catch((e) => {
-              throw new Error(`Error in computing scope: ${e}`)
-            })
+        )
+          .then((v) => {
+            this.scopeval = v
+            return v
+          })
+          .catch((e) => {
+            throw new Error(`Error in computing scope: ${e}`)
+          })
 
     context = async (_r: TPrivacyPool.RequestT): Promise<bigint> =>
       this._context
         ? this._context(this.meta.address, _r)
         : ContextFn(this.chain, this.conn)(this.meta.address, _r)
-    }
 
     verify = async (
       proof?: SnarkJSOutputT,
@@ -408,16 +410,16 @@ export namespace CPool {
       // if proof is provided, verify it
       proof
         ? {
-            verified: this._onChainGroth16Verifier
-              ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
-              : await FnGroth16Verifier.verifyProofFn(this.chain, this.conn)(
-                  this.meta.verifier,
-                  packed
-                ),
-            packedProof: packed
-          }
+          verified: this._onChainGroth16Verifier
+            ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
+            : await FnGroth16Verifier.verifyProofFn(this.chain, this.conn)(
+              this.meta.verifier,
+              packed
+            ),
+          packedProof: packed
+        }
         : // otherwise, reject the promise
-          Promise.reject("No proof provided")
+        Promise.reject("No proof provided")
 
     processOnChain = async (
       account: PublicActions & WalletActions & Client,

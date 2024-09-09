@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button.tsx"
 import { cn } from "@/lib/utils.ts"
-import { ChevronRightSquareIcon, ChevronsUpDown, SigmaIcon } from "lucide-react"
+import { ChevronRightSquareIcon, SigmaIcon } from "lucide-react"
 import React, {
   lazy,
   useCallback,
-  useEffect,
   useMemo,
   useState,
   useTransition
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/select.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
-import { debounce, formatValue, shortForm } from "@/utils"
+import { formatValue, shortForm } from "@/utils"
 import { useBoundStore } from "@/stores"
 
 type ExistingCommitmentsProps = {
@@ -101,7 +100,6 @@ export const ExistingCommitments = ({
     },
     [externIO, fe?.precision, setExternIO, startTransition]
   )
-  // useEffect(() => {}, [fe?.precision, setExternIO, externIO])
 
   return (
     <div className="">

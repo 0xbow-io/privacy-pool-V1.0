@@ -16,15 +16,29 @@ import {
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { useBoundStore } from "@/stores"
 
+type TransactionProcessingStepProps = {
+  onRestartCb: () => void
+}
+
 export const TransactionProcessingStep = ({
-  setPrimaryButtonProps
-}: CommonProps) => {
-  const { reqStatus, reqTxHash, currPoolID } = useBoundStore(
-    ({ proof, reqStatus, reqTxHash, currPoolID }) => ({
+  setPrimaryButtonProps,
+  onRestartCb
+}: TransactionProcessingStepProps & CommonProps) => {
+  const { reqStatus, reqTxHash, currPoolID, resetRequestState } = useBoundStore(
+    ({
       proof,
       reqStatus,
       reqTxHash,
-      currPoolID
+      currPoolID,
+      getStatus,
+      resetRequestState
+    }) => ({
+      proof,
+      reqStatus,
+      reqTxHash,
+      currPoolID,
+      status: getStatus(),
+      resetRequestState
     })
   )
 
@@ -43,22 +57,16 @@ export const TransactionProcessingStep = ({
     return `${chain.blockExplorers!.default.url}/tx/${txHash}`
   }
 
-  // useEffect(() => {
-  //   if (
-  //     status === TransactionStatus.success ||
-  //     status === TransactionStatus.failure
-  //   ) {
-  //     resetComputeState()
-  //   }
-  //   if (status === TransactionStatus.success) {
-  //     setPrimaryButtonProps &&
-  //       setPrimaryButtonProps({
-  //         disabled: false,
-  //         text: "Compute Another Commitment",
-  //         onClick: () => onRestartCb(0)
-  //       })
-  //   }
-  // }, [status])
+  useEffect(() => {
+    if (reqStatus === "success") {
+      setPrimaryButtonProps &&
+        setPrimaryButtonProps({
+          disabled: false,
+          text: "Compute Another Commitment",
+          onClick: () => onRestartCb(0)
+        })
+    }
+  }, [reqStatus])
 
   return (
     <Container>
