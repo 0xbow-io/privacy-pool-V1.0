@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react"
 import { StyledFooter } from "@/components/Footer/styled.ts"
 import { PoolRootContainer } from "@/components/PoolHeader/styled.ts"
 import { ethers } from "ethers"
-import provider from "@/providers/websocketProvider.ts"
+
+// import provider from "@/providers/websocketProvider.ts"
 
 const Footer: React.FC = () => {
   const [stateRoot, setStateRoot] = useState<string>("")
@@ -11,7 +12,7 @@ const Footer: React.FC = () => {
     // Minimal ABI required to call getStateRoot
     "function GetStateRoot() view returns (bytes32)"
   ]
-
+  /*
   const fetchStateRoot = async (): Promise<string> => {
     try {
       const contract = new ethers.Contract(
@@ -40,12 +41,12 @@ const Footer: React.FC = () => {
       })
     }, 40 * 1000) // TODO: block subscription on WS?
 
-    return () => {
+  return () => {
       // Clear the interval when the component unmounts
       clearInterval(intervalId)
     }
-  }, [])
-
+  }, [fetchStateRoot])
+*/
   return (
     <StyledFooter>
       <div className="w-full h-full grid grid-cols-2 items-center justify-end phone:px-6 tablet:grid-cols-6 laptop:grid-cols-6 2xl:grid-cols-12">

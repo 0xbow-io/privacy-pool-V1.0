@@ -1,5 +1,5 @@
 import { ethers, WebSocketProvider } from "ethers"
-
+/*
 const provider = new WebSocketProvider(
   process.env.NEXT_PUBLIC_INFURA_PROJECT_URL || "",
   "sepolia",
@@ -22,3 +22,4 @@ provider
   })
 
 export default provider
+ */

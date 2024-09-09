@@ -26,16 +26,14 @@ export const WelcomeSection = ({
               You can start on Accounts tab where you can{" "}
               <span className="text-toxic-orange">
                 {" "}
-                Create a new account
-              </span>,{" "}
-              <span className="text-toxic-orange"> Import from JSON </span> or
-              <span className="text-toxic-orange"> Connect Metamask </span>
-              <div className="flex justify-center mt-6">
-                <Button variant="primary" onClick={() => onProceedClick()}>
-                  Go to accounts
-                </Button>
-              </div>
+                Create or import your Privacy Keys
+              </span>
             </p>
+          </div>
+          <div className="flex justify-center mt-6">
+            <Button variant="primary" onClick={() => onProceedClick()}>
+              Go to accounts
+            </Button>
           </div>
         </div>
       </div>
