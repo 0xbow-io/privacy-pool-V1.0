@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import { Upload, UserRoundPlus } from "lucide-react"
 import React, { useCallback } from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import {
   Drawer,
   DrawerClose,
@@ -37,10 +36,16 @@ import {
   PrivacyPools,
   ChainIDToPoolIDs
 } from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
+import { useBoundStore } from "@/stores"
 
 export const SettingsDrawer = () => {
   const isNotMobile = useMediaQuery("(min-width: 768px)")
-  const { _settingsDrawer, settingsDrawer } = useGlobalStore((state) => state)
+  const { _settingsDrawer, settingsDrawer } = useBoundStore(
+    ({ settingsDrawer, _settingsDrawer }) => ({
+      settingsDrawer,
+      _settingsDrawer
+    })
+  )
 
   return isNotMobile ? (
     <Dialog open={_settingsDrawer} onOpenChange={settingsDrawer}>
@@ -89,12 +94,16 @@ const SettingsDrawerContent = ({
   onClose: () => void
   className: string
 }) => {
-  const { currPoolID, setTargetPool, addKey, importKeys } = useGlobalStore(
-    (state) => state
+  const { currPoolID, setTargetPool, addKey, importKeys } = useBoundStore(
+    ({ currPoolID, setTargetPool, addKey, importKeys }) => ({
+      currPoolID,
+      setTargetPool,
+      addKey,
+      importKeys
+    })
   )
-
-  // on file drop to load local account
   const onDrop = useCallback(
+    // on file drop to load local account
     async (acceptedFiles: File[]) => {
       const fileReader = new FileReader()
 

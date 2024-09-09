@@ -9,18 +9,23 @@ import {
   LoaderIcon
 } from "@/views/PoolView/sections/ComputeSection/steps/styled.ts"
 import { BadgeCheck, CircleAlert } from "lucide-react"
-import { useGlobalStore } from "@/stores/global-store"
 import {
   ChainNameIDToChain,
   DEFAULT_CHAIN,
   PrivacyPools
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { useBoundStore } from "@/stores"
 
 export const TransactionProcessingStep = ({
   setPrimaryButtonProps
 }: CommonProps) => {
-  const { proof, reqStatus, reqTxHash, currPoolID } = useGlobalStore(
-    (state) => state
+  const { reqStatus, reqTxHash, currPoolID } = useBoundStore(
+    ({ proof, reqStatus, reqTxHash, currPoolID }) => ({
+      proof,
+      reqStatus,
+      reqTxHash,
+      currPoolID
+    })
   )
 
   const pool = PrivacyPools.get(currPoolID)
@@ -38,22 +43,22 @@ export const TransactionProcessingStep = ({
     return `${chain.blockExplorers!.default.url}/tx/${txHash}`
   }
 
-  useEffect(() => {
-    if (
-      status === TransactionStatus.success ||
-      status === TransactionStatus.failure
-    ) {
-      resetComputeState()
-    }
-    if (status === TransactionStatus.success) {
-      setPrimaryButtonProps &&
-        setPrimaryButtonProps({
-          disabled: false,
-          text: "Compute Another Commitment",
-          onClick: () => onRestartCb(0)
-        })
-    }
-  }, [status])
+  // useEffect(() => {
+  //   if (
+  //     status === TransactionStatus.success ||
+  //     status === TransactionStatus.failure
+  //   ) {
+  //     resetComputeState()
+  //   }
+  //   if (status === TransactionStatus.success) {
+  //     setPrimaryButtonProps &&
+  //       setPrimaryButtonProps({
+  //         disabled: false,
+  //         text: "Compute Another Commitment",
+  //         onClick: () => onRestartCb(0)
+  //       })
+  //   }
+  // }, [status])
 
   return (
     <Container>

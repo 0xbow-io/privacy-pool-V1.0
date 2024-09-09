@@ -9,13 +9,15 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import {
   ChainIDToPoolIDs,
   PrivacyPools
 } from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
+import { useBoundStore } from "@/stores"
 export const PoolHeader = () => {
-  const { setTargetPool, currPoolID } = useGlobalStore((state) => state)
+  const { setTargetPool, currPoolID } = useBoundStore(
+    ({ setTargetPool, currPoolID }) => ({ setTargetPool, currPoolID })
+  )
 
   return (
     <Container>

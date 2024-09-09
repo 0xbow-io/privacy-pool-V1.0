@@ -2,7 +2,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle
 } from "@/components/ui/card.tsx"
@@ -13,22 +12,26 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion.tsx"
-import { Button } from "@/components/ui/button.tsx"
 import React, { useCallback, useState } from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { CirclePlus, Download, Upload, Wallet } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { useBoundStore } from "@/stores"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { privKeys, addKey, importKeys, exportKeys } = useGlobalStore(
-    (state) => state
+  const { privKeys, addKey, importKeys, exportKeys } = useBoundStore(
+    ({ privKeys, addKey, importKeys, exportKeys }) => ({
+      privKeys,
+      addKey,
+      importKeys,
+      exportKeys
+    })
   )
   const [account, setAccount] = useState<string>()
 
-  const { sdk, connected, chainId } = useSDK()
+  const { sdk, connected } = useSDK()
 
   const connect = async () => {
     try {

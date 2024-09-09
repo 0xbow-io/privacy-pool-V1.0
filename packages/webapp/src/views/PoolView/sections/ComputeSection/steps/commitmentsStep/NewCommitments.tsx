@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button.tsx"
 import { cn } from "@/lib/utils.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
-import { NewCommitmentDialog } from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/NewCommitmentDialog.tsx"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
-import { type Commitment, PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
-import { ChevronRightSquareIcon, ChevronsUpDown, SigmaIcon } from "lucide-react"
-import React from "react"
+import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { ChevronRightSquareIcon, SigmaIcon } from "lucide-react"
+import React, { lazy, memo, useMemo, useTransition } from "react"
 import { formatUnits, type Hex, numberToHex, parseUnits } from "viem"
 import { Label } from "@/components/ui/label.tsx"
 import {
@@ -18,24 +16,63 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { formatValue, shortForm } from "@/utils"
+import { useBoundStore } from "@/stores"
+
+const NewCommitmentDialog = lazy(
+  () =>
+    import(
+      "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/NewCommitmentDialog.tsx"
+    )
+)
 
 export const NewCommitments = ({ className }: { className: string }) => {
   const {
-    currPoolID,
-    request,
-    privKeys,
-    getTotalExisting,
-    getTotalNew,
+    externIO,
+    newValues,
+    sink,
     updateSink,
+    currPoolID,
+    getTotalNew,
+    getTotalExisting,
+    privKeys,
     setExternIO
-  } = useGlobalStore((state) => state)
+  } = useBoundStore(
+    ({
+      externIO,
+      newValues,
+      sink,
+      updateSink,
+      currPoolID,
+      getTotalNew,
+      getTotalExisting,
+      privKeys,
+      setExternIO
+    }) => ({
+      externIO,
+      newValues,
+      sink,
+      updateSink,
+      currPoolID,
+      getTotalNew,
+      getTotalExisting,
+      privKeys,
+      setExternIO
+    })
+  )
+
   const [isOutputDialogOpen, setIsNewCommitmentDialogOpen] =
     React.useState(false)
   const [newSlot, setNewSlot] = React.useState(0)
+  const [_, startTransition] = useTransition()
 
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
-
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
+  const privacyKeys = useMemo(
+    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
+    [privKeys]
+  )
+  const fe = useMemo(
+    () => PrivacyPools.get(currPoolID)?.fieldElement,
+    [currPoolID]
+  )
 
   return (
     <div className="">
@@ -47,7 +84,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
           New Commitments:
         </Label>
       </div>
-      {request.newValues.map((val, index) => {
+      {newValues.map((val, index) => {
         return (
           <div
             key={`New Commitment:${index}`}
@@ -85,7 +122,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
         </div>
         <div>
           <Select
-            value={shortForm(request.sink)}
+            value={shortForm(sink)}
             onValueChange={(value) => updateSink(value as Hex)}
           >
             <SelectTrigger
@@ -93,9 +130,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
                 "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
               )}
             >
-              <SelectValue placeholder="Select">
-                {shortForm(request.sink)}
-              </SelectValue>
+              <SelectValue placeholder="Select">{shortForm(sink)}</SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
               {privacyKeys.map((pK, index) => {
@@ -114,12 +149,14 @@ export const NewCommitments = ({ className }: { className: string }) => {
         <Input
           id="external-output"
           type="number"
-          disabled={request.sink === numberToHex(0)}
+          disabled={sink === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={formatUnits(request.externIO[1], Number(fe?.precision))}
+          value={formatUnits(externIO[1], Number(fe?.precision))}
           onChange={(e) => {
             let newVal = parseUnits(e.target.value, Number(fe?.precision))
-            setExternIO([request.externIO[0], newVal < 0n ? 0n : newVal])
+            startTransition(() => {
+              setExternIO([externIO[0], newVal < 0n ? 0n : newVal])
+            })
           }}
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
@@ -128,11 +165,11 @@ export const NewCommitments = ({ className }: { className: string }) => {
         <IconButton
           onClick={() => {
             const diff = getTotalExisting() - getTotalNew()
-            const val = diff > 0n ? request.externIO[1] + diff : 0n
-            setExternIO([request.externIO[0], val])
+            const val = diff > 0n ? externIO[1] + diff : 0n
+            setExternIO([externIO[0], val])
           }}
           icon={<SigmaIcon />}
-          disabled={request.sink === numberToHex(0)}
+          disabled={sink === numberToHex(0)}
         >
           Calculate
         </IconButton>
@@ -156,3 +193,5 @@ export const NewCommitments = ({ className }: { className: string }) => {
     </div>
   )
 }
+
+export default NewCommitments

@@ -53,7 +53,7 @@ import {
 export type OnChainPrivacyPool = CPool.poolC
 export type PrivacyPoolState = CPool.stateC
 
-export const NewPrivacyPoolSate = (): PrivacyPoolState => new CPool.stateC()
+export const NewPrivacyPoolState = (): PrivacyPoolState => new CPool.stateC()
 
 // returns all the privacy pool isntances
 export const GetOnchainPrivacyPools = (): OnChainPrivacyPool[] =>
@@ -393,6 +393,7 @@ export namespace CPool {
       this._context
         ? this._context(this.meta.address, _r)
         : ContextFn(this.chain, this.conn)(this.meta.address, _r)
+    }
 
     verify = async (
       proof?: SnarkJSOutputT,

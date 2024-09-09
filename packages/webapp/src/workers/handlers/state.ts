@@ -1,12 +1,8 @@
-import type { TCommitment, Commitment } from "@privacy-pool-v1/domainobjs/ts"
 import type {
   OnChainPrivacyPool,
-  TPrivacyPool
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { GetOnChainPrivacyPoolByPoolID } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import type { WorkerMsg } from "../eventListener"
-import type { Hex } from "viem"
 
 export const StateSync = async (
   msg: WorkerMsg,

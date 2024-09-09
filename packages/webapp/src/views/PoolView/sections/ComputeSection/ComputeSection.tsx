@@ -12,7 +12,6 @@ import {
   type BackButtonProps,
   type ForwardButtonProps
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import {
   Card,
   CardContent,
@@ -21,14 +20,17 @@ import {
   CardTitle
 } from "@/components/ui/card.tsx"
 
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/types.ts"
 import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
+import { useBoundStore } from "@/stores"
+import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
+import { WorkerCmd, type WorkerResponse } from "@/workers/eventListener.ts"
 
 const ComputeSection = () => {
+  const [worker, setWorker] = useState<Worker | null>(null)
   const [currentStep, setCurrentStep] = useState(
-    ComputeSectionSteps.Confirmation
+    ComputeSectionSteps.Commitments
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
@@ -39,25 +41,53 @@ const ComputeSection = () => {
     text: "Back"
   })
   const {
-    privKeys,
-    request,
     sync,
     applyFee,
     currPoolID,
     computeProof,
-    executeRequest
-  } = useGlobalStore((state) => state)
+    executeRequest,
+    updatePoolSync
+  } = useBoundStore((state) => ({
+    sync: state.startSync,
+    applyFee: state.applyFee,
+    currPoolID: state.currPoolID,
+    computeProof: state.computeProof,
+    executeRequest: state.executeRequest,
+    updatePoolSync: state.updatePoolSync
+  }))
 
   useEffect(() => {
     if (currentStep == ComputeSectionSteps.Commitments) {
-      sync(currPoolID)
+      sync()
+      worker?.postMessage({
+        cmd: WorkerCmd.SYNC_POOL_STATE,
+        poolID: currPoolID
+      })
     }
     if (currentStep == ComputeSectionSteps.TransactionProcessing) {
       computeProof()
     }
-  }, [currentStep, sync, computeProof, request, currPoolID])
+  }, [currentStep, sync, computeProof, currPoolID, worker])
 
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n))
+  useEffect(() => {
+    const worker = loadWorkerDynamically()
+    if (worker) {
+      worker.onmessage = (event) => {
+        const resp = event.data as WorkerResponse
+        console.log("new worker msg", resp.cmd)
+        if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
+          console.log("go into sync func")
+          updatePoolSync(currPoolID, resp)
+        }
+      }
+      setWorker(worker)
+    }
+    return () => {
+      worker && worker.terminate()
+    }
+  }, [])
+
+  // const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n))
   // const publicKeys = privacyKeys.map((key) => key.publicAddr)
 
   const [selectedASP, setSelectedASP] = useState<ASP>({

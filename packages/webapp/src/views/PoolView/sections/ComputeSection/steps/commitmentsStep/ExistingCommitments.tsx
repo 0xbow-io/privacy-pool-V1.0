@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button.tsx"
 import { cn } from "@/lib/utils.ts"
 import { ChevronRightSquareIcon, ChevronsUpDown, SigmaIcon } from "lucide-react"
-import React, { useState } from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
-import { ExistingSelectionDialog } from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/ExistingSelectionDialog.tsx"
-import {
-  type Commitment,
-  DummyCommitment,
-  PrivacyKey
-} from "@privacy-pool-v1/domainobjs/ts"
+import React, {
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition
+} from "react"
+import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { formatUnits, numberToHex, type Hex, parseUnits } from "viem"
 import { Label } from "@/components/ui/label.tsx"
@@ -21,26 +22,86 @@ import {
 } from "@/components/ui/select.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
-import { GetNewSum } from "@privacy-pool-v1/zero-knowledge"
-import { formatValue, shortForm } from "@/utils"
+import { debounce, formatValue, shortForm } from "@/utils"
+import { useBoundStore } from "@/stores"
+
 type ExistingCommitmentsProps = {
   className: string
 }
+
+const ExistingSelectionDialog = lazy(
+  () =>
+    import(
+      "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/ExistingSelectionDialog.tsx"
+    )
+)
+
 export const ExistingCommitments = ({
   className
 }: ExistingCommitmentsProps) => {
-  const { request, commitments, currPoolID, getTotalNew, getTotalExisting } =
-    useGlobalStore((state) => state)
-
-  const { privKeys, updateSrc, setExternIO } = useGlobalStore((state) => state)
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
-
-  const [isSelectionDialogOpen, setSelectionDialog] = React.useState(false)
-  const [existingSlot, setExistingSlot] = React.useState(0)
-  const [totalInputValue, setTotalInputValue] = useState(
-    formatUnits(request.externIO[0], Number(fe?.precision))
+  const {
+    externIO,
+    existing,
+    src,
+    currPoolID,
+    getTotalNew,
+    getTotalExisting,
+    privKeys,
+    updateSrc,
+    setExternIO
+  } = useBoundStore(
+    ({
+      externIO,
+      existing,
+      src,
+      currPoolID,
+      privKeys,
+      getTotalNew,
+      getTotalExisting,
+      updateSrc,
+      setExternIO
+    }) => ({
+      externIO,
+      existing,
+      src,
+      currPoolID,
+      privKeys,
+      getTotalNew,
+      getTotalExisting,
+      updateSrc,
+      setExternIO
+    })
   )
+  const privacyKeys = useMemo(
+    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
+    [privKeys]
+  ) // TODO: this is reused across components and should be moved to a parent component to avoid recalc
+  const fe = useMemo(
+    () => PrivacyPools.get(currPoolID)?.fieldElement,
+    [currPoolID]
+  )
+
+  const [_, startTransition] = useTransition()
+  const [isSelectionDialogOpen, setSelectionDialog] = useState(false)
+  const [existingSlot, setExistingSlot] = useState(0)
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value
+      const validNumberPattern = /^-?\d*\.?\d*$/
+
+      if (validNumberPattern.test(value)) {
+        startTransition(() => {
+          const newVal = parseUnits(value, Number(fe?.precision))
+          if (newVal >= 0n && newVal !== externIO[0]) {
+            setExternIO([newVal, externIO[1]])
+          }
+        })
+      }
+    },
+    [externIO, fe?.precision, setExternIO, startTransition]
+  )
+  // useEffect(() => {}, [fe?.precision, setExternIO, externIO])
 
   return (
     <div className="">
@@ -52,42 +113,40 @@ export const ExistingCommitments = ({
           Existing Commitments:
         </Label>
       </div>
-      {request.existing.map((c, index) => {
-        return (
-          <div
-            key={`Existing:${index}`}
-            className={cn(
-              "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
-              "bg-tropical-forest text-ghost-white min"
-            )}
-            style={{ minHeight: "4rem" }}
-          >
-            <div className="flex flex-col">
-              <div>
-                <h2 className="font-semibold">
-                  {shortForm(numberToHex(c.commitmentRoot))}
-                </h2>
-              </div>
-              <div>
-                <h2 className="font-semibold">
-                  ({formatValue(c.asTuple()[0], fe?.precision)} {fe?.ticker})
-                </h2>
-              </div>
+      {existing.map((c, index) => (
+        <div
+          key={`Existing:${index}`}
+          className={cn(
+            "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
+            "bg-tropical-forest text-ghost-white min"
+          )}
+          style={{ minHeight: "4rem" }}
+        >
+          <div className="flex flex-col">
+            <div>
+              <h2 className="font-semibold">
+                {shortForm(numberToHex(c.commitmentRoot))}
+              </h2>
             </div>
-            <Button
-              onClick={() => {
-                setExistingSlot(index)
-                setSelectionDialog(true)
-              }}
-              variant="ghost"
-              size="sm"
-              className="w-9 p-0"
-            >
-              <ChevronRightSquareIcon className="size-6" />
-            </Button>
+            <div>
+              <h2 className="font-semibold">
+                ({formatValue(c.asTuple()[0], fe?.precision)} {fe?.ticker})
+              </h2>
+            </div>
           </div>
-        )
-      })}
+          <Button
+            onClick={() => {
+              setExistingSlot(index)
+              setSelectionDialog(true)
+            }}
+            variant="ghost"
+            size="sm"
+            className="w-9 p-0"
+          >
+            <ChevronRightSquareIcon className="size-6" />
+          </Button>
+        </div>
+      ))}
 
       <div className="flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2">
         <div>
@@ -100,7 +159,7 @@ export const ExistingCommitments = ({
         </div>
         <div>
           <Select
-            value={shortForm(request.src)}
+            value={shortForm(src)}
             onValueChange={(value) => updateSrc(value as Hex)}
           >
             <SelectTrigger
@@ -108,45 +167,24 @@ export const ExistingCommitments = ({
                 "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
               )}
             >
-              <SelectValue placeholder="Select">
-                {shortForm(request.src)}
-              </SelectValue>
+              <SelectValue placeholder="Select">{shortForm(src)}</SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
-              {privacyKeys.map((pK, index) => {
-                return (
-                  <SelectItem key={index} value={pK.pubAddr}>
-                    {shortForm(pK.pubAddr)}
-                  </SelectItem>
-                )
-              })}
+              {privacyKeys.map((pK, index) => (
+                <SelectItem key={index} value={pK.pubAddr}>
+                  {shortForm(pK.pubAddr)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <Input
           id="external-input"
           type="number"
-          disabled={request.src === numberToHex(0)}
+          disabled={src === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={totalInputValue}
-          onChange={(e) => {
-            const value = e.target.value
-            const validNumberPattern = /^-?\d*\.?\d*$/
-
-            if (validNumberPattern.test(value)) {
-              setTotalInputValue(value)
-
-              try {
-                const newVal = parseUnits(value, Number(fe?.precision))
-                if (newVal >= 0n) {
-                  setExternIO([newVal, request.externIO[1]])
-                }
-              } catch (error) {
-                // Handle invalid input (e.g., non-numeric values)
-                console.error("Invalid input value:", error)
-              }
-            }
-          }}
+          value={formatUnits(externIO[0], Number(fe?.precision))}
+          onChange={(e) => handleInputChange(e)}
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
           )}
@@ -154,11 +192,11 @@ export const ExistingCommitments = ({
         <IconButton
           onClick={() => {
             const diff = getTotalNew() - getTotalExisting()
-            const val = diff > 0n ? request.externIO[0] + diff : 0n
-            setExternIO([val, request.externIO[1]])
+            const val = diff > 0n ? externIO[0] + diff : 0n
+            setExternIO([val, externIO[1]])
           }}
           icon={<SigmaIcon />}
-          disabled={request.src === numberToHex(0)}
+          disabled={src === numberToHex(0)}
         >
           Calculate
         </IconButton>
@@ -169,7 +207,7 @@ export const ExistingCommitments = ({
           htmlFor=""
           className={cn("block text-base font-bold text-blackmail")}
         >
-          Total: {formatValue(getTotalExisting(), fe?.precision)} {fe?.ticker}{" "}
+          Total: {formatValue(getTotalExisting(), fe?.precision)} {fe?.ticker}
         </Label>
       </div>
 
@@ -182,3 +220,5 @@ export const ExistingCommitments = ({
     </div>
   )
 }
+
+export default ExistingCommitments

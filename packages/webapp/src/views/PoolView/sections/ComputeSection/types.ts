@@ -1,4 +1,3 @@
-
 export enum ComputeSectionSteps {
   Commitments,
   ASPSelection,

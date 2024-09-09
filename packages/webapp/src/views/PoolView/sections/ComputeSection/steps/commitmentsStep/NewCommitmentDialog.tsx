@@ -13,11 +13,11 @@ import {
   SelectValue
 } from "@/components/ui/select.tsx"
 import { cn } from "@/lib/utils.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
-import React from "react"
+import React, { memo, useMemo } from "react"
 import { formatUnits, parseUnits } from "viem"
+import { useBoundStore } from "@/stores"
 
 type NewCommitmentDialogProps = {
   className: string
@@ -26,20 +26,31 @@ type NewCommitmentDialogProps = {
   newSlot: number
 }
 
-export const NewCommitmentDialog = ({
+const NewCommitmentDialog = ({
   className,
   isOpen,
   onOpenChange,
   newSlot
 }: NewCommitmentDialogProps) => {
-  const { privKeys, request, insertNew, currPoolID } = useGlobalStore(
-    (state) => state
+  const { privKeys, insertNew, currPoolID, newValues } = useBoundStore(
+    ({ privKeys, insertNew, currPoolID, newValues }) => ({
+      privKeys,
+      insertNew,
+      currPoolID,
+      newValues
+    })
   )
 
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
   const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
 
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
+  const privacyKeys = useMemo(
+    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
+    [privKeys]
+  )
+  const fe = useMemo(
+    () => PrivacyPools.get(currPoolID)?.fieldElement,
+    [currPoolID]
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -67,7 +78,7 @@ export const NewCommitmentDialog = ({
               id="new-amount"
               type="number"
               placeholder={formatUnits(
-                request.newValues[newSlot],
+                newValues[newSlot],
                 Number(fe?.precision)
               )}
               onChange={(e) =>
@@ -121,3 +132,5 @@ export const NewCommitmentDialog = ({
     </Dialog>
   )
 }
+
+export default memo(NewCommitmentDialog)

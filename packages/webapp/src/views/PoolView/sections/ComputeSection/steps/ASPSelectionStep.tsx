@@ -6,7 +6,7 @@ import type {
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import Select from "@/components/Select/Select.tsx"
 import { formatEther } from "viem"
-import { useGlobalStore } from "@/stores/global-store.ts"
+import { useBoundStore } from "@/stores"
 
 type ASPSelectionStepProps = {
   ASPOptions: ASP[]
@@ -20,7 +20,7 @@ export const ASPSelectionStep: React.FC<ASPSelectionStepProps> = ({
   onASPSelect,
   setPrimaryButtonProps
 }) => {
-  const { isSyncing } = useGlobalStore((state) => state)
+  const { isSyncing } = useBoundStore(({ isSyncing }) => ({ isSyncing }))
 
   useEffect(() => {
     if (setPrimaryButtonProps) {

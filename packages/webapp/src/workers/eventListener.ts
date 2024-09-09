@@ -5,8 +5,11 @@ import type { TPrivacyPool } from "@privacy-pool-v1/contracts"
 import type { PrivacyPoolCircuitInput } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import type { StdPackedGroth16ProofT } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 
-export const SYNC_POOL_STATE: number = 0
-export const COMPUTE_PROOF_CMD: number = 1
+
+export enum WorkerCmd {
+  SYNC_POOL_STATE = 0,
+  COMPUTE_PROOF_CMD = 1
+}
 
 export type WorkerMsg = {
   cmd: number
@@ -46,7 +49,7 @@ export const eventListenerFn = async (event: MessageEvent) => {
 
   try {
     switch (resp.cmd) {
-      case SYNC_POOL_STATE:
+      case WorkerCmd.SYNC_POOL_STATE:
         await StateSync(msg)
           .then((result) => {
             resp.status = "success"
@@ -57,7 +60,7 @@ export const eventListenerFn = async (event: MessageEvent) => {
             throw new Error(`cmd: ${resp.cmd} Error: ${e}`)
           })
         break
-      case COMPUTE_PROOF_CMD:
+      case WorkerCmd.COMPUTE_PROOF_CMD:
         await ComputeProof(msg)
           .then((result) => {
             resp.status = "success"

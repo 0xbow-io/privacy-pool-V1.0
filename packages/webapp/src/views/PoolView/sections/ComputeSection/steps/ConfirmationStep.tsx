@@ -1,4 +1,3 @@
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { formatUnits, numberToHex } from "viem"
 import {
@@ -9,6 +8,7 @@ import React, { useEffect } from "react"
 import type { CommonProps } from "./types"
 import { CommitmentsInfo } from "@/components/CommitmentsInfo/CommitmentsInfo.tsx"
 import StatGrid from "@/components/ASPStat/StatGrid.tsx"
+import { useBoundStore } from "@/stores"
 
 export const ConfirmationStep: React.FC<CommonProps> = ({
   setPrimaryButtonProps,
@@ -27,32 +27,49 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
     existing,
     sumNewValues,
     fe
-  } = useGlobalStore((state) => {
-    const pool = PrivacyPools.get(state.currPoolID)
-    return {
-      isGeneratingProof: state.isGeneratingProof,
-      proof: state.proof,
-      src: state.request.src,
-      sink: state.request.sink,
-      feeAmt: state.request.fee,
-      feeCollector: state.request.feeCollector,
-      feeCollectorID: state.request.feeCollectorID,
-      externIO: state.request.externIO,
-      _new: state.request.newValues.map((val, i) =>
-        CreateNewCommitment({
-          _pK: state.privKeys[state.request.keyIdx[i + 2]],
-          // auto set nonce to 0n for now
-          _nonce: 0n,
-          _scope: pool ? pool.scope : 0n,
-          _value: val
-        })
-      ) as [Commitment, Commitment],
-      existing: state.request.existing,
-      keys: state.request.keyIdx.map((idx) => state.privKeys[idx]),
-      sumNewValues: state.request.sumNewValues,
-      fe: PrivacyPools.get(state.currPoolID)?.fieldElement
+  } = useBoundStore(
+    ({
+      isGeneratingProof,
+      proof,
+      src,
+      sink,
+      fee,
+      feeCollector,
+      feeCollectorID,
+      externIO,
+      newValues,
+      existing,
+      sumNewValues,
+      currPoolID,
+      keyIdx,
+      privKeys
+    }) => {
+      const pool = PrivacyPools.get(currPoolID)
+      return {
+        isGeneratingProof: isGeneratingProof,
+        proof: proof,
+        src: src,
+        sink: sink,
+        feeAmt: fee,
+        feeCollector: feeCollector,
+        feeCollectorID: feeCollectorID,
+        externIO: externIO,
+        _new: newValues.map((val, i) =>
+          CreateNewCommitment({
+            _pK: privKeys[keyIdx[i + 2]],
+            // auto set nonce to 0n for now
+            _nonce: 0n,
+            _scope: pool ? pool.scope : 0n,
+            _value: val
+          })
+        ) as [Commitment, Commitment],
+        existing: existing,
+        keys: keyIdx.map((idx) => privKeys[idx]),
+        sumNewValues: sumNewValues,
+        fe: PrivacyPools.get(currPoolID)?.fieldElement
+      }
     }
-  })
+  )
 
   useEffect(() => {
     setPrimaryButtonProps &&

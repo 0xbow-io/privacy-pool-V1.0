@@ -1,10 +1,10 @@
 import React from "react"
 import { formatEther, numberToHex } from "viem"
 import type { ICommitment } from "@privacy-pool-v1/domainobjs/ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { formatValue } from "@/utils"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { CommitmentContainer, CommitmentDetail, Label, Value } from "./styled"
+import { useBoundStore } from "@/stores"
 
 type CommitmentsInfoProps = {
   isInput: boolean
@@ -12,10 +12,10 @@ type CommitmentsInfoProps = {
 }
 
 export const CommitmentsInfo = ({ isInput, commits }: CommitmentsInfoProps) => {
-  const { keys, fe } = useGlobalStore((state) => {
+  const { keys, fe } = useBoundStore(({ keyIdx, currPoolID, privKeys }) => {
     return {
-      keys: state.request.keyIdx.map((idx) => state.privKeys[idx]),
-      fe: PrivacyPools.get(state.currPoolID)?.fieldElement
+      keys: keyIdx.map((idx) => privKeys[idx]),
+      fe: PrivacyPools.get(currPoolID)?.fieldElement
     }
   })
 

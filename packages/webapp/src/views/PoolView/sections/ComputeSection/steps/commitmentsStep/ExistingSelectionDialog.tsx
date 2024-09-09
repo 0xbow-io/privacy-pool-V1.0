@@ -12,18 +12,15 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
+import React, { memo, useMemo } from "react"
 import { formatUnits, numberToHex, type Hex } from "viem"
-import {
-  PrivacyKey,
-  type Commitment,
-} from "@privacy-pool-v1/domainobjs/ts"
+import { PrivacyKey, type Commitment } from "@privacy-pool-v1/domainobjs/ts"
 import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { cn } from "@/lib/utils.ts"
 import { Label } from "@/components/ui/label.tsx"
 import { BinaryIcon, SigmaIcon } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
+import { useBoundStore } from "@/stores"
 type SelectionDialogProps = {
   className: string
   isOpen: boolean
@@ -31,7 +28,7 @@ type SelectionDialogProps = {
   existingSlot: number
 }
 
-export const ExistingSelectionDialog = ({
+const ExistingSelectionDialog = ({
   className,
   isOpen,
   onOpenChange,
@@ -39,16 +36,38 @@ export const ExistingSelectionDialog = ({
 }: SelectionDialogProps) => {
   const {
     privKeys,
-    request,
     commitments,
+    existing,
     selectExisting,
     currPoolID,
     downloadMembershipProof
-  } = useGlobalStore((state) => state)
+  } = useBoundStore(
+    ({
+      privKeys,
+      commitments,
+      existing,
+      selectExisting,
+      currPoolID,
+      downloadMembershipProof
+    }) => ({
+      privKeys,
+      commitments,
+      existing,
+      selectExisting,
+      currPoolID,
+      downloadMembershipProof
+    })
+  )
   const poolCommitments = commitments.get(currPoolID) || []
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
 
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
+  const privacyKeys = useMemo(
+    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
+    [privKeys]
+  )
+  const fe = useMemo(
+    () => PrivacyPools.get(currPoolID)?.fieldElement,
+    [currPoolID]
+  )
 
   const [targetKeyIndex, setTargetKeyIndex] = React.useState(-1)
 
@@ -125,7 +144,7 @@ export const ExistingSelectionDialog = ({
         <div className="flex-auto">
           <Select
             value={shortForm(
-              numberToHex(request.existing[existingSlot].commitmentRoot)
+              numberToHex(existing[existingSlot]?.commitmentRoot || 0)
             )}
             onValueChange={(value) => {
               selectExisting(targetKeyIndex, Number(value), existingSlot)
@@ -134,7 +153,7 @@ export const ExistingSelectionDialog = ({
             <SelectTrigger>
               <SelectValue placeholder="Select">
                 {shortForm(
-                  numberToHex(request.existing[existingSlot].commitmentRoot)
+                  numberToHex(existing[existingSlot]?.commitmentRoot || 0)
                 )}
               </SelectValue>
             </SelectTrigger>
@@ -167,3 +186,5 @@ export const ExistingSelectionDialog = ({
     </Dialog>
   )
 }
+
+export default memo(ExistingSelectionDialog)

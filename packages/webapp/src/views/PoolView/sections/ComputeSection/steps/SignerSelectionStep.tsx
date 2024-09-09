@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react"
 import type { CommonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import Select from "@/components/Select/Select.tsx"
-import { useGlobalStore } from "@/stores/global-store"
 import { numberToHex, type Hex } from "viem"
+import { useBoundStore } from "@/stores"
 
 export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
-  const { setSigner, signerKey, privKeys } = useGlobalStore((state) => state)
+  const { setSigner, signerKey, privKeys } = useBoundStore(
+    ({ setSigner, signerKey, privKeys }) => ({ setSigner, signerKey, privKeys })
+  )
   useEffect(() => {
     setPrimaryButtonProps &&
       setPrimaryButtonProps({
