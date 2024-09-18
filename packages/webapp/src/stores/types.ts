@@ -1,5 +1,8 @@
 import type { PrivacyPoolState } from "@privacy-pool-v1/contracts/ts"
-import type { Commitment } from "@privacy-pool-v1/domainobjs/ts"
+import type {
+  Commitment,
+  MembershipProofJSON
+} from "@privacy-pool-v1/domainobjs/ts"
 import type { WorkerResponse } from "@/workers/eventListener.ts"
 import type { Hex } from "viem"
 import type { StdPackedGroth16ProofT } from "@privacy-pool-v1/zero-knowledge"
@@ -21,11 +24,15 @@ export type PoolsSlice = {
   currPoolID: string
   pools: Map<string, PrivacyPoolState>
   commitments: Map<string, Commitment[][]>
+  poolToMembershipProofs: Map<string, MembershipProofJSON[][]>
 
   setTargetPool: (poolID: string) => void
   startSync: () => void
-  updatePoolSync: (poolID: string, resp: WorkerResponse) => void
+  updatePoolSync: (resp: WorkerResponse) => void
   downloadMembershipProof: (slot: number) => void
+  updateMembershipProofs: (
+    proofs: Map<string, MembershipProofJSON[][]>
+  ) => void
 }
 
 export type RequestSlice = {

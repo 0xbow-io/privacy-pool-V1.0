@@ -1,9 +1,5 @@
 import React, { useEffect } from "react"
-import { Loader } from "@/components/Loader/Loader.tsx"
-import {
-  type CommonProps,
-  TransactionStatus
-} from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
+import { type CommonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import {
   Container,
   LoaderIcon

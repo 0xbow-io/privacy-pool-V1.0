@@ -24,13 +24,10 @@ import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/ty
 import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
 import { useBoundStore } from "@/stores"
-import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
-import { WorkerCmd, type WorkerResponse } from "@/workers/eventListener.ts"
-
 const ComputeSection = () => {
-  const [worker, setWorker] = useState<Worker | null>(null)
+
   const [currentStep, setCurrentStep] = useState(
-    ComputeSectionSteps.Commitments
+    ComputeSectionSteps.ASPSelection
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
@@ -56,34 +53,6 @@ const ComputeSection = () => {
     updatePoolSync: state.updatePoolSync
   }))
 
-  useEffect(() => {
-    if (currentStep == ComputeSectionSteps.Commitments) {
-      sync()
-      worker?.postMessage({
-        cmd: WorkerCmd.SYNC_POOL_STATE,
-        poolID: currPoolID
-      })
-    }
-    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
-      computeProof()
-    }
-  }, [currentStep, sync, computeProof, currPoolID, worker])
-
-  useEffect(() => {
-    const worker = loadWorkerDynamically()
-    if (worker) {
-      worker.onmessage = (event) => {
-        const resp = event.data as WorkerResponse
-        if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
-          updatePoolSync(currPoolID, resp)
-        }
-      }
-      setWorker(worker)
-    }
-    return () => {
-      worker && worker.terminate()
-    }
-  }, [])
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",

@@ -12,26 +12,62 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion.tsx"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { CirclePlus, Download, Upload, Wallet } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { PrivacyKey, type TCommitment } from "@privacy-pool-v1/domainobjs/ts"
 import { useBoundStore } from "@/stores"
+import { loadWorkerDynamically } from "@/workers/WorkerLazyLoader.ts"
+import { WorkerCmd, type WorkerResponse } from "@/workers/eventListener.ts"
+import type { LeanIMT } from "@zk-kit/lean-imt"
+import { useZKWorker } from "@/hooks/useZKWorker.ts"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { privKeys, addKey, importKeys, exportKeys } = useBoundStore(
-    ({ privKeys, addKey, importKeys, exportKeys }) => ({
-      privKeys,
-      addKey,
-      importKeys,
-      exportKeys
-    })
-  )
+  const { privKeys, addKey, importKeys, exportKeys, commitments, pools } =
+    useBoundStore(
+      ({ privKeys, addKey, importKeys, exportKeys, commitments, pools }) => ({
+        privKeys,
+        addKey,
+        importKeys,
+        exportKeys,
+        commitments,
+        pools
+      })
+    )
   const [account, setAccount] = useState<string>()
-
+  const { postMessage } = useZKWorker()
   const { sdk, connected } = useSDK()
+
+  useEffect(() => {
+    if (privKeys.length && pools.size) {
+      const poolIds = Array.from(pools.keys())
+
+      const keyToCommitJSONs = new Map<string, TCommitment.CommitmentJSON[][]>()
+      let poolStates = new Map<string, LeanIMT<bigint>>()
+      for (const [poolId, pState] of pools.entries()) {
+        poolStates.set(poolId, pState.stateTree)
+      }
+
+      console.log("poolIds", poolIds)
+
+      poolIds.forEach((id) => {
+        const poolCommits = commitments.get(id)
+        const commitJSONs = poolCommits?.map((keyCommits) =>
+          keyCommits.map((commit) => commit.toJSON())
+        )
+        if (!commitJSONs) return
+        keyToCommitJSONs.set(id, commitJSONs)
+      })
+
+      postMessage({
+        cmd: WorkerCmd.COMPUTE_MEMBERSHIP_PROOF_CMD,
+        poolStates,
+        keyToCommitJSONs
+      })
+    }
+  }, [commitments, privKeys, pools])
 
   const connect = async () => {
     try {
