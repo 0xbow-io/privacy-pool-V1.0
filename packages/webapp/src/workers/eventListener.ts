@@ -14,7 +14,6 @@ import type {
   StdPackedGroth16ProofT
 } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import type { Hex } from "viem"
-import CommitmentJSON = TCommitment.CommitmentJSON
 
 export enum WorkerCmd {
   SYNC_POOL_STATE = 0,
@@ -42,7 +41,7 @@ export type WorkerResponse = {
     packedProof: StdPackedGroth16ProofT<bigint>
   }
   syncedPools?: StateSyncDTO[]
-  processedCommits?: Map<string, CommitmentJSON[][]>
+  processedCommits?: Map<string, TCommitment.CommitmentJSON[][]>
   error?: Error
   membershipProofs?: Map<string, MembershipProofJSON[][]>
 }
@@ -62,10 +61,8 @@ export const eventListenerFn = async (event: MessageEvent) => {
       case WorkerCmd.SYNC_POOL_STATE:
         await getAllPoolsStates(msg)
           .then((result) => {
-            console.log('aboba')
             resp.syncedPools = result
             const commitsJSONs = recoverPoolCommits(msg.privateKeys!, resp)
-            console.log('will return', commitsJSONs)
             resp.status = "success"
             resp.processedCommits = commitsJSONs
           })

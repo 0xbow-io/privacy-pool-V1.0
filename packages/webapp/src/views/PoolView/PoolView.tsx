@@ -20,6 +20,7 @@ export default function PoolView() {
     updatePoolSync,
     pools,
     privKeys,
+    isSyncing,
     updateMembershipProofs
   } = useBoundStore(
     ({
@@ -28,13 +29,15 @@ export default function PoolView() {
       updatePoolSync,
       pools,
       privKeys,
-      updateMembershipProofs
+      updateMembershipProofs,
+      isSyncing
     }) => ({
       commitments,
       startSync,
       updatePoolSync,
       pools,
       privKeys,
+      isSyncing,
       updateMembershipProofs
     })
   )
@@ -70,11 +73,10 @@ export default function PoolView() {
   }, [pools, worker, commitments])
 
   useEffect(() => {
-    if (!worker || !privKeys.length) {
+    if (!worker || !privKeys.length || isSyncing) {
       return
     }
     startSync()
-    console.log("loop check")
     if (!commitments.size) {
       const poolIds = Array.from(PrivacyPools.keys())
       postMessage({
@@ -83,6 +85,7 @@ export default function PoolView() {
         privateKeys: privKeys
       })
     } else {
+      console.log("compute proofs")
       computeProofs()
     }
     addMessageHandler((event) => {

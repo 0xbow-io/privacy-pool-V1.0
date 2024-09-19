@@ -1,17 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState } from "react"
 import { useBoundStore } from "@/stores"
 import { Loader } from "@/components/Loader/Loader.tsx"
 import { JSONTree } from "react-json-tree"
 import { PrivacyKey, type TCommitment } from "@privacy-pool-v1/domainobjs/ts"
-import {
-  useReactTable,
-  type ColumnDef,
-  getCoreRowModel,
-  getExpandedRowModel,
-  flexRender,
-  type Row
-} from "@tanstack/react-table"
-import { RecordsTable } from "@/views/PoolView/sections/RecordsSection/RecordsTable/RecordsTable.tsx"
+import RecordsTable from "@/components/RecordsTable/RecordsTable.tsx"
 
 export const RecordsSection = () => {
   const { poolToMembershipProofs, isSyncing, privKeys } = useBoundStore(
@@ -47,25 +39,12 @@ export const RecordsSection = () => {
     setKeyToCommits(result)
   }, [poolToMembershipProofs, privKeys])
 
-  const theme = {
-    base00: "transparent", // Background color
-    base07: "" // Text color
-    // Add other color properties as needed
-  }
-
   return (
     <div>
       {isSyncing ? (
         <Loader loading={true} />
       ) : (
         <div>
-          <h2>JSON Commitments Tree</h2>
-          <JSONTree
-            data={keyToCommits}
-            hideRoot
-            getItemString={(itemType) => <span>{itemType}</span>}
-            theme={theme}
-          />
           <RecordsTable keyToCommits={keyToCommits} />
         </div>
       )}
