@@ -64,7 +64,7 @@ export const AccountCard = ({ className }: { className: string }) => {
     [importKeys]
   )
 
-  const { getRootProps } = useDropzone({ onDrop })
+  const { getInputProps, getRootProps } = useDropzone({ onDrop })
 
   return (
     <Card className={cn("", className)}>
@@ -135,6 +135,7 @@ export const AccountCard = ({ className }: { className: string }) => {
       <CardContent className="space-y-2">
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3 2xl:grid-cols-3 justify-around">
           <div className="flex justify-center mt-10">
+            <input type="file" {...getInputProps()} />
             <IconButton {...getRootProps()} icon={<Upload />} disabled={false}>
               Import Keys
             </IconButton>
