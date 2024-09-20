@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { jetBrainMono } from "./fonts"
-
 import "./globals.css"
-//import { Providers } from "@/app/providers.tsx"
+import { Providers } from "@/app/providers"
 
 export const metadata: Metadata = {
   title: "Home",
@@ -16,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${jetBrainMono.className}`}>{children}</body>
+      <body className={`${jetBrainMono.className}`}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   )
 }
