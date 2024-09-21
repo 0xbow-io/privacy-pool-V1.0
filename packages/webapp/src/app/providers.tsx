@@ -10,7 +10,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       sdkOptions={{
         dappMetadata: {
           name: "0xbow privacy pool",
-          url: window.location.href
+          url: "https://www.0xbow.io/"
         },
         infuraAPIKey: process.env.INFURA_PROJECT_ID
       }}
