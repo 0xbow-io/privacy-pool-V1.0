@@ -32,8 +32,6 @@ export const AccountCard = ({ className }: { className: string }) => {
 
   const connect = async () => {
     try {
-      console.log("We are connecting to metamask !!!!!")
-      await sdk?.connect();
       const accounts: string[] = (await sdk?.connect()) as string[]
       setAccount(accounts?.[0])
     } catch (err) {
