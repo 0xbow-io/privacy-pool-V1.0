@@ -151,7 +151,7 @@ export const AccountCard = ({ className }: { className: string }) => {
             <IconButton
               onClick={() => connect()}
               icon={<Wallet />}
-              disabled={true}
+              disabled={false}
             >
               Connect To Metamask
             </IconButton>
