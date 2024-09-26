@@ -12,15 +12,27 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React, { memo, useMemo } from "react"
-import { formatUnits, numberToHex, type Hex } from "viem"
+import React, { memo, useEffect, useMemo, useState } from "react"
+import {
+  formatUnits,
+  numberToHex,
+  type Hex,
+  createWalletClient,
+  http,
+  publicActions,
+  formatEther
+} from "viem"
 import { PrivacyKey, type Commitment } from "@privacy-pool-v1/domainobjs/ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import {
+  DEFAULT_CHAIN,
+  PrivacyPools
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { cn } from "@/lib/utils.ts"
 import { Label } from "@/components/ui/label.tsx"
 import { BinaryIcon, SigmaIcon } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useBoundStore } from "@/stores"
+import { formatValue, shortForm } from "@/utils"
 type SelectionDialogProps = {
   className: string
   isOpen: boolean
@@ -69,18 +81,38 @@ const ExistingSelectionDialog = ({
     [currPoolID]
   )
 
-  const [targetKeyIndex, setTargetKeyIndex] = React.useState(-1)
+  const [targetKeyIndex, setTargetKeyIndex] = useState(-1)
+  const [currentWalletBalance, setCurrentWalletBalance] = useState<
+    bigint | null
+  >(null)
 
   const getAvailCommitments = (): Commitment[] =>
     poolCommitments[targetKeyIndex] ?? []
 
-  const shortForm = (str: Hex): string => {
-    return `${str.substring(0, 14)}....${str.substring(54)}`
-  }
+  console.log('values', getAvailCommitments().map(c => console.log(c.asTuple()[0], formatValue(c.asTuple()[0], fe?.precision))))
 
-  const formatValue = (val: bigint): string => {
-    return formatUnits(val, Number(fe?.precision))
-  }
+  useEffect(() => {
+    const updateBalance = async () => {
+      const publicAddr = new PrivacyKey(privKeys[targetKeyIndex], 0n).publicAddr
+      const walletClient = createWalletClient({
+        account: publicAddr,
+        chain: DEFAULT_CHAIN, //todo: change for dynamic chain
+        transport: http()
+      }).extend(publicActions)
+
+      const balance = await walletClient.getBalance({ address: publicAddr })
+      return balance
+    }
+
+    const fetchBalance = async () => {
+      const balance = await updateBalance()
+      setCurrentWalletBalance(balance)
+    }
+
+    if (targetKeyIndex !== -1) {
+      fetchBalance()
+    }
+  }, [targetKeyIndex, privKeys])
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -131,6 +163,13 @@ const ExistingSelectionDialog = ({
             </SelectContent>
           </Select>
         </div>
+        {targetKeyIndex !== -1 && (
+          <div>
+            Wallet balance:{" "}
+            {currentWalletBalance &&
+              `${Number(formatValue(currentWalletBalance, fe?.precision)).toFixed(8)} ${fe?.ticker}`}
+          </div>
+        )}
 
         <div className="flex-auto">
           <Label
@@ -163,7 +202,7 @@ const ExistingSelectionDialog = ({
                   <SelectItem key={index} value={index.toString()}>
                     {shortForm(numberToHex(commit.commitmentRoot))} (
                     {commit.asTuple()[0] !== 0n
-                      ? `${formatValue(commit.asTuple()[0])} ${fe?.ticker}`
+                      ? `${formatValue(commit.asTuple()[0], fe?.precision)} ${fe?.ticker}`
                       : "VOID"}
                     )
                   </SelectItem>

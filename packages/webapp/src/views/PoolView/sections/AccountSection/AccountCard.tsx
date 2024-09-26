@@ -17,18 +17,29 @@ import { CirclePlus, Download, Upload, Wallet } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { useBoundStore } from "@/stores"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { privKeys, addKey, importKeys, exportKeys } = useBoundStore(
-    ({ privKeys, addKey, importKeys, exportKeys }) => ({
-      privKeys,
-      addKey,
-      importKeys,
-      exportKeys
-    })
-  )
+  const { privKeys, privacyKeys, addKey, importKeys, exportKeys } =
+    useBoundStore(
+      ({
+        privKeys,
+        addKey,
+        importKeys,
+        exportKeys,
+        privacyKeys,
+        currPoolFe
+      }) => ({
+        privKeys,
+        addKey,
+        importKeys,
+        exportKeys,
+        privacyKeys,
+        currPoolFe
+      })
+    )
+
+  console.log("keys", privacyKeys)
   const [account, setAccount] = useState<string>()
   const { sdk, connected } = useSDK()
 
@@ -79,9 +90,8 @@ export const AccountCard = ({ className }: { className: string }) => {
           </div>
         )}
         <Accordion type="single" collapsible>
-          {privKeys.length ? (
-            privKeys.map((k) => {
-              const key = PrivacyKey.from(k, 0n)
+          {privacyKeys?.length ? (
+            privacyKeys.map((key) => {
               return (
                 <AccordionItem
                   key={key.publicAddr}

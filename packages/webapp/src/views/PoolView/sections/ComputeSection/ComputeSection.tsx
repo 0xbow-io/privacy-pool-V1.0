@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import Steps from "@/components/Steps/Steps.tsx"
 import {
   ASPSelectionStep,
@@ -24,10 +24,10 @@ import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/ty
 import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
 import { useBoundStore } from "@/stores"
-const ComputeSection = () => {
 
+const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(
-    ComputeSectionSteps.ASPSelection
+    ComputeSectionSteps.Commitments
   )
   const [forwardBtnProps, setForwardBtnProps] = useState<ForwardButtonProps>({
     disabled: false,
@@ -37,22 +37,12 @@ const ComputeSection = () => {
     disabled: false,
     text: "Back"
   })
-  const {
-    sync,
-    applyFee,
-    currPoolID,
-    computeProof,
-    executeRequest,
-    updatePoolSync
-  } = useBoundStore((state) => ({
-    sync: state.startSync,
-    applyFee: state.applyFee,
-    currPoolID: state.currPoolID,
-    computeProof: state.computeProof,
-    executeRequest: state.executeRequest,
-    updatePoolSync: state.updatePoolSync
-  }))
-
+  const { executeRequest, applyFee } = useBoundStore(
+    ({ executeRequest, applyFee }) => ({
+      executeRequest,
+      applyFee
+    })
+  )
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",

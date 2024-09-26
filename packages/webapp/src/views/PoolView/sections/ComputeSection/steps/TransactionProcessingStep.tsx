@@ -45,7 +45,8 @@ export const TransactionProcessingStep = ({
     setPrimaryButtonProps &&
       setPrimaryButtonProps({
         disabled: reqStatus !== "success",
-        text: "Finish"
+        text: "Finish",
+        onClick: () => resetRequestState()
       })
   }, [setPrimaryButtonProps, reqStatus])
 
@@ -71,7 +72,7 @@ export const TransactionProcessingStep = ({
           <LoaderIcon />
           <p className="mt-2 text-sm">Pending onchain...</p>
           <div className="mt-2 text-sm">
-            This may take up to 1min, please do not close or refresh the page.
+            This may take up to 1 min, please do not close or refresh the page.
             <a> {formatTxHash(reqTxHash)} </a>
           </div>
         </div>

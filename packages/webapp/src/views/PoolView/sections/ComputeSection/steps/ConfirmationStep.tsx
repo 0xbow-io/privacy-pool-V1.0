@@ -9,10 +9,17 @@ import type { CommonProps } from "./types"
 import { CommitmentsInfo } from "@/components/CommitmentsInfo/CommitmentsInfo.tsx"
 import StatGrid from "@/components/ASPStat/StatGrid.tsx"
 import { useBoundStore } from "@/stores"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion.tsx"
 
 export const ConfirmationStep: React.FC<CommonProps> = ({
   setPrimaryButtonProps,
-  setbackButtonProps
+  setBackButtonProps,
+  fe
 }) => {
   const {
     isGeneratingProof,
@@ -26,7 +33,6 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
     _new,
     existing,
     sumNewValues,
-    fe
   } = useBoundStore(
     ({
       isGeneratingProof,
@@ -66,7 +72,6 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         existing: existing,
         keys: keyIdx.map((idx) => privKeys[idx]),
         sumNewValues: sumNewValues,
-        fe: PrivacyPools.get(currPoolID)?.fieldElement
       }
     }
   )
@@ -78,12 +83,12 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         text: isGeneratingProof ? "Generating proof" : "Confirm & Execute"
       })
 
-    setbackButtonProps &&
-      setbackButtonProps({
+    setBackButtonProps &&
+      setBackButtonProps({
         disabled: isGeneratingProof,
         text: isGeneratingProof ? "Generating proof" : "Back"
       })
-  }, [isGeneratingProof, setPrimaryButtonProps, setbackButtonProps])
+  }, [isGeneratingProof, setPrimaryButtonProps, setBackButtonProps])
 
   const formatValue = (value: bigint) =>
     formatUnits(value, Number(fe?.precision))
@@ -94,60 +99,75 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         <h1 className="text-2xl font-bold">Confirmation</h1>
         <p className="text-sm">Please review the details below:</p>
       </div>
+      <Accordion type="single" collapsible className="w-full my-4">
+        <AccordionItem value="existing">
+          <AccordionTrigger className="text-sm mb-2 font-semibold text-blackmail">
+            Existing commitments
+          </AccordionTrigger>
+          <AccordionContent>
+            <CommitmentsInfo isInput={true} commits={existing} />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="new">
+          <AccordionTrigger className="text-sm mb-2 font-semibold text-blackmail">
+            New commitments
+          </AccordionTrigger>
+          <AccordionContent>
+            <CommitmentsInfo isInput={false} commits={_new} />
+            <StatGrid
+              stats={[
+                {
+                  header: "Value sum for New Commitments:",
+                  value: `${formatValue(sumNewValues)} ${fe?.ticker}`
+                }
+              ]}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="io">
+          <AccordionTrigger className="text-sm mb-2 font-semibold text-blackmail">
+            External IO
+          </AccordionTrigger>
+          <AccordionContent>
+            <StatGrid
+              stats={[
+                {
+                  header: "Input Value",
+                  value: formatValue(externIO[0]) + " " + fe?.ticker
+                },
+                { header: "Input Source", value: src },
+                {
+                  header: "Output Value",
+                  value: formatValue(externIO[1]) + " " + fe?.ticker
+                },
+                { header: "Output Sink", value: sink }
+              ]}
+            />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="fee">
+          <AccordionTrigger className="text-sm mb-2 font-semibold text-blackmail">
+            Commitment Fee
+          </AccordionTrigger>
+          <AccordionContent>
+            <StatGrid
+              stats={[
+                { header: "Fee Collector ID", value: feeCollectorID },
+                {
+                  header: "Fee Amount",
+                  value: formatValue(feeAmt) + " " + fe?.ticker
+                },
+                { header: "Fee Collector", value: feeCollector }
+              ]}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
       <div className="w-full my-4">
-        <CommitmentsInfo isInput={true} commits={existing} />
-      </div>
-      <div className="w-full my-4">
-        <h2 className="text-sm mb-2 font-semibold text-blackmail">
-          External IO:
-        </h2>
-        <StatGrid
-          stats={[
-            {
-              header: "Input Value",
-              value: formatValue(externIO[0]) + " " + fe?.ticker
-            },
-            { header: "Input Source", value: src },
-            {
-              header: "Output Value",
-              value: formatValue(externIO[1]) + " " + fe?.ticker
-            },
-            { header: "Output Sink", value: sink }
-          ]}
-        />
-      </div>
-      <div className="w-full my-4">
-        <div className="text-sm mb-2 font-semibold text-blackmail">
-          <CommitmentsInfo isInput={false} commits={_new} />
-        </div>
-      </div>
-      <div className="w-full my-4">
-        <h2 className="text-sm mb-2 font-semibold text-blackmail">
-          Value sum for New Commitments:
-        </h2>
-        <p>
-          {formatValue(sumNewValues)} {fe?.ticker}
-        </p>
-      </div>
-      <div className="w-full my-4">
-        <h2 className="text-sm mb-2 font-semibold text-blackmail">
-          Commitment Fee:
-        </h2>
-        <StatGrid
-          stats={[
-            { header: "Fee Collector ID", value: feeCollectorID },
-            {
-              header: "Fee Amount",
-              value: formatValue(feeAmt) + " " + fe?.ticker
-            },
-            { header: "Fee Collector", value: feeCollector }
-          ]}
-        />
-      </div>
-      <div className="w-full my-4">
-        <h2 className="text-sm mb-2 font-semibold text-blackmail">
-          External IO:
-        </h2>
+        {/*<h2 className="text-sm mb-2 font-semibold text-blackmail">*/}
+        {/*  External IO:*/}
+        {/*</h2>*/}
         <StatGrid
           stats={[
             { header: "Proof Generated", value: !isGeneratingProof && !!proof },

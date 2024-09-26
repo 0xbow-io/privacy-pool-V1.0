@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button.tsx"
 import { cn } from "@/lib/utils.ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { ChevronRightSquareIcon, SigmaIcon } from "lucide-react"
-import React, { lazy, memo, useMemo, useTransition } from "react"
+import React, { lazy, useState, useTransition } from "react"
 import { formatUnits, type Hex, numberToHex, parseUnits } from "viem"
 import { Label } from "@/components/ui/label.tsx"
 import {
@@ -31,11 +29,11 @@ export const NewCommitments = ({ className }: { className: string }) => {
     newValues,
     sink,
     updateSink,
-    currPoolID,
     getTotalNew,
     getTotalExisting,
-    privKeys,
-    setExternIO
+    setExternIO,
+    privacyKeys,
+    currPoolFe
   } = useBoundStore(
     ({
       externIO,
@@ -45,8 +43,9 @@ export const NewCommitments = ({ className }: { className: string }) => {
       currPoolID,
       getTotalNew,
       getTotalExisting,
-      privKeys,
-      setExternIO
+      setExternIO,
+      privacyKeys,
+      currPoolFe
     }) => ({
       externIO,
       newValues,
@@ -55,24 +54,15 @@ export const NewCommitments = ({ className }: { className: string }) => {
       currPoolID,
       getTotalNew,
       getTotalExisting,
-      privKeys,
-      setExternIO
+      setExternIO,
+      privacyKeys,
+      currPoolFe
     })
   )
 
-  const [isOutputDialogOpen, setIsNewCommitmentDialogOpen] =
-    React.useState(false)
-  const [newSlot, setNewSlot] = React.useState(0)
+  const [isOutputDialogOpen, setIsNewCommitmentDialogOpen] = useState(false)
+  const [newSlot, setNewSlot] = useState(0)
   const [_, startTransition] = useTransition()
-
-  const privacyKeys = useMemo(
-    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
-    [privKeys]
-  )
-  const fe = useMemo(
-    () => PrivacyPools.get(currPoolID)?.fieldElement,
-    [currPoolID]
-  )
 
   return (
     <div className="">
@@ -95,7 +85,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
             style={{ minHeight: "4rem" }}
           >
             <h2 className="font-semibold">
-              {formatValue(val, fe?.precision)} {fe?.ticker}
+              {formatValue(val, currPoolFe?.precision)} {currPoolFe?.ticker}
             </h2>
             <Button
               onClick={() => {
@@ -133,13 +123,14 @@ export const NewCommitments = ({ className }: { className: string }) => {
               <SelectValue placeholder="Select">{shortForm(sink)}</SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
-              {privacyKeys.map((pK, index) => {
-                return (
-                  <SelectItem key={index} value={pK.pubAddr}>
-                    {shortForm(pK.pubAddr)}
-                  </SelectItem>
-                )
-              })}
+              {privacyKeys &&
+                privacyKeys.map((pK, index) => {
+                  return (
+                    <SelectItem key={index} value={pK.publicAddr}>
+                      {shortForm(pK.publicAddr)}
+                    </SelectItem>
+                  )
+                })}
               <SelectItem key={"0xgeneratekey"} value={"0xgeneratekey"}>
                 Generate New Key
               </SelectItem>
@@ -151,9 +142,9 @@ export const NewCommitments = ({ className }: { className: string }) => {
           type="number"
           disabled={sink === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={formatUnits(externIO[1], Number(fe?.precision))}
+          value={formatUnits(externIO[1], Number(currPoolFe?.precision))}
           onChange={(e) => {
-            let newVal = parseUnits(e.target.value, Number(fe?.precision))
+            let newVal = parseUnits(e.target.value, Number(currPoolFe?.precision))
             startTransition(() => {
               setExternIO([externIO[0], newVal < 0n ? 0n : newVal])
             })
@@ -180,7 +171,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
           htmlFor=""
           className={cn("block text-base font-bold text-blackmail")}
         >
-          Total: {formatValue(getTotalNew(), fe?.precision)} {fe?.ticker}{" "}
+          Total: {formatValue(getTotalNew(), currPoolFe?.precision)} {currPoolFe?.ticker}{" "}
         </Label>
       </div>
 

@@ -1,7 +1,8 @@
-import type { PrivacyPoolState } from "@privacy-pool-v1/contracts/ts"
-import type {
-  Commitment,
-  MembershipProofJSON
+import type { FEMeta, PrivacyPoolState } from "@privacy-pool-v1/contracts/ts"
+import {
+  type Commitment,
+  type MembershipProofJSON,
+  PrivacyKey
 } from "@privacy-pool-v1/domainobjs/ts"
 import type { WorkerResponse } from "@/workers/eventListener.ts"
 import type { Hex } from "viem"
@@ -20,6 +21,8 @@ export type AppStateSlice = {
   settingsDrawer: (open: boolean) => void
 }
 
+export type IOCommitments = [Commitment | undefined, Commitment | undefined]
+
 export type PoolsSlice = {
   currPoolID: string
   pools: Map<string, PrivacyPoolState>
@@ -30,9 +33,8 @@ export type PoolsSlice = {
   startSync: () => void
   updatePoolSync: (resp: WorkerResponse) => void
   downloadMembershipProof: (slot: number) => void
-  updateMembershipProofs: (
-    proofs: Map<string, MembershipProofJSON[][]>
-  ) => void
+  updateMembershipProofs: (proofs: Map<string, MembershipProofJSON[][]>) => void
+  currPoolFe: FEMeta | undefined
 }
 
 export type RequestSlice = {
@@ -41,12 +43,12 @@ export type RequestSlice = {
   feeCollectorID: string
   feeCollector: Hex
   fee: bigint
-  existing: [Commitment, Commitment]
+  existing: IOCommitments
 
   newValues: [bigint, bigint]
   // expected vrs actual
   sumNewValues: bigint
-  new: [Commitment, Commitment] | undefined
+  new: IOCommitments
   keyIdx: [number, number, number, number]
   pkScalars: [bigint, bigint, bigint, bigint]
   nonces: [bigint, bigint, bigint, bigint]
@@ -84,6 +86,7 @@ export type KeysSlice = {
   hasKeys: () => boolean
   setSigner: (key: Hex) => void
   exportKeys: (fileName?: string) => void
+  privacyKeys: PrivacyKey[]
 }
 
 export type GlobalStore = {

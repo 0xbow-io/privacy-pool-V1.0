@@ -1,13 +1,42 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import type { CommonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
 import Select from "@/components/Select/Select.tsx"
-import { numberToHex, type Hex } from "viem"
+import {
+  numberToHex,
+  type Hex,
+  createWalletClient,
+  http,
+  publicActions
+} from "viem"
 import { useBoundStore } from "@/stores"
+import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import {
+  DEFAULT_CHAIN,
+  PrivacyPools
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { formatValue } from "@/utils"
 
 export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
-  const { setSigner, signerKey, privKeys } = useBoundStore(
-    ({ setSigner, signerKey, privKeys }) => ({ setSigner, signerKey, privKeys })
+  const { setSigner, signerKey, privKeys, src, currPoolFe } = useBoundStore(
+    ({ setSigner, src, signerKey, privKeys, currPoolFe }) => ({
+      setSigner,
+      signerKey,
+      privKeys,
+      src,
+      currPoolFe
+    })
   )
+
+  const [currentWalletBalance, setCurrentWalletBalance] = useState<
+    bigint | null
+  >(null)
+
+  useEffect(() => {
+    if (src && signerKey === numberToHex(0)) {
+      setSigner(src)
+    }
+  }, [src, signerKey, setSigner])
+
   useEffect(() => {
     setPrimaryButtonProps &&
       setPrimaryButtonProps({
@@ -15,6 +44,29 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
         text: "Continue"
       })
   }, [setPrimaryButtonProps, signerKey])
+
+  useEffect(() => {
+    const updateBalance = async () => {
+      const publicAddr = new PrivacyKey(signerKey, 0n)?.publicAddr
+      const walletClient = createWalletClient({
+        account: publicAddr,
+        chain: DEFAULT_CHAIN, //todo: change for dynamic chain
+        transport: http()
+      }).extend(publicActions)
+
+      const balance = await walletClient.getBalance({ address: publicAddr })
+      return balance
+    }
+
+    const fetchBalance = async () => {
+      const balance = await updateBalance()
+      setCurrentWalletBalance(balance)
+    }
+
+    if (signerKey !== numberToHex(0)) {
+      fetchBalance()
+    }
+  }, [signerKey])
 
   return (
     <div className="flex flex-col items-center w-full h-full">
@@ -34,6 +86,16 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
             </option>
           ))}
         </Select>
+      </div>
+      <div>
+        {signerKey && (
+          <div>
+            Wallet balance:{" "}
+            {(currentWalletBalance &&
+              `${formatValue(currentWalletBalance, currPoolFe?.precision)} ${currPoolFe?.ticker}`) ||
+              `0 ${currPoolFe?.ticker}`}
+          </div>
+        )}
       </div>
     </div>
   )

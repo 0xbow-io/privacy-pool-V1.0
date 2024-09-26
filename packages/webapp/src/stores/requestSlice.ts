@@ -20,7 +20,11 @@ import {
   PrivacyPools
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { privateKeyToAccount } from "viem/accounts"
-import type { CompleteStore, RequestSlice } from "@/stores/types.ts"
+import type {
+  CompleteStore,
+  IOCommitments,
+  RequestSlice
+} from "@/stores/types.ts"
 
 const requestSliceDefaultValue = {
   src: numberToHex(0),
@@ -30,11 +34,8 @@ const requestSliceDefaultValue = {
   fee: 0n,
   newValues: [0n, 0n] as [bigint, bigint],
   sumNewValues: 0n,
-  new: undefined,
-  existing: [DummyCommitment(0n), DummyCommitment(0n)] as [
-    Commitment,
-    Commitment
-  ],
+  new: [undefined, undefined] as IOCommitments,
+  existing: [undefined, undefined] as IOCommitments,
   keyIdx: [0, 0, 0, 0] as [number, number, number, number],
   pkScalars: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
   nonces: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
@@ -59,18 +60,33 @@ export const createRequestSlice: StateCreator<
 
   updateSrc: (address: Hex) => set((state) => ({ ...state, src: address })),
   updateSink: (address: Hex) => set((state) => ({ ...state, sink: address })),
-
   getStatus: () => {
     const state = get()
-    const { existing, externIO, src, sink, newValues } = state
-
-    const isDuplicateCommitments = existing[0].nullRoot === existing[1].nullRoot
+    const {
+      existing,
+      externIO,
+      src,
+      sink,
+      newValues,
+      new: newCommitments
+    } = state
+    const noInputCommits = !existing[0] || !existing[1]
+    const isDuplicateCommitments =
+      existing[0]?.nullRoot === existing[1]?.nullRoot
     const isInvalidExternIO = externIO[0] < 0n || externIO[1] < 0n
     const isInvalidSrc = src === numberToHex(0) && externIO[0] !== 0n
     const isInvalidSink = sink === numberToHex(0) && externIO[1] !== 0n
+    const isVoidCommits =
+      newCommitments[0]?.isVoid() && newCommitments[1]?.isVoid()
 
+    if (noInputCommits) {
+      return "existing commitments are not selected"
+    }
     if (isDuplicateCommitments) {
       return "duplicate existing commitments"
+    }
+    if (isVoidCommits) {
+      return "only 1 of new commitments can be void"
     }
     if (isInvalidExternIO || isInvalidSrc || isInvalidSink) {
       return "invalid external input / output"
@@ -79,7 +95,7 @@ export const createRequestSlice: StateCreator<
     const { expected, actual } = GetNewSum(
       {
         new: newValues.map((v) => DummyCommitment(v)),
-        existing: existing
+        existing: existing.map((c) => c || DummyCommitment())
       },
       externIO
     )
@@ -92,32 +108,37 @@ export const createRequestSlice: StateCreator<
   },
   getTotalNew: () =>
     get().newValues.reduce((acc, val) => acc + val, 0n) + get().externIO[1],
-  getTotalExisting: () =>
-    get().existing.reduce((acc, val) => acc + val.asTuple()[0], 0n) +
-    get().externIO[0],
+  getTotalExisting: () => {
+    const { existing = [undefined, undefined], externIO } = get()
+    return (
+      existing.reduce((acc, val) => acc + (val ? val.asTuple()[0] : 0n), 0n) +
+      externIO[0]
+    )
+  },
   selectExisting: (keyIdx: number, commitIdx: number, slot: number) => {
-    const poolCommitments = get().commitments.get(get().currPoolID)
+    const { commitments, currPoolID, existing, newValues, externIO } = get()
+    const poolCommitments = commitments.get(currPoolID)
     if (poolCommitments === undefined) {
       throw new Error("Error: empty set of pool commitments")
     }
     const targetCommitment = poolCommitments[keyIdx][commitIdx]
 
-    const updExisting = [...get().existing]
+    const updExisting = [...existing] as IOCommitments
     updExisting[slot] = targetCommitment
 
     const { expected, actual } = GetNewSum(
       {
-        new: get().newValues.map((v) => DummyCommitment(v)),
-        existing: updExisting
+        new: newValues.map((v) => DummyCommitment(v)),
+        existing: existing.map((c) => c || DummyCommitment())
       },
-      get().externIO
+      externIO
     )
 
     console.log(`expected sum: ${expected}, actual sum: ${actual}`)
 
     set((state) => {
       const updatedState = { ...state }
-      updatedState.existing[slot] = targetCommitment
+      updatedState.existing = updExisting
       updatedState.pkScalars[slot] = hexToBigInt(
         targetCommitment.toJSON().pkScalar
       )
@@ -148,7 +169,7 @@ export const createRequestSlice: StateCreator<
       const { expected, actual } = GetNewSum(
         {
           new: updatedState.newValues.map((v) => DummyCommitment(v)),
-          existing: updatedState.existing
+          existing: updatedState.existing.map((c) => c || DummyCommitment())
         },
         updatedState.externIO
       )
@@ -183,7 +204,7 @@ export const createRequestSlice: StateCreator<
       const { expected, actual } = GetNewSum(
         {
           new: updatedState.newValues.map((v) => DummyCommitment(v)),
-          existing: updatedState.existing
+          existing: updatedState.existing.map((c) => c || DummyCommitment())
         },
         updatedState.externIO
       )
@@ -205,9 +226,17 @@ export const createRequestSlice: StateCreator<
   resetRequestState: () => set(requestSliceDefaultValue),
   executeRequest: () => {
     const state = get()
+    if (get().new === undefined) {
+      throw new Error(`Error: new commitments are undefined`)
+    }
+
+    const signerKey = state.signerKey
+    const signerPubAddr = new PrivacyKey(signerKey, 0n).publicAddr
+    const acc = privateKeyToAccount(signerKey)
+
     const requestSlice = {
-      src: state.src,
-      sink: state.sink,
+      src: state.src === numberToHex(0) ? signerPubAddr : state.src,
+      sink: state.sink === numberToHex(0) ? signerPubAddr : state.sink,
       feeCollectorID: state.feeCollectorID,
       feeCollector: state.feeCollector,
       fee: state.fee,
@@ -233,21 +262,14 @@ export const createRequestSlice: StateCreator<
       executeRequest: state.executeRequest
     }
 
-    if (get().new === undefined) {
-      throw new Error(`Error: new commitments are undefined`)
-    }
-
-    let signerKey = get().signerKey
-    const acc = privateKeyToAccount(signerKey)
-
-    let poolID = get().currPoolID
-    let proof = get().proof
+    const poolID = state.currPoolID
+    const proof = state.proof
     if (proof === null) {
       throw new Error(`Error: proof is not generated`)
     }
 
-    let meta = PrivacyPools.get(poolID)
-    if (meta === undefined) {
+    const meta = PrivacyPools.get(poolID)
+    if (!meta) {
       throw new Error(`Error: invalid poolID ${poolID}`)
     }
 
@@ -266,11 +288,10 @@ export const createRequestSlice: StateCreator<
     GetOnChainPrivacyPoolByPoolID(poolID)
       .processOnChain(wallet, requestSlice, proof.packedProof, false)
       .then((out) => {
-        console.log(`Request processed: ${out}`)
         set((state) => ({
           ...state,
           isExecutingRequest: false,
-          reqStatus: out === false ? "failed simulation" : "pending",
+          reqStatus: out === false ? "failed simulation" : "success",
           reqTxHash: out !== false ? (out as Hex) : numberToHex(0)
         }))
       })

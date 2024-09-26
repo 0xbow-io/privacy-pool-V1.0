@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect } from "react"
 import { SettingsDrawer } from "@/views/PoolView/sections/SettingsDrawer.tsx"
 import { PoolHeader } from "@/components/PoolHeader/PoolHeader.tsx"
 import Footer from "@/components/Footer/Footer.tsx"
@@ -9,7 +9,7 @@ import { WorkerCmd, type WorkerResponse } from "@/workers/eventListener.ts"
 import { useBoundStore } from "@/stores"
 import { useZKWorker } from "@/hooks/useZKWorker.ts"
 import type { TCommitment } from "@privacy-pool-v1/domainobjs/ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool/constants"
 
 export default function PoolView() {
   const { worker, postMessage, addMessageHandler } = useZKWorker()

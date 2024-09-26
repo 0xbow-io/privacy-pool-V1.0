@@ -8,15 +8,14 @@ import {
 import {
   CCommitment,
   type Commitment,
-  type MembershipProofJSON,
-  PrivacyKey,
-  RecoverCommitments
+  type MembershipProofJSON
 } from "@privacy-pool-v1/domainobjs/ts"
 import type { StateCreator } from "zustand"
 import { downloadJSON } from "@/utils"
-import { WorkerCmd, type WorkerResponse } from "@/workers/eventListener.ts"
+import { type WorkerResponse } from "@/workers/eventListener.ts"
 import type { CompleteStore, PoolsSlice } from "@/stores/types.ts"
 import CommitmentC = CCommitment.CommitmentC
+import memoizeOne from "memoize-one"
 
 export const createPoolsSlice: StateCreator<
   CompleteStore,
@@ -26,13 +25,18 @@ export const createPoolsSlice: StateCreator<
 > = (set, get) => ({
   commitments: new Map<string, Commitment[][]>(),
   currPoolID: getDefaultPoolIDForChainID(DEFAULT_CHAIN.id),
+  currPoolFe: undefined,
   pools: new Map<string, PrivacyPoolState>(),
   poolToMembershipProofs: new Map<string, MembershipProofJSON[][]>(),
 
   setTargetPool: (poolID: string) => {
     set((state) => {
       if (PrivacyPools.has(poolID) && state.currPoolID !== poolID) {
-        return { ...state, currPoolID: poolID }
+        return {
+          ...state,
+          currPoolID: poolID,
+          currPoolFe: getCurrPoolFe(poolID)
+        }
       }
       return { ...state }
     })
@@ -43,15 +47,17 @@ export const createPoolsSlice: StateCreator<
   //todo: will be moved to a separate function
   downloadMembershipProof: (slot: number) => {
     const state = get()
-    const { keyToMembershipProofs, currPoolID, existing } = state
-    const commitment = existing[slot]
+    const { poolToMembershipProofs, currPoolID, existing } = state
+    const commitment = existing[slot]!
 
     let existingProof: MembershipProofJSON | undefined
-    for (const [_k, proofs] of keyToMembershipProofs.entries()) {
-      for (const proof of proofs) {
-        if (proof.private.root.raw === commitment.root.toString()) {
-          existingProof = proof
-          break
+    for (const [_p, keys] of poolToMembershipProofs.entries()) {
+      for (const key of keys) {
+        for (const proof of key) {
+          if (proof.private.root.raw === commitment.root.toString()) {
+            existingProof = proof
+            break
+          }
         }
       }
       if (existingProof) break
@@ -74,7 +80,7 @@ export const createPoolsSlice: StateCreator<
   startSync: () => set((state) => ({ ...state, isSyncing: true })),
   updatePoolSync: (resp: WorkerResponse) => {
     set((state) => {
-      console.log('start updatePool')
+      console.log("start updatePool")
       const pools = new Map(state.pools)
       const commitments = new Map(state.commitments)
 
@@ -91,7 +97,7 @@ export const createPoolsSlice: StateCreator<
         pools.set(poolId, poolState)
       })
 
-      console.log('processed', resp.processedCommits)
+      console.log("processed", resp.processedCommits)
 
       resp.processedCommits?.forEach((keyCommits, poolId) => {
         const poolCommitments = keyCommits.map((commits) =>
@@ -111,3 +117,7 @@ export const createPoolsSlice: StateCreator<
     })
   }
 })
+
+const getCurrPoolFe = memoizeOne(
+  (currPoolID: string) => PrivacyPools.get(currPoolID)?.fieldElement
+)

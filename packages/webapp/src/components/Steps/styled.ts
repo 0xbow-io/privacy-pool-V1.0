@@ -39,9 +39,9 @@ export const StepLabel = styled.span<{ isActive: boolean }>`
   font-size: 14px;
   color: ${({ isActive }) => (isActive ? "#220066" : "#6c757d")};
   z-index: 3;
+  text-align: center;
   @media screen and (max-width: 768px) {
     font-size: 10px;
-    text-align: center;
     padding: 0 4px;
   }
 `
