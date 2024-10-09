@@ -9,10 +9,12 @@ export const Container = styled.div`
   background-color: #220066;
   color: #f8f8ff;
   padding: 0.75rem 1rem;
+  align-items: center;
   position: relative;
 `
 
 export const HeaderText = styled.h2`
+  line-height: 2rem;
   font-size: 1.5rem;
   font-weight: bold;
 

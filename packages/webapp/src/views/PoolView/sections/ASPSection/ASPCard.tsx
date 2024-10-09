@@ -1,0 +1,314 @@
+import React, { useEffect, useRef, useState } from "react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card.tsx"
+import {
+  CenteredContent,
+  FlexContainer,
+  IconWrapper,
+  TreeContainer,
+  BackButton
+} from "@/views/PoolView/sections/ASPSection/styled.ts"
+import { Button } from "@/components/ui/button.tsx"
+import { useBoundStore } from "@/stores"
+import { formatValue } from "@/utils"
+import { type RecordDTO, recordsMock } from "./recordsMock.ts"
+import { SelectionList } from "@/components/SelectionList/SelectionList.tsx"
+import Select from "@/components/Select/Select.tsx"
+import { numberToHex } from "viem"
+import type { Commitment } from "@privacy-pool-v1/domainobjs/ts"
+import mermaid from "mermaid"
+import { cn } from "@/lib/utils.ts"
+import { Label } from "@/components/ui/label.tsx"
+
+type ASPCardProps = {
+  name: string
+  description: string
+  icon: string
+  fee: bigint
+  isSelected: boolean
+  handleSelect: (name: string) => void
+  handleBack: () => void
+}
+
+type TreeNode = { commit: Commitment; parents: TreeNode[] }
+type ErrorTreeNode = { error: string }
+
+const categories = [
+  "uncategorized",
+  "terrorism",
+  "scam",
+  "money_laundering",
+  "exploit",
+  "indirect_ofac",
+  "direct_ofac",
+  "indirect_kyc",
+  "direct_kyc",
+  "cex"
+]
+
+export const ASPCard = ({
+  name,
+  description,
+  fee,
+  icon,
+  isSelected,
+  handleSelect,
+  handleBack
+}: ASPCardProps) => {
+  const { currPoolFe, commitments, currPoolID } = useBoundStore(
+    ({ currPoolFe, commitments, currPoolID }) => ({
+      currPoolFe,
+      commitments,
+      currPoolID
+    })
+  )
+
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedCommitment, setSelectedCommitment] = useState<string | null>(
+    null
+  )
+  const [error, setError] = useState<{ message: string } | null>(null)
+  const [treeString, setTreeString] = useState("")
+  const mermaidRef = useRef<HTMLDivElement>(null)
+
+  const userCommits = commitments.get(currPoolID)?.flat()
+
+  function findRecordByCRoot(
+    cRoot: string,
+    records: RecordDTO[]
+  ): RecordDTO | null {
+    return (
+      records
+        .filter((r) => selectedCategories.every((sC) => r.cats[sC] === 1))
+        .find((record) => record.blame.cRoots.includes(cRoot)) || null
+    )
+  }
+
+  const findCommitByCRoot = (cRoot: string, commits: Commitment[]) => {
+    return commits.find((commit) => commit.commitmentRoot.toString() === cRoot)
+  }
+
+  const findCommitByNRoot = (nRoot: string, commits: Commitment[]) => {
+    return commits.find((commit) => commit.nullRoot.toString() === nRoot)
+  }
+
+  const buildCommitTree = (
+    commitmentRoot: string,
+    commits: Commitment[],
+    records: RecordDTO[]
+  ): TreeNode | ErrorTreeNode => {
+    const commit = findCommitByCRoot(commitmentRoot, commits)
+    if (!commit) {
+      return {
+        error: `Commit with cRoot ${numberToHex(BigInt(commitmentRoot))} not found.`
+      }
+    }
+
+    if (commit.isVoid()) {
+      return { commit, parents: [] }
+    }
+
+    const relatedRecord = findRecordByCRoot(commitmentRoot, records)
+    if (!relatedRecord) {
+      return {
+        error: `No related record found for cRoot ${commitmentRoot}.`
+      }
+    }
+
+    // Get the nRoots from the record and find the parent commits
+    const [nRoot1, nRoot2] = relatedRecord.blame.nRoot
+    const parentCommit1 = findCommitByNRoot(nRoot1, commits)
+    const parentCommit2 = findCommitByNRoot(nRoot2, commits)
+
+    if (!parentCommit1 && !parentCommit2) {
+      return {
+        error: `Both parent commits not found for nRoots ${nRoot1}, ${nRoot2}.`
+      }
+    }
+    // Recursively build the tree for both parents if they exist
+    const parentTree1 = parentCommit1
+      ? buildCommitTree(
+          parentCommit1.commitmentRoot.toString(),
+          commits,
+          records
+        )
+      : null
+    const parentTree2 = parentCommit2
+      ? buildCommitTree(
+          parentCommit2.commitmentRoot.toString(),
+          commits,
+          records
+        )
+      : null
+
+    // Check if parent trees returned an error
+    if (parentTree1 && "error" in parentTree1) return parentTree1
+    if (parentTree2 && "error" in parentTree2) return parentTree2
+
+    // Return the current commit along with its parent hashes
+    return {
+      commit,
+      parents: [parentTree1, parentTree2].filter(Boolean) as TreeNode[]
+    }
+  }
+
+  const convertToMermaidGraph = (tree: TreeNode | ErrorTreeNode): string => {
+    if ("error" in tree) {
+      return `graph TD\nError["${tree.error}"]`
+    }
+
+    const lines: string[] = ["graph LR"]
+    const visited = new Set<string>()
+
+    const traverse = (node: TreeNode) => {
+      const nodeId = node.commit.commitmentRoot.toString().slice(-4)
+      if (visited.has(nodeId)) return
+      visited.add(nodeId)
+
+      const nodeLabel = node.commit.isVoid() ? `${nodeId}(void)` : nodeId
+      lines.push(`${nodeId}["${nodeLabel}"]`)
+
+      node.parents.forEach((parent) => {
+        const parentId = parent.commit.commitmentRoot.toString().slice(-4)
+        lines.push(`${parentId} --> ${nodeId}`)
+        traverse(parent)
+      })
+    }
+
+    traverse(tree)
+    return lines.join("\n")
+  }
+
+  useEffect(() => {
+    if (selectedCommitment && userCommits) {
+      const res = buildCommitTree(
+        selectedCommitment,
+        userCommits,
+        recordsMock.records
+      )
+
+      if ("error" in res) {
+        setError({ message: res.error })
+      }
+      console.log("generated tree:", res)
+      const graph = convertToMermaidGraph(res)
+      setTreeString(graph)
+    }
+  }, [selectedCommitment])
+
+  useEffect(() => {
+    const renderElem = async () => {
+      if (treeString && mermaidRef.current) {
+        const { svg } = await mermaid.render("mermaidChart", treeString)
+        mermaidRef.current.innerHTML = svg
+      }
+    }
+
+    renderElem()
+  }, [treeString])
+
+  useEffect(() => {
+    const processedCommits = userCommits?.map((commit) => {
+      return {
+        commitmentRoot: commit.commitmentRoot.toString().slice(-4),
+        nullRoot: commit.nullRoot.toString().slice(-4)
+      }
+    })
+    console.log("processedCommits", processedCommits)
+  }, [userCommits?.length])
+
+  return isSelected ? (
+    <Card className="w-full">
+      <CardHeader className="">
+        <BackButton onClick={() => handleBack()}>← BACK</BackButton>
+        <CardTitle>{name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <FlexContainer dir="column">
+          <FlexContainer dir="row">
+            <FlexContainer dir="column">
+              <Label
+                htmlFor=""
+                className={cn("block text-sm font-semibold text-blackmail")}
+              >
+                Category filter:
+              </Label>
+              <SelectionList
+                data={categories.map((c) => ({
+                  id: c,
+                  label: c.replaceAll("_", " ")
+                }))}
+                onSelect={(categories) => setSelectedCategories(categories)}
+              />
+            </FlexContainer>
+            <FlexContainer dir="column" fullWidth>
+              <Label
+                htmlFor=""
+                className={cn("block text-sm font-semibold text-blackmail")}
+              >
+                Commitment POA:
+              </Label>
+              {!selectedCommitment ? (
+                <CenteredContent>Select commitment</CenteredContent>
+              ) : (
+                <TreeContainer>
+                  {treeString && (
+                    <div>
+                      {error ? (
+                        <CenteredContent>{error.message}</CenteredContent>
+                      ) : (
+                        <div className="mermaid" ref={mermaidRef}>
+                          {treeString}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </TreeContainer>
+              )}
+            </FlexContainer>
+          </FlexContainer>
+          <Label
+            htmlFor=""
+            className={cn("block text-sm font-semibold text-blackmail")}
+          >
+            User Commitments:
+          </Label>
+          <Select
+            value={selectedCommitment || ""}
+            onChange={(value) => setSelectedCommitment(value)}
+          >
+            <option value="">Select commitment</option>
+            {userCommits?.map((commit) => (
+              <option
+                key={commit.commitmentRoot}
+                value={commit.commitmentRoot.toString()}
+              >
+                {commit.commitmentRoot.toString()}
+              </option>
+            ))}
+          </Select>
+        </FlexContainer>
+      </CardContent>
+    </Card>
+  ) : (
+    <Card className="w-full flex flex-row">
+      <CardHeader className="space-y-6">
+        <CardTitle>{name}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+        <span>
+          <b>Fee: </b>
+          {formatValue(fee, currPoolFe?.precision)} {currPoolFe?.ticker}
+        </span>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-6">
+        <IconWrapper src={icon} />
+        <Button onClick={() => handleSelect(name)}>Select</Button>
+      </CardContent>
+    </Card>
+  )
+}

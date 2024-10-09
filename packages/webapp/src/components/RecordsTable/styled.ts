@@ -62,6 +62,8 @@ export const RowContent = styled.div`
 export const BackButton = styled.button`
   margin-bottom: 10px;
   cursor: pointer;
+  display: inline-block;
+  width: fit-content;
 `
 
 export const ExpandedContent = styled.div`

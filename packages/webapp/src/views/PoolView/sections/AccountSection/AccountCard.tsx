@@ -39,7 +39,6 @@ export const AccountCard = ({ className }: { className: string }) => {
       })
     )
 
-  console.log("keys", privacyKeys)
   const [account, setAccount] = useState<string>()
   const { sdk, connected } = useSDK()
 

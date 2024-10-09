@@ -34,6 +34,7 @@
     "lucide-react": "^0.394.0",
     "maci-crypto": "^1.2.5",
     "memoize-one": "^6.0.0",
+    "mermaid": "^11.3.0",
     "next": "^14.2.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -11,6 +11,7 @@ import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"
 import { useState } from "react"
 import { useBoundStore } from "@/stores"
 import { RecordsSection } from "@/views/PoolView/sections/RecordsSection/RecordsSection.tsx"
+import { ASPSection } from "@/views/PoolView/sections/ASPSection/ASPSection.tsx"
 
 export const PoolTabs = () => {
   const [isWelcomeScreen, setIsWelcomeScreen] = useState(true)
@@ -88,6 +89,9 @@ export const PoolTabs = () => {
           </TabsContent>
           <TabsContent value="records">
             <RecordsSection />
+          </TabsContent>
+          <TabsContent value="asp">
+          <ASPSection />
           </TabsContent>
         </div>
       </Tabs>

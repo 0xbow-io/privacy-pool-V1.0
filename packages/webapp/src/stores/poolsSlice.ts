@@ -25,7 +25,7 @@ export const createPoolsSlice: StateCreator<
 > = (set, get) => ({
   commitments: new Map<string, Commitment[][]>(),
   currPoolID: getDefaultPoolIDForChainID(DEFAULT_CHAIN.id),
-  currPoolFe: undefined,
+  currPoolFe: getCurrPoolFe(getDefaultPoolIDForChainID(DEFAULT_CHAIN.id)),
   pools: new Map<string, PrivacyPoolState>(),
   poolToMembershipProofs: new Map<string, MembershipProofJSON[][]>(),
 
