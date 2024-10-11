@@ -13,8 +13,6 @@ import {
   SelectValue
 } from "@/components/ui/select.tsx"
 import { cn } from "@/lib/utils.ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import React, { memo, useMemo } from "react"
 import { formatUnits, parseUnits } from "viem"
 import { useBoundStore } from "@/stores"
@@ -32,25 +30,16 @@ const NewCommitmentDialog = ({
   onOpenChange,
   newSlot
 }: NewCommitmentDialogProps) => {
-  const { privKeys, insertNew, currPoolID, newValues } = useBoundStore(
-    ({ privKeys, insertNew, currPoolID, newValues }) => ({
-      privKeys,
+  const { privacyKeys, currPoolFe, insertNew, newValues } = useBoundStore(
+    ({ privacyKeys, currPoolFe, insertNew, currPoolID, newValues }) => ({
+      privacyKeys,
+      currPoolFe,
       insertNew,
-      currPoolID,
       newValues
     })
   )
 
   const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
-
-  const privacyKeys = useMemo(
-    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
-    [privKeys]
-  )
-  const fe = useMemo(
-    () => PrivacyPools.get(currPoolID)?.fieldElement,
-    [currPoolID]
-  )
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -79,12 +68,12 @@ const NewCommitmentDialog = ({
               type="number"
               placeholder={formatUnits(
                 newValues[newSlot],
-                Number(fe?.precision)
+                Number(currPoolFe?.precision)
               )}
               onChange={(e) =>
                 insertNew(
                   targetKeyIndex,
-                  parseUnits(e.target.value, Number(fe?.precision)),
+                  parseUnits(e.target.value, Number(currPoolFe?.precision)),
                   newSlot
                 )
               }
@@ -103,23 +92,23 @@ const NewCommitmentDialog = ({
               Binded To:
             </label>
             <Select
-              value={privacyKeys[targetKeyIndex].pubAddr}
+              value={privacyKeys[targetKeyIndex].publicAddr}
               onValueChange={(value) => {
                 setTargetKeyIndex(
-                  privacyKeys.findIndex((key) => key.pubAddr === value)!
+                  privacyKeys.findIndex((key) => key.publicAddr === value)!
                 )
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select">
-                  {privacyKeys[targetKeyIndex].pubAddr}
+                  {privacyKeys[targetKeyIndex].publicAddr}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" id="putput-key-dropdown">
                 {privacyKeys.map((pK, index) => {
-                  const short = `0x${pK.pubAddr.substring(0, 14)}....${pK.pubAddr.substring(54)}`
+                  const short = `0x${pK.publicAddr.substring(0, 14)}....${pK.publicAddr.substring(54)}`
                   return (
-                    <SelectItem key={index} value={pK.pubAddr}>
+                    <SelectItem key={index} value={pK.publicAddr}>
                       {short}
                     </SelectItem>
                   )

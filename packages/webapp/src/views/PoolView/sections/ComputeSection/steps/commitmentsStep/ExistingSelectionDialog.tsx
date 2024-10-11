@@ -50,8 +50,10 @@ const ExistingSelectionDialog = ({
     privKeys,
     commitments,
     existing,
-    selectExisting,
     currPoolID,
+    privacyKeys,
+    currPoolFe,
+    selectExisting,
     downloadMembershipProof
   } = useBoundStore(
     ({
@@ -59,10 +61,14 @@ const ExistingSelectionDialog = ({
       commitments,
       existing,
       selectExisting,
+      privacyKeys,
+      currPoolFe,
       currPoolID,
       downloadMembershipProof
     }) => ({
       privKeys,
+      privacyKeys,
+      currPoolFe,
       commitments,
       existing,
       selectExisting,
@@ -72,15 +78,6 @@ const ExistingSelectionDialog = ({
   )
   const poolCommitments = commitments.get(currPoolID) || []
 
-  const privacyKeys = useMemo(
-    () => privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON),
-    [privKeys]
-  )
-  const fe = useMemo(
-    () => PrivacyPools.get(currPoolID)?.fieldElement,
-    [currPoolID]
-  )
-
   const [targetKeyIndex, setTargetKeyIndex] = useState(-1)
   const [currentWalletBalance, setCurrentWalletBalance] = useState<
     bigint | null
@@ -88,8 +85,6 @@ const ExistingSelectionDialog = ({
 
   const getAvailCommitments = (): Commitment[] =>
     poolCommitments[targetKeyIndex] ?? []
-
-  console.log('values', getAvailCommitments().map(c => console.log(c.asTuple()[0], formatValue(c.asTuple()[0], fe?.precision))))
 
   useEffect(() => {
     const updateBalance = async () => {
@@ -137,11 +132,11 @@ const ExistingSelectionDialog = ({
             value={
               targetKeyIndex === -1
                 ? ""
-                : shortForm(privacyKeys[targetKeyIndex].pubAddr)
+                : shortForm(privacyKeys[targetKeyIndex].publicAddr)
             }
             onValueChange={(value) => {
               setTargetKeyIndex(
-                privacyKeys.findIndex((key) => key.pubAddr === value)!
+                privacyKeys.findIndex((key) => key.publicAddr === value)!
               )
             }}
           >
@@ -149,14 +144,14 @@ const ExistingSelectionDialog = ({
               <SelectValue placeholder="Select Wallet">
                 {targetKeyIndex === -1
                   ? ""
-                  : shortForm(privacyKeys[targetKeyIndex].pubAddr)}
+                  : shortForm(privacyKeys[targetKeyIndex].publicAddr)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
               {privacyKeys.map((pK, index) => {
                 return (
-                  <SelectItem key={index} value={pK.pubAddr}>
-                    {shortForm(pK.pubAddr)}
+                  <SelectItem key={index} value={pK.publicAddr}>
+                    {shortForm(pK.publicAddr)}
                   </SelectItem>
                 )
               })}
@@ -167,7 +162,7 @@ const ExistingSelectionDialog = ({
           <div>
             Wallet balance:{" "}
             {currentWalletBalance &&
-              `${Number(formatValue(currentWalletBalance, fe?.precision)).toFixed(8)} ${fe?.ticker}`}
+              `${Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8)} ${currPoolFe?.ticker}`}
           </div>
         )}
 
@@ -202,7 +197,7 @@ const ExistingSelectionDialog = ({
                   <SelectItem key={index} value={index.toString()}>
                     {shortForm(numberToHex(commit.commitmentRoot))} (
                     {commit.asTuple()[0] !== 0n
-                      ? `${formatValue(commit.asTuple()[0], fe?.precision)} ${fe?.ticker}`
+                      ? `${formatValue(commit.asTuple()[0], currPoolFe?.precision)} ${currPoolFe?.ticker}`
                       : "VOID"}
                     )
                   </SelectItem>
