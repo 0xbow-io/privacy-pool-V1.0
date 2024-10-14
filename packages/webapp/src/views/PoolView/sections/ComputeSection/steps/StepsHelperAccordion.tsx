@@ -18,7 +18,7 @@ export const StepsHelperAccordion = ({
     <Accordion type="single" collapsible>
       <AccordionItem key="how_it_works" value="how_it_works" className=" ">
         <AccordionTrigger className="mt-4 border border-blackmail px-2 hover:bg-toxic-orange">
-          <h2 className="text-blackmail ">How does it work?</h2>
+          <h2 className="text-blackmail">How does it work?</h2>
         </AccordionTrigger>
         <AccordionContent>
           <div className="flex flex-row relative p-6">

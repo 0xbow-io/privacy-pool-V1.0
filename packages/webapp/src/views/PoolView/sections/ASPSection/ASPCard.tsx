@@ -104,6 +104,7 @@ export const ASPCard = ({
   ): TreeNode | ErrorTreeNode => {
     const commit = findCommitByCRoot(commitmentRoot, commits)
     if (!commit) {
+      console.log(`Commit with cRoot ${numberToHex(BigInt(commitmentRoot))} not found.`)
       return {
         error: `Commit with cRoot ${numberToHex(BigInt(commitmentRoot))} not found.`
       }
@@ -115,6 +116,7 @@ export const ASPCard = ({
 
     const relatedRecord = findRecordByCRoot(commitmentRoot, records)
     if (!relatedRecord) {
+      console.log(`No related record found for cRoot ${commitmentRoot}.`)
       return {
         error: `No related record found for cRoot ${commitmentRoot}.`
       }
@@ -126,6 +128,7 @@ export const ASPCard = ({
     const parentCommit2 = findCommitByNRoot(nRoot2, commits)
 
     if (!parentCommit1 && !parentCommit2) {
+      console.log(`Both parent commits not found for nRoots ${nRoot1}, ${nRoot2}.`)
       return {
         error: `Both parent commits not found for nRoots ${nRoot1}, ${nRoot2}.`
       }
@@ -184,33 +187,82 @@ export const ASPCard = ({
     return lines.join("\n")
   }
 
+  const buildAllCommitsTree = (
+    commits: Commitment[],
+    records: RecordDTO[]
+  ): string => {
+    const nodeMap = new Map<string, TreeNode>()
+
+    // Build the tree for each commitment
+    commits.forEach((commit) => {
+      const result = buildCommitTree(
+        commit.commitmentRoot.toString(),
+        commits,
+        records
+      )
+      if (!("error" in result)) {
+        nodeMap.set(commit.commitmentRoot.toString(), result)
+      }
+    })
+
+    // Convert the combined tree to a Mermaid graph
+    const lines: string[] = ["graph LR"]
+    const visited = new Set<string>()
+
+    const traverse = (node: TreeNode) => {
+      const nodeId = node.commit.commitmentRoot.toString().slice(-4)
+      if (visited.has(nodeId)) return
+      visited.add(nodeId)
+
+      const nodeLabel = node.commit.isVoid() ? `${nodeId}(void)` : nodeId
+      lines.push(`${nodeId}["${nodeLabel}"]`)
+
+      node.parents.forEach((parent) => {
+        const parentId = parent.commit.commitmentRoot.toString().slice(-4)
+        lines.push(`${parentId} --> ${nodeId}`)
+        traverse(parent)
+      })
+    }
+
+    nodeMap.forEach((node) => traverse(node))
+
+    const res = lines.join("\n")
+    console.log(res)
+
+    return res
+  }
+
   useEffect(() => {
     if (selectedCommitment && userCommits) {
+      setError(null)
       const res = buildCommitTree(
         selectedCommitment,
         userCommits,
         recordsMock.records
       )
 
-      if ("error" in res) {
-        setError({ message: res.error })
-      }
-      console.log("generated tree:", res)
+      // if ("error" in res) {
+      //   setError({ message: res.error })
+      // }
+      // console.log("generated tree:", res)
       const graph = convertToMermaidGraph(res)
-      setTreeString(graph)
+      console.log('local graph', graph)
+      // setTreeString(graph)
     }
   }, [selectedCommitment])
 
   useEffect(() => {
     const renderElem = async () => {
+      console.log(!!treeString, !!mermaidRef.current)
       if (treeString && mermaidRef.current) {
+        console.log('need to render', treeString)
         const { svg } = await mermaid.render("mermaidChart", treeString)
         mermaidRef.current.innerHTML = svg
       }
     }
 
     renderElem()
-  }, [treeString])
+  }, [treeString, mermaidRef.current])
 
   useEffect(() => {
     const processedCommits = userCommits?.map((commit) => {
@@ -220,6 +272,9 @@ export const ASPCard = ({
       }
     })
     console.log("processedCommits", processedCommits)
+    if (!userCommits) return
+    const newTree = buildAllCommitsTree(userCommits, recordsMock.records)
+    setTreeString(newTree)
   }, [userCommits?.length])
 
   return isSelected ? (

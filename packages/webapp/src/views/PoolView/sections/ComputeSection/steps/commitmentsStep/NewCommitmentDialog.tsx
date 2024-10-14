@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils.ts"
 import React, { memo, useMemo } from "react"
 import { formatUnits, parseUnits } from "viem"
 import { useBoundStore } from "@/stores"
+import { debounce, shortForm } from "@/utils"
 
 type NewCommitmentDialogProps = {
   className: string
@@ -31,12 +32,25 @@ const NewCommitmentDialog = ({
   newSlot
 }: NewCommitmentDialogProps) => {
   const { privacyKeys, currPoolFe, insertNew, newValues } = useBoundStore(
-    ({ privacyKeys, currPoolFe, insertNew, currPoolID, newValues }) => ({
+    ({ privacyKeys, currPoolFe, insertNew, newValues }) => ({
       privacyKeys,
       currPoolFe,
       insertNew,
       newValues
     })
+  )
+
+  const debouncedInsertNew = debounce(
+    (
+      value: string,
+      precision: number,
+      slot: number,
+      targetKeyIndex: number,
+      insertNew: (keyIdx: number, value: bigint, slot: number) => void
+    ) => {
+      insertNew(targetKeyIndex, parseUnits(value, precision), slot)
+    },
+    500
   )
 
   const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
@@ -71,10 +85,12 @@ const NewCommitmentDialog = ({
                 Number(currPoolFe?.precision)
               )}
               onChange={(e) =>
-                insertNew(
+                debouncedInsertNew(
+                  e.target.value,
+                  Number(currPoolFe?.precision),
+                  newSlot,
                   targetKeyIndex,
-                  parseUnits(e.target.value, Number(currPoolFe?.precision)),
-                  newSlot
+                  insertNew
                 )
               }
               className={cn(
@@ -106,10 +122,9 @@ const NewCommitmentDialog = ({
               </SelectTrigger>
               <SelectContent position="popper" id="putput-key-dropdown">
                 {privacyKeys.map((pK, index) => {
-                  const short = `0x${pK.publicAddr.substring(0, 14)}....${pK.publicAddr.substring(54)}`
                   return (
                     <SelectItem key={index} value={pK.publicAddr}>
-                      {short}
+                      {shortForm(pK.publicAddr)}
                     </SelectItem>
                   )
                 })}

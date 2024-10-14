@@ -63,6 +63,7 @@ export const NewCommitments = ({ className }: { className: string }) => {
   const [isOutputDialogOpen, setIsNewCommitmentDialogOpen] = useState(false)
   const [newSlot, setNewSlot] = useState(0)
   const [_, startTransition] = useTransition()
+  const [rawInputValue, setRawInputValue] = useState("0")
 
   return (
     <div className="">
@@ -139,15 +140,24 @@ export const NewCommitments = ({ className }: { className: string }) => {
         </div>
         <Input
           id="external-output"
-          type="number"
+          // type="number"
           disabled={sink === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={formatUnits(externIO[1], Number(currPoolFe?.precision))}
+          value={rawInputValue}
           onChange={(e) => {
-            let newVal = parseUnits(e.target.value, Number(currPoolFe?.precision))
-            startTransition(() => {
-              setExternIO([externIO[0], newVal < 0n ? 0n : newVal])
-            })
+            const value = e.target.value
+            const validNumberPattern = /^-?\d*\.?\d*$/
+
+            if (validNumberPattern.test(value)) {
+              let newVal = parseUnits(
+                e.target.value,
+                Number(currPoolFe?.precision)
+              )
+              setRawInputValue(value)
+              startTransition(() => {
+                setExternIO([externIO[0], newVal < 0n ? 0n : newVal])
+              })
+            }
           }}
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
@@ -157,7 +167,9 @@ export const NewCommitments = ({ className }: { className: string }) => {
           onClick={() => {
             const diff = getTotalExisting() - getTotalNew()
             const val = diff > 0n ? externIO[1] + diff : 0n
+            console.log('formatun', formatUnits(val, Number(currPoolFe?.precision)))
             setExternIO([externIO[0], val])
+            setRawInputValue(formatUnits(val, Number(currPoolFe?.precision)))
           }}
           icon={<SigmaIcon />}
           disabled={sink === numberToHex(0)}
@@ -171,7 +183,8 @@ export const NewCommitments = ({ className }: { className: string }) => {
           htmlFor=""
           className={cn("block text-base font-bold text-blackmail")}
         >
-          Total: {formatValue(getTotalNew(), currPoolFe?.precision)} {currPoolFe?.ticker}{" "}
+          Total: {formatValue(getTotalNew(), currPoolFe?.precision)}{" "}
+          {currPoolFe?.ticker}{" "}
         </Label>
       </div>
 

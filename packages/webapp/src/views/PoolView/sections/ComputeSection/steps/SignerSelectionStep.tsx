@@ -9,23 +9,21 @@ import {
   publicActions
 } from "viem"
 import { useBoundStore } from "@/stores"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
-import {
-  DEFAULT_CHAIN,
-  PrivacyPools
-} from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import { DEFAULT_CHAIN } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { formatValue } from "@/utils"
 
 export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
-  const { setSigner, signerKey, privKeys, src, currPoolFe } = useBoundStore(
-    ({ setSigner, src, signerKey, privKeys, currPoolFe }) => ({
-      setSigner,
-      signerKey,
-      privKeys,
-      src,
-      currPoolFe
-    })
-  )
+  const { setSigner, signerKey, privKeys, privacyKeys, src, currPoolFe } =
+    useBoundStore(
+      ({ setSigner, src, signerKey, privKeys, privacyKeys, currPoolFe }) => ({
+        setSigner,
+        signerKey,
+        privKeys,
+        privacyKeys,
+        src,
+        currPoolFe
+      })
+    )
 
   const [currentWalletBalance, setCurrentWalletBalance] = useState<
     bigint | null
@@ -47,7 +45,14 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
 
   useEffect(() => {
     const updateBalance = async () => {
-      const publicAddr = new PrivacyKey(signerKey, 0n)?.publicAddr
+      const publicAddr = privacyKeys.find(
+        (k) => k.pKey === signerKey
+      )?.publicAddr
+
+      if (!publicAddr) {
+        return
+      }
+
       const walletClient = createWalletClient({
         account: publicAddr,
         chain: DEFAULT_CHAIN, //todo: change for dynamic chain
@@ -60,7 +65,7 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
 
     const fetchBalance = async () => {
       const balance = await updateBalance()
-      setCurrentWalletBalance(balance)
+      balance && setCurrentWalletBalance(balance)
     }
 
     if (signerKey !== numberToHex(0)) {
@@ -92,7 +97,7 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
           <div>
             Wallet balance:{" "}
             {(currentWalletBalance &&
-              `${formatValue(currentWalletBalance, currPoolFe?.precision)} ${currPoolFe?.ticker}`) ||
+              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`) ||
               `0 ${currPoolFe?.ticker}`}
           </div>
         )}

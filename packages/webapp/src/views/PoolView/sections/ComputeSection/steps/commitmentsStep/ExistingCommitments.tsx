@@ -71,6 +71,7 @@ export const ExistingCommitments = ({
   const [_, startTransition] = useTransition()
   const [isSelectionDialogOpen, setSelectionDialog] = useState(false)
   const [existingSlot, setExistingSlot] = useState(0)
+  const [rawInputValue, setRawInputValue] = useState("0")
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +79,7 @@ export const ExistingCommitments = ({
       const validNumberPattern = /^-?\d*\.?\d*$/
 
       if (validNumberPattern.test(value)) {
+        setRawInputValue(value)
         startTransition(() => {
           const newVal = parseUnits(value, Number(currPoolFe?.precision))
           if (newVal >= 0n && newVal !== externIO[0]) {
@@ -181,10 +183,10 @@ export const ExistingCommitments = ({
         </div>
         <Input
           id="external-input"
-          type="number"
+          // type="number"
           disabled={src === numberToHex(0)}
           placeholder="Enter Input Value"
-          value={formatUnits(externIO[0], Number(currPoolFe?.precision))}
+          value={rawInputValue}
           onChange={(e) => handleInputChange(e)}
           className={cn(
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
@@ -195,6 +197,7 @@ export const ExistingCommitments = ({
             const diff = getTotalNew() - getTotalExisting()
             const val = diff > 0n ? externIO[0] + diff : 0n
             setExternIO([val, externIO[1]])
+            setRawInputValue(formatUnits(val, Number(currPoolFe?.precision)))
           }}
           icon={<SigmaIcon />}
           disabled={src === numberToHex(0)}

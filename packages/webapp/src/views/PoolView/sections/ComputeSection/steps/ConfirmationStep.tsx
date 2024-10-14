@@ -33,6 +33,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
     _new,
     existing,
     sumNewValues,
+    currPoolFe
   } = useBoundStore(
     ({
       isGeneratingProof,
@@ -48,7 +49,8 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
       sumNewValues,
       currPoolID,
       keyIdx,
-      privKeys
+      privKeys,
+      currPoolFe
     }) => {
       const pool = PrivacyPools.get(currPoolID)
       return {
@@ -72,6 +74,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
         existing: existing,
         keys: keyIdx.map((idx) => privKeys[idx]),
         sumNewValues: sumNewValues,
+        currPoolFe: currPoolFe
       }
     }
   )
@@ -91,7 +94,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
   }, [isGeneratingProof, setPrimaryButtonProps, setBackButtonProps])
 
   const formatValue = (value: bigint) =>
-    formatUnits(value, Number(fe?.precision))
+    formatUnits(value, Number(currPoolFe?.precision))
 
   return (
     <div className="flex flex-col items-center w-full h-full">
@@ -118,7 +121,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
               stats={[
                 {
                   header: "Value sum for New Commitments:",
-                  value: `${formatValue(sumNewValues)} ${fe?.ticker}`
+                  value: `${formatValue(sumNewValues)} ${currPoolFe?.ticker}`
                 }
               ]}
             />
@@ -133,12 +136,12 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
               stats={[
                 {
                   header: "Input Value",
-                  value: formatValue(externIO[0]) + " " + fe?.ticker
+                  value: formatValue(externIO[0]) + " " + currPoolFe?.ticker
                 },
                 { header: "Input Source", value: src },
                 {
                   header: "Output Value",
-                  value: formatValue(externIO[1]) + " " + fe?.ticker
+                  value: formatValue(externIO[1]) + " " + currPoolFe?.ticker
                 },
                 { header: "Output Sink", value: sink }
               ]}
@@ -155,7 +158,7 @@ export const ConfirmationStep: React.FC<CommonProps> = ({
                 { header: "Fee Collector ID", value: feeCollectorID },
                 {
                   header: "Fee Amount",
-                  value: formatValue(feeAmt) + " " + fe?.ticker
+                  value: formatValue(feeAmt) + " " + currPoolFe?.ticker
                 },
                 { header: "Fee Collector", value: feeCollector }
               ]}

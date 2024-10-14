@@ -72,6 +72,7 @@ const ComputeSection = () => {
         <CardDescription>
           <div className="flex-auto">
             <StepsIndicator
+              onChangeStep={(index) => setCurrentStep(index)}
               steps={[
                 "Select Commitments",
                 "ASP Selection",

@@ -16,7 +16,7 @@ export const Step = styled.div<{ isActive: boolean }>`
   flex: 1;
   z-index: 1;
   position: relative;
-  cursor: pointer;
+  cursor: ${({ isActive }) => (isActive ? "pointer" : "default")};
 `
 
 export const StepCircle = styled.div<{ isActive: boolean }>`

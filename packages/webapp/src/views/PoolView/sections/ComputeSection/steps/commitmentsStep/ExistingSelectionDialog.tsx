@@ -12,27 +12,17 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React, { memo, useEffect, useMemo, useState } from "react"
-import {
-  formatUnits,
-  numberToHex,
-  type Hex,
-  createWalletClient,
-  http,
-  publicActions,
-  formatEther
-} from "viem"
-import { PrivacyKey, type Commitment } from "@privacy-pool-v1/domainobjs/ts"
-import {
-  DEFAULT_CHAIN,
-  PrivacyPools
-} from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import React, { memo, useEffect, useState } from "react"
+import { createWalletClient, http, numberToHex, publicActions } from "viem"
+import { type Commitment, PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { DEFAULT_CHAIN } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { cn } from "@/lib/utils.ts"
 import { Label } from "@/components/ui/label.tsx"
-import { BinaryIcon, SigmaIcon } from "lucide-react"
+import { BinaryIcon } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useBoundStore } from "@/stores"
 import { formatValue, shortForm } from "@/utils"
+
 type SelectionDialogProps = {
   className: string
   isOpen: boolean
@@ -162,7 +152,7 @@ const ExistingSelectionDialog = ({
           <div>
             Wallet balance:{" "}
             {currentWalletBalance &&
-              `${Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8)} ${currPoolFe?.ticker}`}
+              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`}
           </div>
         )}
 
@@ -177,6 +167,7 @@ const ExistingSelectionDialog = ({
 
         <div className="flex-auto">
           <Select
+            disabled={targetKeyIndex === -1}
             value={shortForm(
               numberToHex(existing[existingSlot]?.commitmentRoot || 0)
             )}
@@ -186,9 +177,11 @@ const ExistingSelectionDialog = ({
           >
             <SelectTrigger>
               <SelectValue placeholder="Select">
-                {shortForm(
-                  numberToHex(existing[existingSlot]?.commitmentRoot || 0)
-                )}
+                {existing[existingSlot]?.commitmentRoot
+                  ? shortForm(
+                      numberToHex(existing[existingSlot]?.commitmentRoot)
+                    )
+                  : "Select commitment"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
