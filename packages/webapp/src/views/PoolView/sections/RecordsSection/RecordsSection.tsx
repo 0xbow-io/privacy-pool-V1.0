@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from "react"
 import { useBoundStore } from "@/stores"
-import { Loader } from "@/components/Loader/Loader.tsx"
 import { type TCommitment } from "@privacy-pool-v1/domainobjs/ts"
 import RecordsTable from "@/components/RecordsTable/RecordsTable.tsx"
 import { LoaderIcon } from "@/views/PoolView/sections/ComputeSection/steps/styled.ts"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card.tsx"
 
 export const RecordsSection = () => {
-  const { poolToMembershipProofs, isSyncing, privacyKeys } =
-    useBoundStore(
-      ({ poolToMembershipProofs, isSyncing, privacyKeys }) => ({
-        poolToMembershipProofs,
-        isSyncing,
-        privacyKeys
-      })
-    )
+  const { poolToMembershipProofs, isSyncing, privacyKeys } = useBoundStore(
+    ({ poolToMembershipProofs, isSyncing, privacyKeys }) => ({
+      poolToMembershipProofs,
+      isSyncing,
+      privacyKeys
+    })
+  )
 
   const [keyToCommits, setKeyToCommits] = useState<{
     [key: string]: { [hash: string]: TCommitment.MembershipProofJSON }
@@ -48,9 +52,14 @@ export const RecordsSection = () => {
           <p className="mt-2 text-sm">Syncing....</p>
         </div>
       ) : (
-        <div>
-          <RecordsTable keyToCommits={keyToCommits} />
-        </div>
+        <Card className="w-full">
+          <CardHeader className="">
+            <CardTitle>Pool Records</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecordsTable keyToCommits={keyToCommits} />
+          </CardContent>
+        </Card>
       )}
     </div>
   )

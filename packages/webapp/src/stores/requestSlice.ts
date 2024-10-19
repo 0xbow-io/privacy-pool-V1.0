@@ -13,7 +13,7 @@ import {
   numberToHex,
   publicActions
 } from "viem"
-import { GetNewSum } from "@privacy-pool-v1/zero-knowledge"
+import { GetNewSum } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import {
   ChainNameIDToChain,
   GetOnChainPrivacyPoolByPoolID,

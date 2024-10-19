@@ -24,20 +24,18 @@ export const createGlobalStoreSlice: StateCreator<
       throw new Error("Error: unable to load worker")
     }
 
-    const poolID = get().currPoolID
-    const poolState = get().pools.get(poolID)
+    const {currPoolID, pools, privKeys, newValues, keyIdx, pkScalars, nonces, existing, externIO} = get()
+
+    const poolID = currPoolID
+    const poolState = pools.get(poolID)
     const meta = PrivacyPools.get(poolID)
     if (meta === undefined || poolState === undefined) {
       throw new Error(`Error: invalid poolID ${poolID}`)
     }
 
-    const privKeys = get().privKeys
-    const newValues = get().newValues
-    const keyIdx = get().keyIdx
-    const pkScalars = get().pkScalars
-    const nonces = get().nonces
-    const existing = get().existing
-    const externIO = get().externIO
+    if (!existing){
+      throw new Error('Input commitments are not defined')
+    }
 
     const newCommitments =
       get().new ??
@@ -66,8 +64,8 @@ export const createGlobalStoreSlice: StateCreator<
             ctx,
             pkScalars,
             nonces,
-            existing,
-            newCommitments,
+            existing as [Commitment, Commitment],
+            newCommitments as [Commitment, Commitment],
             externIO
           )
         })

@@ -71,7 +71,7 @@ export const SignerSelectionStep = ({ setPrimaryButtonProps }: CommonProps) => {
     if (signerKey !== numberToHex(0)) {
       fetchBalance()
     }
-  }, [signerKey])
+  }, [signerKey, privacyKeys])
 
   return (
     <div className="flex flex-col items-center w-full h-full">

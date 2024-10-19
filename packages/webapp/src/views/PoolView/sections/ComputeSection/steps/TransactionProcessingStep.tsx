@@ -48,7 +48,7 @@ export const TransactionProcessingStep = ({
         text: "Finish",
         onClick: () => resetRequestState()
       })
-  }, [setPrimaryButtonProps, reqStatus])
+  }, [setPrimaryButtonProps, reqStatus, resetRequestState])
 
   const formatTxHash = (txHash: string) => {
     return `${chain.blockExplorers!.default.url}/tx/${txHash}`
@@ -63,7 +63,7 @@ export const TransactionProcessingStep = ({
           onClick: () => onRestartCb()
         })
     }
-  }, [reqStatus])
+  }, [reqStatus, onRestartCb, setPrimaryButtonProps])
 
   return (
     <Container>

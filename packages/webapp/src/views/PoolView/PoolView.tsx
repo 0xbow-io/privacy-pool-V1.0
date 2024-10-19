@@ -70,7 +70,7 @@ export default function PoolView() {
       poolStates,
       keyToCommitJSONs
     })
-  }, [pools, worker, commitments])
+  }, [pools, commitments, postMessage])
 
   useEffect(() => {
     if (!worker || !privKeys.length || isSyncing) {
@@ -101,7 +101,18 @@ export default function PoolView() {
         updateMembershipProofs(resp.membershipProofs)
       }
     })
-  }, [worker, commitments.size, privKeys.length])
+  }, [
+    worker,
+    commitments.size,
+    isSyncing,
+    privKeys,
+    postMessage,
+    computeProofs,
+    addMessageHandler,
+    startSync,
+    updatePoolSync,
+    updateMembershipProofs
+  ])
 
   return (
     <div className="bg-page-background min-w-screen w-full min-h-screen h-full flex mb-12 flex-col">
