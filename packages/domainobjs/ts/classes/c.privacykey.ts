@@ -217,6 +217,13 @@ export class PrivacyKey {
           }
         }
       }
+      const voidC = CreateNewCommitment({
+        _pK: this.pKey,
+        _nonce: this.nonce,
+        _scope: _scope,
+        _value: BigInt(0)
+      })
+      commitments.push(voidC)
     } else {
       // if no commitments were recovered
       // we'll create 2 void commitments

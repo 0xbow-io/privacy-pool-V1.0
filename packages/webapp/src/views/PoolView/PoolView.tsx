@@ -21,6 +21,7 @@ export default function PoolView() {
     pools,
     privKeys,
     isSyncing,
+    syncComplete,
     updateMembershipProofs
   } = useBoundStore(
     ({
@@ -30,7 +31,8 @@ export default function PoolView() {
       pools,
       privKeys,
       updateMembershipProofs,
-      isSyncing
+      isSyncing,
+      syncComplete
     }) => ({
       commitments,
       startSync,
@@ -38,7 +40,8 @@ export default function PoolView() {
       pools,
       privKeys,
       isSyncing,
-      updateMembershipProofs
+      updateMembershipProofs,
+      syncComplete
     })
   )
 
@@ -73,13 +76,11 @@ export default function PoolView() {
   }, [pools, commitments, postMessage])
 
   useEffect(() => {
-    if (!worker || !privKeys.length || isSyncing) {
+    if (!worker || !privKeys.length || isSyncing || syncComplete) {
       return
     }
-    console.log('worker useEffect')
     startSync()
     if (!commitments.size) {
-      console.log('sync pool')
       const poolIds = Array.from(PrivacyPools.keys())
       postMessage({
         cmd: WorkerCmd.SYNC_POOL_STATE,
@@ -87,20 +88,18 @@ export default function PoolView() {
         privateKeys: privKeys
       })
     } else {
-      console.log("compute proofs")
       computeProofs()
     }
     addMessageHandler((event) => {
       const resp = event.data as WorkerResponse
       if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
-        console.log('pool state response')
         updatePoolSync(resp)
         computeProofs()
       }
       if (resp.cmd === WorkerCmd.COMPUTE_MEMBERSHIP_PROOF_CMD) {
+        console.log("return handler")
         const resp = event.data as WorkerResponse
         if (!resp.membershipProofs) return
-        console.log("updating proofs")
         updateMembershipProofs(resp.membershipProofs)
       }
     })

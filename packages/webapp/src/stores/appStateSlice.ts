@@ -8,6 +8,7 @@ export const createAppStateSlice: StateCreator<
   AppStateSlice
 > = (set) => ({
   isSyncing: false,
+  syncComplete: false,
   isGeneratingProof: false,
   isExecutingRequest: false,
 

@@ -10,6 +10,7 @@ import type { StdPackedGroth16ProofT } from "@privacy-pool-v1/zero-knowledge"
 
 export type AppStateSlice = {
   isSyncing: boolean
+  syncComplete: boolean
   isGeneratingProof: boolean
   isExecutingRequest: boolean
 

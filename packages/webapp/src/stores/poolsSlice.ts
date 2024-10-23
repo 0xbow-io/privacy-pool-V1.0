@@ -42,7 +42,12 @@ export const createPoolsSlice: StateCreator<
     })
   },
   updateMembershipProofs: (proofs) => {
-    set((state) => ({ ...state, poolToMembershipProofs: proofs }))
+    set((state) => ({
+      ...state,
+      isSyncing: false,
+      syncComplete: true,
+      poolToMembershipProofs: proofs
+    }))
   },
   //todo: will be moved to a separate function
   downloadMembershipProof: (slot: number) => {
@@ -80,7 +85,6 @@ export const createPoolsSlice: StateCreator<
   startSync: () => set((state) => ({ ...state, isSyncing: true })),
   updatePoolSync: (resp: WorkerResponse) => {
     set((state) => {
-      console.log("start updatePool")
       const pools = new Map(state.pools)
       const commitments = new Map(state.commitments)
 
@@ -106,7 +110,6 @@ export const createPoolsSlice: StateCreator<
         commitments.set(poolId, poolCommitments)
       })
 
-      console.log("commitments set:", commitments)
       // .map((x) => x.filter((c) => !poolState.has(c.nullRoot)))
       return {
         ...state,

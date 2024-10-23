@@ -87,6 +87,7 @@ export const eventListenerFn = async (event: MessageEvent) => {
           msg.poolStates,
           msg.keyToCommitJSONs
         )
+        resp.status = "success"
         resp.membershipProofs = proofs
         break
     }
