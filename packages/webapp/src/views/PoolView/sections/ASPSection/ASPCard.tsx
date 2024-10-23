@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Card,
   CardContent,
@@ -76,7 +76,10 @@ export const ASPCard = ({
   const [treeString, setTreeString] = useState("")
   const mermaidRef = useRef<HTMLDivElement>(null)
 
-  const userCommits = commitments.get(currPoolID)?.flat()
+  const userCommits = useMemo(
+    () => commitments.get(currPoolID)?.flat(),
+    [commitments, currPoolID]
+  )
 
   const findRecordByCRoot = useCallback(
     (cRoot: string, records: RecordDTO[]): RecordDTO | null => {
@@ -261,7 +264,6 @@ export const ASPCard = ({
 
   useEffect(() => {
     const renderElem = async () => {
-      console.log(!!treeString, !!mermaidRef.current)
       if (treeString && mermaidRef.current) {
         console.log("need to render", treeString)
         const { svg } = await mermaid.render("mermaidChart", treeString)

@@ -1,27 +1,25 @@
-import { useCallback, useState } from "react"
+import { useCallback, useRef } from "react"
 import { useWorker } from "../contexts/WorkerContext"
 
 export const useZKWorker = () => {
   const worker = useWorker()
-  const [busy, setBusy] = useState<Set<number>>(new Set())
+  const busyRef = useRef<Set<number>>(new Set())
 
   const postMessage = useCallback(
     (message: { cmd: number; [key: string]: any }) => {
-      if (worker) {
-        setBusy((prev) => {
-          const newSet = new Set(prev)
-          if (newSet.has(message.cmd)) {
-            console.warn(`Worker is busy processing command: ${message.cmd}`)
-            return prev
-          }
-          newSet.add(message.cmd)
-          console.log('postMessage', message.cmd, message)
-          worker.postMessage(message)
-          return newSet
-        })
-      } else {
+      if (!worker) {
         console.error("Post message: Worker is not initialized")
+        return
       }
+
+      if (busyRef.current.has(message.cmd)) {
+        console.warn(`Worker is busy processing command: ${message.cmd}`)
+        return
+      }
+
+      busyRef.current.add(message.cmd)
+      console.log("postMessage", message.cmd, message)
+      worker.postMessage(message)
     },
     [worker]
   )
@@ -30,11 +28,7 @@ export const useZKWorker = () => {
     (handler: (event: MessageEvent) => void) => {
       const messageListener = (event: MessageEvent) => {
         const { cmd } = event.data
-        setBusy((prev) => {
-          const newSet = new Set(prev)
-          newSet.delete(cmd)
-          return newSet
-        })
+        busyRef.current.delete(cmd)
         handler(event)
       }
 
@@ -53,5 +47,5 @@ export const useZKWorker = () => {
     [worker]
   )
 
-  return { worker, postMessage, addMessageHandler, busy }
+  return { worker, postMessage, addMessageHandler }
 }

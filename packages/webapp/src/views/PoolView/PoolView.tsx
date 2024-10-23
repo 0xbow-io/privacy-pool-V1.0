@@ -76,8 +76,10 @@ export default function PoolView() {
     if (!worker || !privKeys.length || isSyncing) {
       return
     }
+    console.log('worker useEffect')
     startSync()
     if (!commitments.size) {
+      console.log('sync pool')
       const poolIds = Array.from(PrivacyPools.keys())
       postMessage({
         cmd: WorkerCmd.SYNC_POOL_STATE,
@@ -91,6 +93,7 @@ export default function PoolView() {
     addMessageHandler((event) => {
       const resp = event.data as WorkerResponse
       if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
+        console.log('pool state response')
         updatePoolSync(resp)
         computeProofs()
       }
@@ -102,14 +105,15 @@ export default function PoolView() {
       }
     })
   }, [
+    privKeys,
     worker,
     commitments.size,
+    privKeys.length,
     isSyncing,
-    privKeys,
+    startSync,
     postMessage,
     computeProofs,
     addMessageHandler,
-    startSync,
     updatePoolSync,
     updateMembershipProofs
   ])
