@@ -97,7 +97,6 @@ export default function PoolView() {
         computeProofs()
       }
       if (resp.cmd === WorkerCmd.COMPUTE_MEMBERSHIP_PROOF_CMD) {
-        console.log("return handler")
         const resp = event.data as WorkerResponse
         if (!resp.membershipProofs) return
         updateMembershipProofs(resp.membershipProofs)
@@ -109,10 +108,11 @@ export default function PoolView() {
     commitments.size,
     privKeys.length,
     isSyncing,
-    startSync,
+    syncComplete,
     postMessage,
     computeProofs,
     addMessageHandler,
+    startSync,
     updatePoolSync,
     updateMembershipProofs
   ])
