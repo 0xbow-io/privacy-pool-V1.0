@@ -93,6 +93,7 @@ export default function PoolView() {
     addMessageHandler((event) => {
       const resp = event.data as WorkerResponse
       if (resp.cmd === WorkerCmd.SYNC_POOL_STATE) {
+        console.log('upd pool sync')
         updatePoolSync(resp)
         computeProofs()
       }

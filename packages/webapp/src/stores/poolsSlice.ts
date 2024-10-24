@@ -104,6 +104,7 @@ export const createPoolsSlice: StateCreator<
       console.log("processed", resp.processedCommits)
 
       resp.processedCommits?.forEach((keyCommits, poolId) => {
+        // TODO: split into chunks to avoid thread block
         const poolCommitments = keyCommits.map((commits) =>
           commits.map((c) => CommitmentC.recoverFromJSON(c))
         )

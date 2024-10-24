@@ -2,7 +2,7 @@ import { GetOnChainPrivacyPoolByPoolID } from "@privacy-pool-v1/contracts/ts/pri
 import type { WorkerMsg, WorkerResponse } from "../eventListener"
 import {
   PrivacyKey,
-  RecoverCommitments,
+  recoverCommitments,
   type TCommitment
 } from "@privacy-pool-v1/domainobjs/ts"
 import type { Hex } from "viem"
@@ -66,10 +66,10 @@ export const getAllPoolsStates = async (
   return poolStates
 }
 
-export const recoverPoolCommits = (
+export const recoverPoolCommits = async (
   keys: Hex[],
   msg: WorkerResponse
-): Map<string, TCommitment.CommitmentJSON[][]> => {
+): Promise<Map<string, TCommitment.CommitmentJSON[][]>> => {
   const commitments = new Map<string, TCommitment.CommitmentJSON[][]>()
 
   if (!msg.syncedPools) {
@@ -77,20 +77,24 @@ export const recoverPoolCommits = (
     return commitments
   }
 
-  msg.syncedPools.forEach((syncedPool) => {
-    const { poolId, ciphers } = syncedPool
+  await Promise.all(
+    msg.syncedPools.map(async (syncedPool) => {
+      const { poolId, ciphers } = syncedPool
+      const pool = GetOnChainPrivacyPoolByPoolID(poolId)
 
-    const rC = RecoverCommitments(
-      keys.map((key) => PrivacyKey.from(key, 0n)),
-      ciphers
-    )
+      const rC = await recoverCommitments(
+        keys.map((key) => PrivacyKey.from(key, 0n)),
+        ciphers,
+        pool
+      )
 
-    const recoveredCommitments = rC.map((commits) =>
-      commits.map((c) => c.toJSON())
-    )
+      const recoveredCommitments = rC.map((commits) =>
+        commits.map((c) => c.toJSON())
+      )
 
-    commitments.set(poolId, recoveredCommitments)
-  })
+      commitments.set(poolId, recoveredCommitments)
+    })
+  )
 
   return commitments
 }

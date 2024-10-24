@@ -19,7 +19,7 @@ import {
   UnpackCiphersWithinRangeFn
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import type { Commitment, PrivacyKeys } from "@privacy-pool-v1/domainobjs"
-import { RecoverCommitments } from "@privacy-pool-v1/domainobjs"
+import { recoverCommitments } from "@privacy-pool-v1/domainobjs"
 import type {
   CircomArtifactsT,
   SnarkJSOutputT,
@@ -373,7 +373,7 @@ export namespace CPool {
           return
         }
         console.log(`there are ${ciphers.length} ciphers to decrypt`)
-        RecoverCommitments(keys, ciphers)
+        recoverCommitments(keys, ciphers)
       })
     }
 

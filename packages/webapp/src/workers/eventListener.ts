@@ -60,9 +60,12 @@ export const eventListenerFn = async (event: MessageEvent) => {
     switch (resp.cmd) {
       case WorkerCmd.SYNC_POOL_STATE:
         await getAllPoolsStates(msg)
-          .then((result) => {
+          .then(async (result) => {
             resp.syncedPools = result
-            const commitsJSONs = recoverPoolCommits(msg.privateKeys!, resp)
+            const commitsJSONs = await recoverPoolCommits(
+              msg.privateKeys!,
+              resp
+            )
             resp.status = "success"
             resp.processedCommits = commitsJSONs
           })
