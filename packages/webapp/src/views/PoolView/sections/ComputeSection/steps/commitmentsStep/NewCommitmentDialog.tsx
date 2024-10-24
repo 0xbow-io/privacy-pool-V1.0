@@ -13,11 +13,10 @@ import {
   SelectValue
 } from "@/components/ui/select.tsx"
 import { cn } from "@/lib/utils.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
-import React from "react"
+import React, { memo, useMemo } from "react"
 import { formatUnits, parseUnits } from "viem"
+import { useBoundStore } from "@/stores"
+import { debounce, shortForm } from "@/utils"
 
 type NewCommitmentDialogProps = {
   className: string
@@ -26,20 +25,35 @@ type NewCommitmentDialogProps = {
   newSlot: number
 }
 
-export const NewCommitmentDialog = ({
+const NewCommitmentDialog = ({
   className,
   isOpen,
   onOpenChange,
   newSlot
 }: NewCommitmentDialogProps) => {
-  const { privKeys, request, insertNew, currPoolID } = useGlobalStore(
-    (state) => state
+  const { privacyKeys, currPoolFe, insertNew, newValues } = useBoundStore(
+    ({ privacyKeys, currPoolFe, insertNew, newValues }) => ({
+      privacyKeys,
+      currPoolFe,
+      insertNew,
+      newValues
+    })
   )
 
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
-  const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
+  const debouncedInsertNew = debounce(
+    (
+      value: string,
+      precision: number,
+      slot: number,
+      targetKeyIndex: number,
+      insertNew: (keyIdx: number, value: bigint, slot: number) => void
+    ) => {
+      insertNew(targetKeyIndex, parseUnits(value, precision), slot)
+    },
+    500
+  )
 
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
+  const [targetKeyIndex, setTargetKeyIndex] = React.useState(0)
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -67,14 +81,16 @@ export const NewCommitmentDialog = ({
               id="new-amount"
               type="number"
               placeholder={formatUnits(
-                request.newValues[newSlot],
-                Number(fe?.precision)
+                newValues[newSlot],
+                Number(currPoolFe?.precision)
               )}
               onChange={(e) =>
-                insertNew(
+                debouncedInsertNew(
+                  e.target.value,
+                  Number(currPoolFe?.precision),
+                  newSlot,
                   targetKeyIndex,
-                  parseUnits(e.target.value, Number(fe?.precision)),
-                  newSlot
+                  insertNew
                 )
               }
               className={cn(
@@ -92,24 +108,23 @@ export const NewCommitmentDialog = ({
               Binded To:
             </label>
             <Select
-              value={privacyKeys[targetKeyIndex].pubAddr}
+              value={privacyKeys[targetKeyIndex].publicAddr}
               onValueChange={(value) => {
                 setTargetKeyIndex(
-                  privacyKeys.findIndex((key) => key.pubAddr === value)!
+                  privacyKeys.findIndex((key) => key.publicAddr === value)!
                 )
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select">
-                  {privacyKeys[targetKeyIndex].pubAddr}
+                  {privacyKeys[targetKeyIndex].publicAddr}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" id="putput-key-dropdown">
                 {privacyKeys.map((pK, index) => {
-                  const short = `0x${pK.pubAddr.substring(0, 14)}....${pK.pubAddr.substring(54)}`
                   return (
-                    <SelectItem key={index} value={pK.pubAddr}>
-                      {short}
+                    <SelectItem key={index} value={pK.publicAddr}>
+                      {shortForm(pK.publicAddr)}
                     </SelectItem>
                   )
                 })}
@@ -121,3 +136,5 @@ export const NewCommitmentDialog = ({
     </Dialog>
   )
 }
+
+export default memo(NewCommitmentDialog)

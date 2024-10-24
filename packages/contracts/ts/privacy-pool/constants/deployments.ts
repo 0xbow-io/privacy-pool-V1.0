@@ -5,7 +5,6 @@ import type {
   PrivacyPoolMeta,
   PoolMeta,
   FEMeta,
-  OnChainPrivacyPool
 } from "@privacy-pool-v1/contracts"
 
 export const SUPPORTED_CHAINS = [sepolia, mainnet, gnosis]
@@ -18,7 +17,7 @@ export const ETH_Simple_FieldElement: FEMeta = {
   address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
 
   precision: 18n,
-  iconURI: "htatps://etherscan.io/images/svg/brands/ethereum-original.svg"
+  iconURI: "https://etherscan.io/images/svg/brands/ethereum-original.svg"
 }
 
 export const XDAI_Simple_FieldElement: FEMeta = {
@@ -143,14 +142,3 @@ export const ExistingPrivacyPools: Map<Chain, PrivacyPoolMeta[]> = new Map<
     ]
   ]
 ])
-
-/**
-  @todo Depreciate this
-*/
-export const getDefaultPool = (): PrivacyPoolMeta => {
-  if (ExistingPrivacyPools.has(DEFAULT_CHAIN)) {
-    const _metas = ExistingPrivacyPools.get(DEFAULT_CHAIN)
-    if (_metas) return _metas[0]
-  }
-  throw new Error("No default pool found")
-}

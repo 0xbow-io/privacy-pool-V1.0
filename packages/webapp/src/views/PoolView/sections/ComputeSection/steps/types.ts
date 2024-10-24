@@ -1,6 +1,11 @@
+import type { PrivacyKeyJSON } from "@privacy-pool-v1/domainobjs/ts"
+import type { FEMeta } from "@privacy-pool-v1/contracts/ts"
+
 export type CommonProps = {
   setPrimaryButtonProps?: (props: ForwardButtonProps) => void
-  setbackButtonProps?: (props: BackButtonProps) => void
+  setBackButtonProps?: (props: BackButtonProps) => void
+  privacyKeys?: PrivacyKeyJSON[]
+  fe?: FEMeta | undefined
 }
 
 export type ForwardButtonProps = {

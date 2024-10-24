@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import Steps from "@/components/Steps/Steps.tsx"
 import {
   ASPSelectionStep,
@@ -12,7 +12,6 @@ import {
   type BackButtonProps,
   type ForwardButtonProps
 } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import {
   Card,
   CardContent,
@@ -21,10 +20,10 @@ import {
   CardTitle
 } from "@/components/ui/card.tsx"
 
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
 import { ComputeSectionSteps } from "@/views/PoolView/sections/ComputeSection/types.ts"
 import { StepsIndicator } from "@/components/Steps/StepsIndicator.tsx"
 import { StepsHelperAccordion } from "@/views/PoolView/sections/ComputeSection/steps/StepsHelperAccordion.tsx"
+import { useBoundStore } from "@/stores"
 
 const ComputeSection = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -38,27 +37,12 @@ const ComputeSection = () => {
     disabled: false,
     text: "Back"
   })
-  const {
-    privKeys,
-    request,
-    sync,
-    applyFee,
-    currPoolID,
-    computeProof,
-    executeRequest
-  } = useGlobalStore((state) => state)
-
-  useEffect(() => {
-    if (currentStep == ComputeSectionSteps.Commitments) {
-      sync(currPoolID)
-    }
-    if (currentStep == ComputeSectionSteps.Confirmation) {
-      computeProof()
-    }
-  }, [currentStep, sync, computeProof, request, currPoolID])
-
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n))
-  // const publicKeys = privacyKeys.map((key) => key.publicAddr)
+  const { executeRequest, applyFee } = useBoundStore(
+    ({ executeRequest, applyFee }) => ({
+      executeRequest,
+      applyFee
+    })
+  )
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",
@@ -74,7 +58,7 @@ const ComputeSection = () => {
   const handleContinue = () => {
     // User is on the ConfirmationStep
     // and has clicked the "Confirm & Execute" button
-    if (currentStep == ComputeSectionSteps.Confirmation) {
+    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
       // execute the request
       executeRequest()
     }
@@ -88,6 +72,7 @@ const ComputeSection = () => {
         <CardDescription>
           <div className="flex-auto">
             <StepsIndicator
+              onChangeStep={(index) => setCurrentStep(index)}
               steps={[
                 "Select Commitments",
                 "ASP Selection",
@@ -131,6 +116,9 @@ const ComputeSection = () => {
             <SignerSelectionStep setPrimaryButtonProps={setForwardBtnProps} />
             <ConfirmationStep setPrimaryButtonProps={setForwardBtnProps} />
             <TransactionProcessingStep
+              onRestartCb={() =>
+                setCurrentStep(ComputeSectionSteps.Commitments)
+              }
               setPrimaryButtonProps={setForwardBtnProps}
             />
           </Steps>

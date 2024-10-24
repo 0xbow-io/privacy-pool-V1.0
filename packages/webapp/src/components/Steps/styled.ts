@@ -16,7 +16,7 @@ export const Step = styled.div<{ isActive: boolean }>`
   flex: 1;
   z-index: 1;
   position: relative;
-  cursor: pointer;
+  cursor: ${({ isActive }) => (isActive ? "pointer" : "default")};
 `
 
 export const StepCircle = styled.div<{ isActive: boolean }>`
@@ -39,9 +39,9 @@ export const StepLabel = styled.span<{ isActive: boolean }>`
   font-size: 14px;
   color: ${({ isActive }) => (isActive ? "#220066" : "#6c757d")};
   z-index: 3;
+  text-align: center;
   @media screen and (max-width: 768px) {
     font-size: 10px;
-    text-align: center;
     padding: 0 4px;
   }
 `

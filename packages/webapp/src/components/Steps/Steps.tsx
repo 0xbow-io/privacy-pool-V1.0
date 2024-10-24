@@ -18,6 +18,7 @@ type StepsPropsBase = {
 type StepsPropsWithIndicator = StepsPropsBase & {
   showStepsIndicator: true
   stepNames: string[]
+  onChangeStep: (stepIdx: number) => void
 }
 
 type StepsPropsWithoutIndicator = StepsPropsBase & {
@@ -27,23 +28,32 @@ type StepsPropsWithoutIndicator = StepsPropsBase & {
 
 type StepsProps = StepsPropsWithIndicator | StepsPropsWithoutIndicator
 
-const Steps: React.FC<StepsProps> = ({
+const Steps = ({
   children,
   currentStep,
   onBack,
   onContinue,
   stepNames,
-  backButtonProps = {},
+  backButtonProps = { text: "back" },
   forwardButtonProps = {},
-  showStepsIndicator
-}) => {
+  showStepsIndicator,
+  ...condProps
+}: StepsProps) => {
   const isForwardDisabled =
     currentStep === children.length - 1 || forwardButtonProps?.disabled
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
       {showStepsIndicator && (
-        <StepsIndicator steps={stepNames} currentStep={currentStep} />
+        <StepsIndicator
+          onChangeStep={(stepIdx) => {
+            if ("onChangeStep" in condProps) {
+              condProps.onChangeStep(stepIdx)
+            }
+          }}
+          steps={stepNames}
+          currentStep={currentStep}
+        />
       )}
       <div className="w-full">{children[currentStep]}</div>
       <div className="flex justify-between w-full mt-4">

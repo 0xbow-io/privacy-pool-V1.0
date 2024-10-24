@@ -1,14 +1,16 @@
+import React, { memo } from "react"
 import { StatusFieldContainer } from "@/components/StatusField/styled.ts"
+import { useBoundStore } from "@/stores"
 
-type StatusFieldProps = {
-  statusIsValid: boolean
-  status: string
-}
+type StatusFieldProps = {}
 
-export const StatusField = ({statusIsValid, status}: StatusFieldProps) => {
+export const StatusField: React.FC<StatusFieldProps> = () => {
+  const { status } = useBoundStore(({ getStatus }) => ({
+    status: getStatus()
+  }))
 
   return (
-    <StatusFieldContainer statusIsValid={statusIsValid}>
+    <StatusFieldContainer statusIsValid={status === "valid"}>
       Status: {status}
     </StatusFieldContainer>
   )

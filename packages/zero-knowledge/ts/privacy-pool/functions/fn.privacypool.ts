@@ -1,11 +1,8 @@
 import type {
-  InclusionProofT,
   Commitment,
-  TCommitment,
-  MembershipProofJSON
+  MembershipProofJSON,
+  TCommitment
 } from "@privacy-pool-v1/domainobjs"
-
-import { MerkleTreeInclusionProofs } from "@privacy-pool-v1/domainobjs"
 import {
   fetchJsonWithRetry,
   loadBytesFromUrl
@@ -21,7 +18,7 @@ import type {
 } from "@privacy-pool-v1/zero-knowledge/ts/privacy-pool"
 import type { CircuitSignals, Groth16Proof, PublicSignals } from "snarkjs"
 import { groth16 } from "snarkjs"
-import { hexToBigInt, type IntegerOutOfRangeErrorType } from "viem"
+import { hexToBigInt } from "viem"
 
 export const GetNewSum = (
   args: {

@@ -2,7 +2,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle
 } from "@/components/ui/card.tsx"
@@ -13,22 +12,35 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion.tsx"
-import { Button } from "@/components/ui/button.tsx"
 import React, { useCallback, useState } from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { CirclePlus, Download, Upload, Wallet } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
-import { PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { useBoundStore } from "@/stores"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { privKeys, addKey, importKeys, exportKeys } = useGlobalStore(
-    (state) => state
-  )
-  const [account, setAccount] = useState<string>()
+  const { privKeys, privacyKeys, addKey, importKeys, exportKeys } =
+    useBoundStore(
+      ({
+        privKeys,
+        addKey,
+        importKeys,
+        exportKeys,
+        privacyKeys,
+        currPoolFe
+      }) => ({
+        privKeys,
+        addKey,
+        importKeys,
+        exportKeys,
+        privacyKeys,
+        currPoolFe
+      })
+    )
 
-  const { sdk, connected, chainId } = useSDK()
+  const [account, setAccount] = useState<string>()
+  const { sdk, connected } = useSDK()
 
   const connect = async () => {
     try {
@@ -62,7 +74,7 @@ export const AccountCard = ({ className }: { className: string }) => {
     [importKeys]
   )
 
-  const { getInputProps, getRootProps } = useDropzone({ onDrop })
+  const { getRootProps } = useDropzone({ onDrop })
 
   return (
     <Card className={cn("", className)}>
@@ -77,9 +89,8 @@ export const AccountCard = ({ className }: { className: string }) => {
           </div>
         )}
         <Accordion type="single" collapsible>
-          {privKeys.length ? (
-            privKeys.map((k) => {
-              const key = PrivacyKey.from(k, 0n)
+          {privacyKeys?.length ? (
+            privacyKeys.map((key) => {
               return (
                 <AccordionItem
                   key={key.publicAddr}
@@ -133,7 +144,6 @@ export const AccountCard = ({ className }: { className: string }) => {
       <CardContent className="space-y-2">
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3 2xl:grid-cols-3 justify-around">
           <div className="flex justify-center mt-10">
-            <input type="file" {...getInputProps()} />
             <IconButton {...getRootProps()} icon={<Upload />} disabled={false}>
               Import Keys
             </IconButton>

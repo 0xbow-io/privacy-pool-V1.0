@@ -22,7 +22,7 @@
     "@types/snarkjs": "^0.7.8",
     "@zk-kit/binary-merkle-root.circom": "^1.0.0",
     "@zk-kit/circuits": "^1.0.0-beta",
-    "@zk-kit/lean-imt": "^2.0.1",
+    "@zk-kit/lean-imt": "^2.2.1",
     "@zk-kit/utils.circom": "^1.0.0-beta.1",
     "circomkit": "^0.2.1",
     "circomlib": "^2.0.5",
