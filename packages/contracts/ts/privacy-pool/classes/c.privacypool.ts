@@ -373,7 +373,7 @@ export namespace CPool {
           return
         }
         console.log(`there are ${ciphers.length} ciphers to decrypt`)
-        recoverCommitments(keys, ciphers)
+        await recoverCommitments(keys, ciphers, this)
       })
     }
 
