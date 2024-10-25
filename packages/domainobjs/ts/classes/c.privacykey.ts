@@ -1,18 +1,16 @@
 import type { Point } from "@zk-kit/baby-jubjub"
+import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
+import { poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import type { Hex } from "viem"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
-
 import {
   ConstCommitment,
   CreateNewCommitment,
   DerivePrivacyKeys,
   RecoverCommitment
 } from "@privacy-pool-v1/domainobjs"
-import { Base8, mulPointEscalar } from "@zk-kit/baby-jubjub"
-import { deriveSecretScalar } from "@zk-kit/eddsa-poseidon"
-import { poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 export type PrivacyKeys = PrivacyKey[]
