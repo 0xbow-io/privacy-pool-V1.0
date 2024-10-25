@@ -5,16 +5,24 @@ import {
   TabsTrigger
 } from "@/components/ui/tabs.tsx"
 import { cn } from "@/lib/utils.ts"
-import { useGlobalStore } from "@/stores/global-store.ts"
 import { AccountCard } from "@/views/PoolView/sections/AccountSection/AccountCard.tsx"
 import ComputeSection from "@/views/PoolView/sections/ComputeSection/ComputeSection.tsx"
 import { WelcomeSection } from "@/views/PoolView/sections/WelcomeSection.tsx"
 import { useState } from "react"
+import { useBoundStore } from "@/stores"
+import { RecordsSection } from "@/views/PoolView/sections/RecordsSection/RecordsSection.tsx"
+import { ASPSection } from "@/views/PoolView/sections/ASPSection/ASPSection.tsx"
 
 export const PoolTabs = () => {
   const [isWelcomeScreen, setIsWelcomeScreen] = useState(true)
 
-  const { onTabChange, currentTab, privKeys } = useGlobalStore((state) => state)
+  const { onTabChange, currentTab, privKeys } = useBoundStore(
+    ({ onTabChange, currentTab, privKeys }) => ({
+      onTabChange,
+      currentTab,
+      privKeys
+    })
+  )
 
   return (
     <div className={cn("relative", "flex-auto z-10 w-full")}>
@@ -78,6 +86,12 @@ export const PoolTabs = () => {
           </TabsContent>
           <TabsContent value="compute">
             <ComputeSection />
+          </TabsContent>
+          <TabsContent value="records">
+            <RecordsSection />
+          </TabsContent>
+          <TabsContent value="asp">
+          <ASPSection />
           </TabsContent>
         </div>
       </Tabs>

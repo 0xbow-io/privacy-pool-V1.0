@@ -12,15 +12,17 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select.tsx"
-import React from "react"
-import { useGlobalStore } from "@/stores/global-store.ts"
-import { formatUnits, numberToHex, type Hex } from "viem"
-import { PrivacyKey, type Commitment } from "@privacy-pool-v1/domainobjs/ts"
-import { PrivacyPools } from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import React, { memo, useEffect, useState } from "react"
+import { createWalletClient, http, numberToHex, publicActions } from "viem"
+import { type Commitment, PrivacyKey } from "@privacy-pool-v1/domainobjs/ts"
+import { DEFAULT_CHAIN } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { cn } from "@/lib/utils.ts"
 import { Label } from "@/components/ui/label.tsx"
-import { BinaryIcon, SigmaIcon } from "lucide-react"
+import { BinaryIcon } from "lucide-react"
 import IconButton from "@/components/IconButton/IconButton.tsx"
+import { useBoundStore } from "@/stores"
+import { formatValue, shortForm } from "@/utils"
+
 type SelectionDialogProps = {
   className: string
   isOpen: boolean
@@ -28,7 +30,7 @@ type SelectionDialogProps = {
   existingSlot: number
 }
 
-export const ExistingSelectionDialog = ({
+const ExistingSelectionDialog = ({
   className,
   isOpen,
   onOpenChange,
@@ -36,29 +38,66 @@ export const ExistingSelectionDialog = ({
 }: SelectionDialogProps) => {
   const {
     privKeys,
-    request,
     commitments,
-    selectExisting,
+    existing,
     currPoolID,
+    privacyKeys,
+    currPoolFe,
+    selectExisting,
     downloadMembershipProof
-  } = useGlobalStore((state) => state)
+  } = useBoundStore(
+    ({
+      privKeys,
+      commitments,
+      existing,
+      selectExisting,
+      privacyKeys,
+      currPoolFe,
+      currPoolID,
+      downloadMembershipProof
+    }) => ({
+      privKeys,
+      privacyKeys,
+      currPoolFe,
+      commitments,
+      existing,
+      selectExisting,
+      currPoolID,
+      downloadMembershipProof
+    })
+  )
   const poolCommitments = commitments.get(currPoolID) || []
-  const privacyKeys = privKeys.map((key) => PrivacyKey.from(key, 0n).asJSON)
 
-  const fe = PrivacyPools.get(currPoolID)?.fieldElement
-
-  const [targetKeyIndex, setTargetKeyIndex] = React.useState(-1)
+  const [targetKeyIndex, setTargetKeyIndex] = useState(-1)
+  const [currentWalletBalance, setCurrentWalletBalance] = useState<
+    bigint | null
+  >(null)
 
   const getAvailCommitments = (): Commitment[] =>
     poolCommitments[targetKeyIndex] ?? []
 
-  const shortForm = (str: Hex): string => {
-    return `${str.substring(0, 14)}....${str.substring(54)}`
-  }
+  useEffect(() => {
+    const updateBalance = async () => {
+      const publicAddr = new PrivacyKey(privKeys[targetKeyIndex], 0n).publicAddr
+      const walletClient = createWalletClient({
+        account: publicAddr,
+        chain: DEFAULT_CHAIN, //todo: change for dynamic chain
+        transport: http()
+      }).extend(publicActions)
 
-  const formatValue = (val: bigint): string => {
-    return formatUnits(val, Number(fe?.precision))
-  }
+      const balance = await walletClient.getBalance({ address: publicAddr })
+      return balance
+    }
+
+    const fetchBalance = async () => {
+      const balance = await updateBalance()
+      setCurrentWalletBalance(balance)
+    }
+
+    if (targetKeyIndex !== -1) {
+      fetchBalance()
+    }
+  }, [targetKeyIndex, privKeys])
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -83,11 +122,11 @@ export const ExistingSelectionDialog = ({
             value={
               targetKeyIndex === -1
                 ? ""
-                : shortForm(privacyKeys[targetKeyIndex].pubAddr)
+                : shortForm(privacyKeys[targetKeyIndex].publicAddr)
             }
             onValueChange={(value) => {
               setTargetKeyIndex(
-                privacyKeys.findIndex((key) => key.pubAddr === value)!
+                privacyKeys.findIndex((key) => key.publicAddr === value)!
               )
             }}
           >
@@ -95,20 +134,27 @@ export const ExistingSelectionDialog = ({
               <SelectValue placeholder="Select Wallet">
                 {targetKeyIndex === -1
                   ? ""
-                  : shortForm(privacyKeys[targetKeyIndex].pubAddr)}
+                  : shortForm(privacyKeys[targetKeyIndex].publicAddr)}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
               {privacyKeys.map((pK, index) => {
                 return (
-                  <SelectItem key={index} value={pK.pubAddr}>
-                    {shortForm(pK.pubAddr)}
+                  <SelectItem key={index} value={pK.publicAddr}>
+                    {shortForm(pK.publicAddr)}
                   </SelectItem>
                 )
               })}
             </SelectContent>
           </Select>
         </div>
+        {targetKeyIndex !== -1 && (
+          <div>
+            Wallet balance:{" "}
+            {currentWalletBalance &&
+              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`}
+          </div>
+        )}
 
         <div className="flex-auto">
           <Label
@@ -121,8 +167,9 @@ export const ExistingSelectionDialog = ({
 
         <div className="flex-auto">
           <Select
+            disabled={targetKeyIndex === -1}
             value={shortForm(
-              numberToHex(request.existing[existingSlot].commitmentRoot)
+              numberToHex(existing[existingSlot]?.commitmentRoot || 0)
             )}
             onValueChange={(value) => {
               selectExisting(targetKeyIndex, Number(value), existingSlot)
@@ -130,9 +177,11 @@ export const ExistingSelectionDialog = ({
           >
             <SelectTrigger>
               <SelectValue placeholder="Select">
-                {shortForm(
-                  numberToHex(request.existing[existingSlot].commitmentRoot)
-                )}
+                {existing[existingSlot]?.commitmentRoot
+                  ? shortForm(
+                      numberToHex(existing[existingSlot]?.commitmentRoot)
+                    )
+                  : "Select commitment"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper">
@@ -141,15 +190,12 @@ export const ExistingSelectionDialog = ({
                   <SelectItem key={index} value={index.toString()}>
                     {shortForm(numberToHex(commit.commitmentRoot))} (
                     {commit.asTuple()[0] !== 0n
-                      ? `${formatValue(commit.asTuple()[0])} ${fe?.ticker}`
+                      ? `${formatValue(commit.asTuple()[0], currPoolFe?.precision)} ${currPoolFe?.ticker}`
                       : "VOID"}
                     )
                   </SelectItem>
                 )
               })}
-              <SelectItem key={"-1"} value={"-1"}>
-                Create New Void Commitment
-              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -167,3 +213,5 @@ export const ExistingSelectionDialog = ({
     </Dialog>
   )
 }
+
+export default memo(ExistingSelectionDialog)

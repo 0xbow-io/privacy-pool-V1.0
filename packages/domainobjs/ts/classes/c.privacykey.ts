@@ -1,7 +1,6 @@
 import type { Point } from "@zk-kit/baby-jubjub"
 import type { CipherText } from "@zk-kit/poseidon-cipher"
 import type { Hex } from "viem"
-import type { TCommitment } from "@privacy-pool-v1/domainobjs"
 import type { OnChainPrivacyPool } from "@privacy-pool-v1/contracts"
 import type { Commitment } from "@privacy-pool-v1/domainobjs"
 
@@ -17,17 +16,26 @@ import { poseidonEncrypt } from "@zk-kit/poseidon-cipher"
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts"
 
 export type PrivacyKeys = PrivacyKey[]
-export const RecoverCommitments = (
+export const recoverCommitments = async (
   keys: PrivacyKeys,
   ciphers: {
     rawSaltPk: [bigint, bigint]
     rawCipherText: [bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     commitmentHash: bigint
     cipherStoreIndex: bigint
-  }[]
-): Commitment[][] =>
-  keys.map((key) =>
-    ciphers
+  }[],
+  pool: OnChainPrivacyPool
+): Promise<Commitment[][]> => {
+  const scope = await pool.scope()
+  return keys.map((key) => {
+    const voidC = CreateNewCommitment({
+      _pK: key.pKey,
+      _nonce: key.nonce,
+      _scope: scope,
+      _value: BigInt(0)
+    })
+
+    return ciphers
       .map((cipher) =>
         key.decryptCipher(
           cipher.rawSaltPk,
@@ -36,8 +44,10 @@ export const RecoverCommitments = (
           cipher.cipherStoreIndex
         )
       )
+      .concat([voidC])
       .filter((v) => v !== undefined)
-  )
+  })
+}
 
 export type PrivacyKeyJSON = {
   _nonce: string
@@ -168,6 +178,7 @@ export class PrivacyKey {
     const _scope = await pool.scope()
     const _secrets = this._knownSecrets.get(_scope)
     let stateTree = pool.stateTree
+    console.log("recovering commitments")
     if (_secrets) {
       for (let i = 0; i < _secrets.length; i++) {
         const _tuple = [
@@ -217,18 +228,12 @@ export class PrivacyKey {
           }
         }
       }
+      console.log("adding void to key")
     } else {
       // if no commitments were recovered
       // we'll create 2 void commitments
       for (let i = 0; i < 2; i++) {
-        commitments.push(
-          CreateNewCommitment({
-            _pK: this.pKey,
-            _nonce: this.nonce,
-            _scope: _scope,
-            _value: BigInt(0)
-          })
-        )
+        commitments.push()
       }
     }
     return commitments
