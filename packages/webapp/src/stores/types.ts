@@ -24,6 +24,11 @@ export type AppStateSlice = {
 
 export type IOCommitments = [Commitment | undefined, Commitment | undefined]
 
+export enum RequestType {
+  OneToTwo,
+  TwoToOne
+}
+
 export type PoolsSlice = {
   currPoolID: string
   pools: Map<string, PrivacyPoolState>
@@ -59,6 +64,7 @@ export type RequestSlice = {
   // It  is possible to have both external input and output
   externIO: [bigint, bigint]
 
+  reqType: RequestType
   reqStatus: string
   reqTxHash: Hex
 
@@ -73,6 +79,7 @@ export type RequestSlice = {
   selectExisting: (keyIdx: number, commitIdx: number, slot: number) => void
   insertNew: (keyIdx: number, value: bigint, slot: number) => void
   createNewCommitments: () => void
+  changeRequestType: (type: RequestType) => void
   setExternIO: (io: [bigint, bigint]) => void
   applyFee: (fee: bigint, feeCollectorAddr: Hex, feeCollectorID: string) => void
   executeRequest: () => void

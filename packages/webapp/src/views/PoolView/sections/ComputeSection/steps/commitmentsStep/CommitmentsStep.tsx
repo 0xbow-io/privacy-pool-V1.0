@@ -1,21 +1,26 @@
-import ExistingCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/ExistingCommitments.tsx"
-import NewCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/NewCommitments.tsx"
 import {
   Container,
   LoaderIcon
 } from "@/views/PoolView/sections/ComputeSection/steps/styled.ts"
 import React, { useEffect } from "react"
 import type { CommonProps } from "@/views/PoolView/sections/ComputeSection/steps/types.ts"
-import { StatusField } from "@/components/StatusField/StatusField.tsx"
 import { useBoundStore } from "@/stores"
+import Switch from "@/components/Switch/Switch.tsx"
+import { ComputeBlockWrapper } from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/styled.ts"
+import { RequestType } from "@/stores/types.ts"
+import ExistingCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/ExistingCommitments.tsx"
+import NewCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/NewCommitments.tsx"
+import { StatusField } from "@/components/StatusField/StatusField.tsx"
 
-export const CommitmentsStep = ({
-  setPrimaryButtonProps,
-}: CommonProps) => {
-  const { isSyncing, status } = useBoundStore((state) => ({
-    isSyncing: state.isSyncing,
-    status: state.getStatus()
-  }))
+export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
+  const { isSyncing, status, reqType, changeRequestType } = useBoundStore(
+    (state) => ({
+      isSyncing: state.isSyncing,
+      status: state.getStatus(),
+      reqType: state.reqType,
+      changeRequestType: state.changeRequestType
+    })
+  )
 
   useEffect(() => {
     setPrimaryButtonProps &&
@@ -33,25 +38,34 @@ export const CommitmentsStep = ({
           <p className="mt-2 text-sm">Syncing....</p>
         </div>
       ) : (
-        <div className="w-full flex items-end flex-col">
-          <div className="grid grid-cols-1 gap-4 laptop:grid-cols-2 w-full">
-            <div className="col-span-1">
-              <ExistingCommitments
-                className=""
-              />
-            </div>
-            <div className="col-span-1 laptop:col-start-2">
-              <div className="flex-auto flex-col gap-y-4 pt-6 laptop:pt-0">
-                <div className="flex-auto">
-                  <NewCommitments
-                    className="border-2"
-                  />
+        <ComputeBlockWrapper>
+          <Switch
+            id="check1"
+            labelLeft="1-to-2"
+            labelRight="2-to-1"
+            checked={reqType === RequestType.TwoToOne}
+            onChange={(checked) =>
+              changeRequestType(
+                checked ? RequestType.TwoToOne : RequestType.OneToTwo
+              )
+            }
+          />
+          <div className="w-full flex items-end flex-col">
+            <div className="grid grid-cols-1 gap-4 laptop:grid-cols-2 w-full">
+              <div className="col-span-1">
+                <ExistingCommitments className="" />
+              </div>
+              <div className="col-span-1 laptop:col-start-2">
+                <div className="flex-auto flex-col gap-y-4 pt-6 laptop:pt-0">
+                  <div className="flex-auto">
+                    <NewCommitments className="border-2" />
+                  </div>
                 </div>
               </div>
             </div>
+            <StatusField />
           </div>
-          <StatusField />
-        </div>
+        </ComputeBlockWrapper>
       )}
     </Container>
   )

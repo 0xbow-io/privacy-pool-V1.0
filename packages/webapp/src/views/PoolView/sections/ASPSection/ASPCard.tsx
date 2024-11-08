@@ -265,7 +265,6 @@ export const ASPCard = ({
   useEffect(() => {
     const renderElem = async () => {
       if (treeString && mermaidRef.current) {
-        console.log("need to render", treeString)
         const { svg } = await mermaid.render("mermaidChart", treeString)
         mermaidRef.current.innerHTML = svg
       }

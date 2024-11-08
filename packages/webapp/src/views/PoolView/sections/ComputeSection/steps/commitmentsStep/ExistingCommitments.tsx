@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { formatValue, shortForm } from "@/utils"
 import { useBoundStore } from "@/stores"
+import { RequestType } from "@/stores/types.ts"
 
 type ExistingCommitmentsProps = {
   className: string
@@ -43,7 +44,8 @@ export const ExistingCommitments = ({
     updateSrc,
     setExternIO,
     privacyKeys,
-    currPoolFe
+    currPoolFe,
+    reqType
   } = useBoundStore(
     ({
       externIO,
@@ -54,7 +56,8 @@ export const ExistingCommitments = ({
       updateSrc,
       setExternIO,
       privacyKeys,
-      currPoolFe
+      currPoolFe,
+      reqType
     }) => ({
       externIO,
       existing,
@@ -64,7 +67,8 @@ export const ExistingCommitments = ({
       updateSrc,
       setExternIO,
       privacyKeys,
-      currPoolFe
+      currPoolFe,
+      reqType
     })
   )
 
@@ -101,54 +105,56 @@ export const ExistingCommitments = ({
           Existing Commitments:
         </Label>
       </div>
-      {[0, 1].map((index) => (
-        <div
-          key={`Existing:${index}`}
-          className={cn(
-            "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
-            "bg-tropical-forest text-ghost-white min"
-          )}
-          style={{ minHeight: "4rem" }}
-        >
-          <div className="flex flex-col">
-            {existing && existing[index] ? (
-              <>
-                <div>
-                  <h2 className="font-semibold">
-                    {shortForm(numberToHex(existing[index].commitmentRoot))}
-                  </h2>
-                </div>
-                <div>
-                  <h2 className="font-semibold">
-                    (
-                    {formatValue(
-                      existing[index].asTuple()[0],
-                      currPoolFe?.precision
-                    )}{" "}
-                    {currPoolFe?.ticker})
-                  </h2>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2 className="font-semibold">Select commitment</h2>
-              </>
+      <div className="flex flex-col justify-center laptop:min-h-40">
+        {(reqType === RequestType.OneToTwo ? [0] : [0, 1]).map((index) => (
+          <div
+            key={`Existing:${index}`}
+            className={cn(
+              "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
+              "bg-tropical-forest text-ghost-white min"
             )}
-          </div>
-
-          <Button
-            onClick={() => {
-              setExistingSlot(index)
-              setSelectionDialog(true)
-            }}
-            variant="ghost"
-            size="sm"
-            className="w-9 p-0"
+            style={{ minHeight: "4rem" }}
           >
-            <ChevronRightSquareIcon className="size-6" />
-          </Button>
-        </div>
-      ))}
+            <div className="flex flex-col">
+              {existing && existing[index] ? (
+                <>
+                  <div>
+                    <h2 className="font-semibold">
+                      {shortForm(numberToHex(existing[index].commitmentRoot))}
+                    </h2>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold">
+                      (
+                      {formatValue(
+                        existing[index].asTuple()[0],
+                        currPoolFe?.precision
+                      )}{" "}
+                      {currPoolFe?.ticker})
+                    </h2>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="font-semibold">Select commitment</h2>
+                </>
+              )}
+            </div>
+
+            <Button
+              onClick={() => {
+                setExistingSlot(index)
+                setSelectionDialog(true)
+              }}
+              variant="ghost"
+              size="sm"
+              className="w-9 p-0"
+            >
+              <ChevronRightSquareIcon className="size-6" />
+            </Button>
+          </div>
+        ))}
+      </div>
 
       <div className="flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2">
         <div>

@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
 import { formatValue, shortForm } from "@/utils"
 import { useBoundStore } from "@/stores"
+import { RequestType } from "@/stores/types.ts"
 
 const NewCommitmentDialog = lazy(
   () =>
@@ -33,7 +34,8 @@ export const NewCommitments = ({ className }: { className: string }) => {
     getTotalExisting,
     setExternIO,
     privacyKeys,
-    currPoolFe
+    currPoolFe,
+    reqType
   } = useBoundStore(
     ({
       externIO,
@@ -45,7 +47,8 @@ export const NewCommitments = ({ className }: { className: string }) => {
       getTotalExisting,
       setExternIO,
       privacyKeys,
-      currPoolFe
+      currPoolFe,
+      reqType
     }) => ({
       externIO,
       newValues,
@@ -56,7 +59,8 @@ export const NewCommitments = ({ className }: { className: string }) => {
       getTotalExisting,
       setExternIO,
       privacyKeys,
-      currPoolFe
+      currPoolFe,
+      reqType
     })
   )
 
@@ -75,33 +79,37 @@ export const NewCommitments = ({ className }: { className: string }) => {
           New Commitments:
         </Label>
       </div>
-      {newValues.map((val, index) => {
-        return (
-          <div
-            key={`New Commitment:${index}`}
-            className={cn(
-              "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
-              "bg-tropical-forest text-ghost-white"
-            )}
-            style={{ minHeight: "4rem" }}
-          >
-            <h2 className="font-semibold">
-              {formatValue(val, currPoolFe?.precision)} {currPoolFe?.ticker}
-            </h2>
-            <Button
-              onClick={() => {
-                setNewSlot(index)
-                setIsNewCommitmentDialogOpen(true)
-              }}
-              variant="ghost"
-              size="sm"
-              className="w-9 p-0"
+      <div className="flex flex-col justify-center laptop:min-h-40">
+        {(reqType === RequestType.TwoToOne ? [0] : [0, 1]).map((index) => {
+          const val = newValues[index]
+          return (
+            <div
+              key={`New Commitment:${index}`}
+              className={cn(
+                "rounded-md border px-4 py-2 my-2 text-sm items-center justify-between flex flex-row w-full",
+                "bg-tropical-forest text-ghost-white"
+              )}
+              style={{ minHeight: "4rem" }}
             >
-              <ChevronRightSquareIcon className="size-6" />
-            </Button>
-          </div>
-        )
-      })}
+              <h2 className="font-semibold">
+                {formatValue(val, currPoolFe?.precision)} {currPoolFe?.ticker}
+              </h2>
+              <Button
+                onClick={() => {
+                  setNewSlot(index)
+                  setIsNewCommitmentDialogOpen(true)
+                }}
+                variant="ghost"
+                size="sm"
+                className="w-9 p-0"
+              >
+                <ChevronRightSquareIcon className="size-6" />
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+
       <div className="flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2">
         <div>
           <Label
@@ -167,7 +175,10 @@ export const NewCommitments = ({ className }: { className: string }) => {
           onClick={() => {
             const diff = getTotalExisting() - getTotalNew()
             const val = diff > 0n ? externIO[1] + diff : 0n
-            console.log('formatun', formatUnits(val, Number(currPoolFe?.precision)))
+            console.log(
+              "formatun",
+              formatUnits(val, Number(currPoolFe?.precision))
+            )
             setExternIO([externIO[0], val])
             setRawInputValue(formatUnits(val, Number(currPoolFe?.precision)))
           }}

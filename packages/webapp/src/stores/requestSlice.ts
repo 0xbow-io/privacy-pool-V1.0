@@ -1,4 +1,4 @@
-import { create, type StateCreator } from "zustand"
+import { type StateCreator } from "zustand"
 import {
   type Commitment,
   CreateNewCommitment,
@@ -20,10 +20,11 @@ import {
   PrivacyPools
 } from "@privacy-pool-v1/contracts/ts/privacy-pool"
 import { privateKeyToAccount } from "viem/accounts"
-import type {
-  CompleteStore,
-  IOCommitments,
-  RequestSlice
+import {
+  type CompleteStore,
+  type IOCommitments,
+  type RequestSlice,
+  RequestType
 } from "@/stores/types.ts"
 
 const requestSliceDefaultValue = {
@@ -40,6 +41,7 @@ const requestSliceDefaultValue = {
   pkScalars: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
   nonces: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
   externIO: [0n, 0n] as [bigint, bigint],
+  reqType: RequestType.OneToTwo,
 
   // The status of the onchain request
   // "": no request
@@ -223,6 +225,8 @@ export const createRequestSlice: StateCreator<
       feeCollector: feeCollectorAddr
     }))
   },
+  changeRequestType: (type: RequestType) =>
+    set((state) => ({ ...state, reqType: type })),
   resetRequestState: () => set(requestSliceDefaultValue),
   executeRequest: () => {
     const state = get()
@@ -240,8 +244,14 @@ export const createRequestSlice: StateCreator<
       feeCollectorID: state.feeCollectorID,
       feeCollector: state.feeCollector,
       fee: state.fee,
-      existing: state.existing,
-      newValues: state.newValues,
+      existing:
+        state.reqType === RequestType.OneToTwo
+          ? [state.existing[0]]
+          : state.existing,
+      newValues:
+        state.reqType === RequestType.TwoToOne
+          ? [state.newValues[0]]
+          : state.newValues,
       sumNewValues: state.sumNewValues,
       new: state.new,
       keyIdx: state.keyIdx,
