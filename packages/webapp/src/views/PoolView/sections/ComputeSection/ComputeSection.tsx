@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Steps from "@/components/Steps/Steps.tsx"
 import {
   ASPSelectionStep,
@@ -37,12 +37,15 @@ const ComputeSection = () => {
     disabled: false,
     text: "Back"
   })
-  const { executeRequest, applyFee } = useBoundStore(
-    ({ executeRequest, applyFee }) => ({
-      executeRequest,
-      applyFee
-    })
-  )
+  const { executeRequest, applyFee, computeProof, createNewCommitments } =
+    useBoundStore(
+      ({ executeRequest, applyFee, computeProof, createNewCommitments }) => ({
+        executeRequest,
+        createNewCommitments,
+        applyFee,
+        computeProof
+      })
+    )
 
   const [selectedASP, setSelectedASP] = useState<ASP>({
     name: "",
@@ -56,14 +59,23 @@ const ComputeSection = () => {
   }
 
   const handleContinue = () => {
-    // User is on the ConfirmationStep
-    // and has clicked the "Confirm & Execute" button
     if (currentStep == ComputeSectionSteps.TransactionProcessing) {
+      // User is on the ConfirmationStep
+      // and has clicked the "Confirm & Execute" button
       // execute the request
       executeRequest()
     }
     setCurrentStep((prevStep) => prevStep + 1)
   }
+
+  useEffect(() => {
+    if (currentStep === ComputeSectionSteps.ASPSelection) {
+      createNewCommitments()
+    }
+    if (currentStep === ComputeSectionSteps.Confirmation) {
+      computeProof()
+    }
+  }, [currentStep])
 
   return (
     <Card className={"w-full"}>
