@@ -59,9 +59,9 @@ const ComputeSection = () => {
   }
 
   const handleContinue = () => {
-    if (currentStep == ComputeSectionSteps.TransactionProcessing) {
-      // User is on the ConfirmationStep
-      // and has clicked the "Confirm & Execute" button
+    // User is on the ConfirmationStep
+    // and has clicked the "Confirm & Execute" button
+    if (currentStep == ComputeSectionSteps.Confirmation) {
       // execute the request
       executeRequest()
     }
