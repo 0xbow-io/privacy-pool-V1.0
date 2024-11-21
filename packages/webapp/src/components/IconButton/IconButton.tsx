@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button.tsx"
 
 interface IconButtonProps {
   icon: React.ReactNode
-  disabled: boolean
+  disabled?: boolean
   onClick?: MouseEventHandler<HTMLButtonElement>
   children: React.ReactNode
 }

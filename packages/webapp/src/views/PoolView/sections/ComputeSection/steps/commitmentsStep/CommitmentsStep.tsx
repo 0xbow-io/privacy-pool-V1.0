@@ -39,17 +39,6 @@ export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
         </div>
       ) : (
         <ComputeBlockWrapper>
-          <Switch
-            id="check1"
-            labelLeft="1-to-2"
-            labelRight="2-to-1"
-            checked={reqType === RequestType.TwoToOne}
-            onChange={(checked) =>
-              changeRequestType(
-                checked ? RequestType.TwoToOne : RequestType.OneToTwo
-              )
-            }
-          />
           <div className="w-full flex items-end flex-col">
             <div className="grid grid-cols-1 gap-4 laptop:grid-cols-2 w-full">
               <div className="col-span-1">

@@ -76,11 +76,13 @@ export const NewCommitments = ({ className }: { className: string }) => {
           htmlFor=""
           className={cn("block mb-2 text-sm font-semibold text-blackmail")}
         >
-          New Commitments:
+          New Commitment:
         </Label>
       </div>
-      <div className="flex flex-col justify-center laptop:min-h-40">
-        {(reqType === RequestType.TwoToOne ? [0] : [0, 1]).map((index) => {
+      <div
+        className={`flex flex-col justify-center ${reqType !== RequestType.OneToOne && "laptop:min-h-40"}`}
+      >
+        {(reqType === RequestType.OneToTwo ? [0, 1] : [0]).map((index) => {
           const val = newValues[index]
           return (
             <div
@@ -110,7 +112,9 @@ export const NewCommitments = ({ className }: { className: string }) => {
         })}
       </div>
 
-      <div className="flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2">
+      <div
+        className={`flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2 ${externIO[1] !== 0n && "min-h-64"}`}
+      >
         <div>
           <Label
             htmlFor=""
@@ -119,37 +123,10 @@ export const NewCommitments = ({ className }: { className: string }) => {
             External Output:
           </Label>
         </div>
-        <div>
-          <Select
-            value={shortForm(sink)}
-            onValueChange={(value) => updateSink(value as Hex)}
-          >
-            <SelectTrigger
-              className={cn(
-                "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
-              )}
-            >
-              <SelectValue placeholder="Select">{shortForm(sink)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {privacyKeys &&
-                privacyKeys.map((pK, index) => {
-                  return (
-                    <SelectItem key={index} value={pK.publicAddr}>
-                      {shortForm(pK.publicAddr)}
-                    </SelectItem>
-                  )
-                })}
-              <SelectItem key={"0xgeneratekey"} value={"0xgeneratekey"}>
-                Generate New Key
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <Input
           id="external-output"
           // type="number"
-          disabled={sink === numberToHex(0)}
+          disabled={externIO[0] !== 0n}
           placeholder="Enter Input Value"
           value={rawInputValue}
           onChange={(e) => {
@@ -171,14 +148,23 @@ export const NewCommitments = ({ className }: { className: string }) => {
             "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
           )}
         />
+        {externIO[1] !== 0n && (
+          <div>
+            <Input
+              id="output-sink"
+              placeholder="Enter Output Sink"
+              value={sink}
+              onChange={(e) => updateSink(e.target.value as Hex)}
+              className={cn(
+                "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
+              )}
+            />
+          </div>
+        )}
         <IconButton
           onClick={() => {
             const diff = getTotalExisting() - getTotalNew()
             const val = diff > 0n ? externIO[1] + diff : 0n
-            console.log(
-              "formatun",
-              formatUnits(val, Number(currPoolFe?.precision))
-            )
             setExternIO([externIO[0], val])
             setRawInputValue(formatUnits(val, Number(currPoolFe?.precision)))
           }}

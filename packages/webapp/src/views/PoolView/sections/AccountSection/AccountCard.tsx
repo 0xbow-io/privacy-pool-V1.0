@@ -18,26 +18,39 @@ import IconButton from "@/components/IconButton/IconButton.tsx"
 import { useSDK } from "@metamask/sdk-react"
 import { useDropzone } from "react-dropzone"
 import { useBoundStore } from "@/stores"
+import { Label } from "@/components/ui/label.tsx"
+import { Button } from "@/components/ui/button.tsx"
 
 export const AccountCard = ({ className }: { className: string }) => {
-  const { privKeys, privacyKeys, addKey, importKeys, exportKeys } =
-    useBoundStore(
-      ({
-        privKeys,
-        addKey,
-        importKeys,
-        exportKeys,
-        privacyKeys,
-        currPoolFe
-      }) => ({
-        privKeys,
-        addKey,
-        importKeys,
-        exportKeys,
-        privacyKeys,
-        currPoolFe
-      })
-    )
+  const {
+    privKeys,
+    privacyKeys,
+    masterKey,
+    addKey,
+    importKeys,
+    exportKeys,
+    setMasterKey
+  } = useBoundStore(
+    ({
+      privKeys,
+      privacyKeys,
+      masterKey,
+      currPoolFe,
+      addKey,
+      importKeys,
+      exportKeys,
+      setMasterKey
+    }) => ({
+      privKeys,
+      privacyKeys,
+      masterKey,
+      currPoolFe,
+      addKey,
+      importKeys,
+      exportKeys,
+      setMasterKey
+    })
+  )
 
   const [account, setAccount] = useState<string>()
   const { sdk, connected } = useSDK()
@@ -79,8 +92,8 @@ export const AccountCard = ({ className }: { className: string }) => {
   return (
     <Card className={cn("", className)}>
       <CardHeader>
-        <CardTitle>Privacy Keys:</CardTitle>
-        <CardDescription>Always keep your privacy keys safe</CardDescription>
+        <CardTitle>Master Key:</CardTitle>
+        <CardDescription>Always keep your Master Key safe</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {connected && (
@@ -88,9 +101,30 @@ export const AccountCard = ({ className }: { className: string }) => {
             <>{account && `Connected account: ${account}`}</>
           </div>
         )}
+        {masterKey && (
+          <>
+            <Label
+              htmlFor=""
+              className={cn("block mb-2 text-sm font-semibold text-blackmail ")}
+            >
+              Selected key:
+            </Label>
+            <div className="text-xs text-blackmail pl-2 font-semibold">
+              {masterKey.publicAddr}
+            </div>
+          </>
+        )}
+        {privacyKeys.length > 0 && (
+          <Label
+            htmlFor=""
+            className={cn("block mb-2 text-sm font-semibold text-blackmail")}
+          >
+            Available keys:
+          </Label>
+        )}
         <Accordion type="single" collapsible>
           {privacyKeys?.length ? (
-            privacyKeys.map((key) => {
+            privacyKeys.map((key, index) => {
               return (
                 <AccordionItem
                   key={key.publicAddr}
@@ -123,6 +157,9 @@ export const AccountCard = ({ className }: { className: string }) => {
                           </h2>
                         </div>
                       </div>
+                      <Button className="w-fit m-auto" onClick={() => setMasterKey(index)}>
+                        Select Key
+                      </Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -130,14 +167,16 @@ export const AccountCard = ({ className }: { className: string }) => {
             })
           ) : (
             <div className="text-md flex justify-center">
-              You do not have any imported keys
+              Master key is not found. Create or import a key.
             </div>
           )}
         </Accordion>
         <div className="flex justify-center mt-10">
-          <IconButton onClick={addKey} icon={<CirclePlus />} disabled={false}>
-            {privKeys && !!privKeys.length ? "Add new key" : "Create account"}
-          </IconButton>
+          {!privacyKeys?.length && (
+            <IconButton onClick={addKey} icon={<CirclePlus />}>
+              Create account
+            </IconButton>
+          )}
         </div>
       </CardContent>
 
@@ -145,8 +184,8 @@ export const AccountCard = ({ className }: { className: string }) => {
         <div className="grid grid-cols-1 gap-4 tablet:grid-cols-3 2xl:grid-cols-3 justify-around">
           <div className="flex justify-center mt-10">
             <input type="file" {...getInputProps()} />
-            <IconButton {...getRootProps()} icon={<Upload />} disabled={false}>
-              Import Keys
+            <IconButton {...getRootProps()} icon={<Upload />}>
+              Import Key
             </IconButton>
           </div>
           <div className="flex justify-center mt-10">
@@ -155,7 +194,7 @@ export const AccountCard = ({ className }: { className: string }) => {
               icon={<Download />}
               disabled={privKeys && privKeys.length === 0}
             >
-              Export Keys
+              Export Key
             </IconButton>
           </div>
           <div className="flex justify-center mt-10">

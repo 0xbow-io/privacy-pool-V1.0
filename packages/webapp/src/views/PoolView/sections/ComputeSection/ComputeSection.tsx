@@ -76,7 +76,6 @@ const ComputeSection = () => {
               steps={[
                 "Select Commitments",
                 "ASP Selection",
-                "Signer Key",
                 "Confirm TX details",
                 "Processing"
               ]}
@@ -113,7 +112,6 @@ const ComputeSection = () => {
                 applyFee(ASP.fee, ASP.feeCollector, ASP.id)
               }}
             />
-            <SignerSelectionStep setPrimaryButtonProps={setForwardBtnProps} />
             <ConfirmationStep setPrimaryButtonProps={setForwardBtnProps} />
             <TransactionProcessingStep
               onRestartCb={() =>

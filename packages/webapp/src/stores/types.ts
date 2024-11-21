@@ -25,6 +25,7 @@ export type AppStateSlice = {
 export type IOCommitments = [Commitment | undefined, Commitment | undefined]
 
 export enum RequestType {
+  OneToOne,
   OneToTwo,
   TwoToOne
 }
@@ -88,13 +89,16 @@ export type RequestSlice = {
 export type KeysSlice = {
   signerKey: Hex
   privKeys: Hex[]
+  privacyKeys: PrivacyKey[]
+  masterKey?: PrivacyKey
+  masterKeyIndex: number
 
   importKeys: (data: string) => void
   addKey: () => void
   hasKeys: () => boolean
   setSigner: (key: Hex) => void
+  setMasterKey: (index: number) => void
   exportKeys: (fileName?: string) => void
-  privacyKeys: PrivacyKey[]
 }
 
 export type GlobalStore = {

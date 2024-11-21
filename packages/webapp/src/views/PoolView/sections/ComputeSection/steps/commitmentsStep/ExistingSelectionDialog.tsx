@@ -41,7 +41,8 @@ const ExistingSelectionDialog = ({
     commitments,
     existing,
     currPoolID,
-    privacyKeys,
+    masterKey,
+    masterKeyIndex,
     currPoolFe,
     selectExisting,
     downloadMembershipProof
@@ -51,15 +52,17 @@ const ExistingSelectionDialog = ({
       commitments,
       existing,
       selectExisting,
-      privacyKeys,
+      masterKey,
+      masterKeyIndex,
       currPoolFe,
       currPoolID,
       downloadMembershipProof
     }) => ({
       privKeys,
-      privacyKeys,
       currPoolFe,
       commitments,
+      masterKey,
+      masterKeyIndex,
       existing,
       selectExisting,
       currPoolID,
@@ -68,24 +71,25 @@ const ExistingSelectionDialog = ({
   )
   const poolCommitments = commitments.get(currPoolID) || []
 
-  const [targetKeyIndex, setTargetKeyIndex] = useState(-1)
   const [currentWalletBalance, setCurrentWalletBalance] = useState<
     bigint | null
   >(null)
 
   const getAvailCommitments = (): Commitment[] =>
-    poolCommitments[targetKeyIndex] ?? []
+    poolCommitments[masterKeyIndex] ?? []
 
   useEffect(() => {
     const updateBalance = async () => {
-      const publicAddr = new PrivacyKey(privKeys[targetKeyIndex], 0n).publicAddr
+      const publicAddr = masterKey?.publicAddr
       const walletClient = createWalletClient({
         account: publicAddr,
         chain: DEFAULT_CHAIN, //todo: change for dynamic chain
         transport: http()
       }).extend(publicActions)
 
-      const balance = await walletClient.getBalance({ address: publicAddr })
+      const balance = await walletClient.getBalance({
+        address: publicAddr || "0x"
+      })
       return balance
     }
 
@@ -94,10 +98,10 @@ const ExistingSelectionDialog = ({
       setCurrentWalletBalance(balance)
     }
 
-    if (targetKeyIndex !== -1) {
+    if (masterKeyIndex !== -1) {
       fetchBalance()
     }
-  }, [targetKeyIndex, privKeys])
+  }, [masterKeyIndex, masterKey, privKeys])
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -105,56 +109,15 @@ const ExistingSelectionDialog = ({
         <DialogHeader>
           <DialogTitle>Select Available Commitment</DialogTitle>
           <DialogDescription>
-            Select Privacy Key and an available commitment from that Privacy
-            Key.
+            Select an available commitment from your Master Key.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-auto">
-          <Label
-            htmlFor=""
-            className={cn("block mb-2 text-base font-bold text-blackmail")}
-          >
-            Select Privacy Key:
-          </Label>
+
+        <div>
+          Wallet balance:{" "}
+          {typeof currentWalletBalance === "bigint" &&
+            `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`}
         </div>
-        <div className="flex-auto">
-          <Select
-            value={
-              targetKeyIndex === -1
-                ? ""
-                : shortForm(privacyKeys[targetKeyIndex].publicAddr)
-            }
-            onValueChange={(value) => {
-              setTargetKeyIndex(
-                privacyKeys.findIndex((key) => key.publicAddr === value)!
-              )
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select Wallet">
-                {targetKeyIndex === -1
-                  ? ""
-                  : shortForm(privacyKeys[targetKeyIndex].publicAddr)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {privacyKeys.map((pK, index) => {
-                return (
-                  <SelectItem key={index} value={pK.publicAddr}>
-                    {shortForm(pK.publicAddr)}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        {targetKeyIndex !== -1 && (
-          <div>
-            Wallet balance:{" "}
-            {currentWalletBalance &&
-              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`}
-          </div>
-        )}
 
         <div className="flex-auto">
           <Label
@@ -167,12 +130,11 @@ const ExistingSelectionDialog = ({
 
         <div className="flex-auto">
           <Select
-            disabled={targetKeyIndex === -1}
             value={shortForm(
               numberToHex(existing[existingSlot]?.commitmentRoot || 0)
             )}
             onValueChange={(value) => {
-              selectExisting(targetKeyIndex, Number(value), existingSlot)
+              selectExisting(masterKeyIndex, Number(value), existingSlot)
             }}
           >
             <SelectTrigger>

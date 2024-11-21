@@ -102,11 +102,13 @@ export const ExistingCommitments = ({
           htmlFor=""
           className={cn("block mb-2 text-sm font-semibold text-blackmail")}
         >
-          Existing Commitments:
+          Existing Commitment:
         </Label>
       </div>
-      <div className="flex flex-col justify-center laptop:min-h-40">
-        {(reqType === RequestType.OneToTwo ? [0] : [0, 1]).map((index) => (
+      <div
+        className={`flex flex-col justify-center ${reqType !== RequestType.OneToOne && "laptop:min-h-40"}`}
+      >
+        {(reqType === RequestType.TwoToOne ? [0, 1] : [0]).map((index) => (
           <div
             key={`Existing:${index}`}
             className={cn(
@@ -156,7 +158,9 @@ export const ExistingCommitments = ({
         ))}
       </div>
 
-      <div className="flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2">
+      <div
+        className={`flex-auto flex flex-col gap-y-4 px-4 py-4 tablet:pt-6 rounded-md border-blackmail border-2 ${externIO[1] !== 0n && "min-h-64"}`}
+      >
         <div>
           <Label
             htmlFor=""
@@ -165,32 +169,10 @@ export const ExistingCommitments = ({
             External Input:
           </Label>
         </div>
-        <div>
-          <Select
-            value={shortForm(src)}
-            onValueChange={(value) => updateSrc(value as Hex)}
-          >
-            <SelectTrigger
-              className={cn(
-                "px-4 py-3 text-sm font-semibold text-blackmail border-solid border-1 border-blackmail"
-              )}
-            >
-              <SelectValue placeholder="Select">{shortForm(src)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {privacyKeys &&
-                privacyKeys.map((pK, index) => (
-                  <SelectItem key={index} value={pK.publicAddr}>
-                    {shortForm(pK.publicAddr)}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
         <Input
           id="external-input"
           // type="number"
-          disabled={src === numberToHex(0)}
+          disabled={externIO[1] !== 0n}
           placeholder="Enter Input Value"
           value={rawInputValue}
           onChange={(e) => handleInputChange(e)}

@@ -41,7 +41,7 @@ const requestSliceDefaultValue = {
   pkScalars: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
   nonces: [0n, 0n, 0n, 0n] as [bigint, bigint, bigint, bigint],
   externIO: [0n, 0n] as [bigint, bigint],
-  reqType: RequestType.OneToTwo,
+  reqType: RequestType.OneToOne,
 
   // The status of the onchain request
   // "": no request
@@ -66,20 +66,27 @@ export const createRequestSlice: StateCreator<
     const state = get()
     const {
       existing,
+      reqType,
       externIO,
       src,
       sink,
       newValues,
       new: newCommitments
     } = state
-    const noInputCommits = !existing[0] || !existing[1]
+    const noInputCommits =
+      reqType === RequestType.TwoToOne
+        ? !existing[0] || !existing[1]
+        : !existing[0]
     const isDuplicateCommitments =
+      reqType === RequestType.TwoToOne &&
       existing[0]?.nullRoot === existing[1]?.nullRoot
     const isInvalidExternIO = externIO[0] < 0n || externIO[1] < 0n
     const isInvalidSrc = src === numberToHex(0) && externIO[0] !== 0n
     const isInvalidSink = sink === numberToHex(0) && externIO[1] !== 0n
     const isVoidCommits =
-      newCommitments[0]?.isVoid() && newCommitments[1]?.isVoid()
+      reqType === RequestType.OneToTwo
+        ? newCommitments[0]?.isVoid() && newCommitments[1]?.isVoid()
+        : newCommitments[0]?.isVoid()
 
     if (noInputCommits) {
       return "existing commitments are not selected"
@@ -88,7 +95,9 @@ export const createRequestSlice: StateCreator<
       return "duplicate existing commitments"
     }
     if (isVoidCommits) {
-      return "only 1 of new commitments can be void"
+      return reqType === RequestType.OneToTwo
+        ? "only 1 of new commitments can be void"
+        : "new commitment can't be void"
     }
     if (isInvalidExternIO || isInvalidSrc || isInvalidSink) {
       return "invalid external input / output"
@@ -96,8 +105,14 @@ export const createRequestSlice: StateCreator<
 
     const { expected, actual } = GetNewSum(
       {
-        new: newValues.map((v) => DummyCommitment(v)),
-        existing: existing.map((c) => c || DummyCommitment())
+        new:
+          reqType === RequestType.TwoToOne
+            ? [DummyCommitment(newValues[0])]
+            : newValues.map((v) => DummyCommitment(v)),
+        existing:
+          reqType === RequestType.OneToTwo
+            ? [existing[0] || DummyCommitment()]
+            : existing.map((c) => c || DummyCommitment())
       },
       externIO
     )
@@ -109,29 +124,43 @@ export const createRequestSlice: StateCreator<
     return "valid"
   },
   getTotalNew: () =>
-    get().newValues.reduce((acc, val) => acc + val, 0n) + get().externIO[1],
+    (get().reqType === RequestType.TwoToOne
+      ? [get().newValues[0]]
+      : get().newValues
+    ).reduce((acc, val) => acc + val, 0n) + get().externIO[1],
   getTotalExisting: () => {
-    const { existing = [undefined, undefined], externIO } = get()
+    const { existing = [undefined, undefined], externIO, reqType } = get()
     return (
-      existing.reduce((acc, val) => acc + (val ? val.asTuple()[0] : 0n), 0n) +
-      externIO[0]
+      (reqType === RequestType.OneToTwo ? [existing[0]] : existing).reduce(
+        (acc, val) => acc + (val ? val.asTuple()[0] : 0n),
+        0n
+      ) + externIO[0]
     )
   },
   selectExisting: (keyIdx: number, commitIdx: number, slot: number) => {
-    const { commitments, currPoolID, existing, newValues, externIO } = get()
+    const { commitments, currPoolID, existing, newValues, externIO, reqType } =
+      get()
     const poolCommitments = commitments.get(currPoolID)
     if (poolCommitments === undefined) {
       throw new Error("Error: empty set of pool commitments")
     }
     const targetCommitment = poolCommitments[keyIdx][commitIdx]
 
-    const updExisting = [...existing] as IOCommitments
+    const updExisting = [...existing].filter((a) => !!a) as IOCommitments
     updExisting[slot] = targetCommitment
 
     const { expected, actual } = GetNewSum(
       {
-        new: newValues.map((v) => DummyCommitment(v)),
-        existing: existing.map((c) => c || DummyCommitment())
+        new:
+          reqType === RequestType.TwoToOne
+            ? [DummyCommitment(newValues[0])]
+            : newValues.map((v) => DummyCommitment(v)),
+        existing:
+          reqType === RequestType.OneToTwo
+            ? [updExisting[0] || DummyCommitment()]
+            : updExisting
+                .filter((c): c is Commitment => c !== undefined)
+                .map((c) => c || DummyCommitment())
       },
       externIO
     )
@@ -170,8 +199,14 @@ export const createRequestSlice: StateCreator<
 
       const { expected, actual } = GetNewSum(
         {
-          new: updatedState.newValues.map((v) => DummyCommitment(v)),
-          existing: updatedState.existing.map((c) => c || DummyCommitment())
+          new:
+            state.reqType === RequestType.TwoToOne
+              ? [DummyCommitment(updatedState.newValues[0])]
+              : updatedState.newValues.map((v) => DummyCommitment(v)),
+          existing:
+            state.reqType === RequestType.OneToTwo
+              ? [updatedState.existing[0] || DummyCommitment()]
+              : updatedState.existing.map((c) => c || DummyCommitment())
         },
         updatedState.externIO
       )
@@ -186,7 +221,10 @@ export const createRequestSlice: StateCreator<
       const pool = PrivacyPools.get(state.currPoolID)
       return {
         ...state,
-        new: state.newValues.map((val, i) =>
+        new: (state.reqType === RequestType.TwoToOne
+          ? [state.newValues[0]]
+          : state.newValues
+        ).map((val, i) =>
           CreateNewCommitment({
             _pK: state.privKeys[state.keyIdx[i + 2]],
             // auto set nonce to 0n for now
@@ -205,8 +243,14 @@ export const createRequestSlice: StateCreator<
 
       const { expected, actual } = GetNewSum(
         {
-          new: updatedState.newValues.map((v) => DummyCommitment(v)),
-          existing: updatedState.existing.map((c) => c || DummyCommitment())
+          new:
+            state.reqType === RequestType.TwoToOne
+              ? [DummyCommitment(updatedState.newValues[0])]
+              : updatedState.newValues.map((v) => DummyCommitment(v)),
+          existing:
+            state.reqType === RequestType.OneToTwo
+              ? [updatedState.existing[0] || DummyCommitment()]
+              : updatedState.existing.map((c) => c || DummyCommitment())
         },
         updatedState.externIO
       )
