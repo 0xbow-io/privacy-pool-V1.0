@@ -167,7 +167,6 @@ export const NewCommitments = ({ className }: { className: string }) => {
           onClick={() => {
             const diff = getTotalExisting() - getTotalNew()
             const val = diff > 0n ? externIO[1] + diff : 0n
-            console.log('formatun', formatUnits(val, Number(currPoolFe?.precision)))
             setExternIO([externIO[0], val])
             setRawInputValue(formatUnits(val, Number(currPoolFe?.precision)))
           }}

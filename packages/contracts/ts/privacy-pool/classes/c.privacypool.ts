@@ -284,18 +284,18 @@ export namespace CPool {
           this._roots
             ? await this._roots(this.meta.address, ToFrom)
             : await FetchRootsFn(this.chain, this.conn)(
-              this.meta.address,
-              ToFrom
-            )
+                this.meta.address,
+                ToFrom
+              )
         ) as bigint[]
         const _newRoot = this.UpdateRootSet(roots)
         // check that there is a checkpoint exisiting for the new root
         const _checkpoint = this._checkpoint
           ? await this._checkpoint(this.meta.address, _newRoot)
           : await FetchCheckpointAtRootFn(this.chain, this.conn)(
-            this.meta.address,
-            _newRoot
-          )
+              this.meta.address,
+              _newRoot
+            )
         return _checkpoint[0]
       }
       return true
@@ -305,19 +305,19 @@ export namespace CPool {
       range?: [bigint, bigint]
     ): Promise<
       | {
-      rawSaltPk: [bigint, bigint]
-      rawCipherText: [
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint
-      ]
-      commitmentHash: bigint
-      cipherStoreIndex: bigint
-    }[]
+          rawSaltPk: [bigint, bigint]
+          rawCipherText: [
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint
+          ]
+          commitmentHash: bigint
+          cipherStoreIndex: bigint
+        }[]
       | void
     > => {
       if (range === undefined) {
@@ -330,9 +330,9 @@ export namespace CPool {
       const res = this._ciphers
         ? await this._ciphers(this.meta.address, range)
         : await UnpackCiphersWithinRangeFn(this.chain, this.conn)(
-          this.meta.address,
-          range
-        )
+            this.meta.address,
+            range
+          )
       if (res) {
         // Note:
         // ciphers[0] => actual ciphertexts
@@ -383,14 +383,14 @@ export namespace CPool {
         : (this._scope
             ? this._scope(this.meta.address)
             : ScopeFn(this.chain)(this.meta.address)
-        )
-          .then((v) => {
-            this.scopeval = v
-            return v
-          })
-          .catch((e) => {
-            throw new Error(`Error in computing scope: ${e}`)
-          })
+          )
+            .then((v) => {
+              this.scopeval = v
+              return v
+            })
+            .catch((e) => {
+              throw new Error(`Error in computing scope: ${e}`)
+            })
 
     context = async (_r: TPrivacyPool.RequestT): Promise<bigint> =>
       this._context
@@ -410,24 +410,25 @@ export namespace CPool {
       // if proof is provided, verify it
       proof
         ? {
-          verified: this._onChainGroth16Verifier
-            ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
-            : await FnGroth16Verifier.verifyProofFn(this.chain, this.conn)(
-              this.meta.verifier,
-              packed
-            ),
-          packedProof: packed
-        }
+            verified: this._onChainGroth16Verifier
+              ? await this._onChainGroth16Verifier(this.meta.verifier, packed)
+              : await FnGroth16Verifier.verifyProofFn(this.chain, this.conn)(
+                  this.meta.verifier,
+                  packed
+                ),
+            packedProof: packed
+          }
         : // otherwise, reject the promise
-        Promise.reject("No proof provided")
+          Promise.reject("No proof provided")
 
     processOnChain = async (
       account: PublicActions & WalletActions & Client,
       request: TPrivacyPool.RequestT,
       proof: StdPackedGroth16ProofT<bigint>,
       simOnly = true
-    ): Promise<boolean | Hex> =>
-      await ProcessFn(account)(
+    ): Promise<boolean | Hex> => {
+      console.log(account)
+      return await ProcessFn(account)(
         this.meta.address,
         [
           request,
@@ -441,6 +442,7 @@ export namespace CPool {
         proof[3][D_ExternIO_StartIdx] as bigint,
         simOnly
       )
+    }
 
     computeProof = async (
       circuitIn: PrivacyPoolCircuitInput,

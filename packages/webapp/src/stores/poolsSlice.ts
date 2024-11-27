@@ -87,7 +87,6 @@ export const createPoolsSlice: StateCreator<
     set((state) => {
       const pools = new Map(state.pools)
       const commitments = new Map(state.commitments)
-
       resp.syncedPools?.forEach((syncedPool) => {
         const { poolId, roots, ciphers } = syncedPool
         const poolState = NewPrivacyPoolState()
@@ -101,13 +100,16 @@ export const createPoolsSlice: StateCreator<
         pools.set(poolId, poolState)
       })
 
-      console.log("processed", resp.processedCommits)
-
       resp.processedCommits?.forEach((keyCommits, poolId) => {
         // TODO: split into chunks to avoid thread block
+        const poolState = pools.get(poolId)!
+        console.log(poolState)
         const poolCommitments = keyCommits.map((commits) =>
-          commits.map((c) => CommitmentC.recoverFromJSON(c))
+          commits
+            .filter((c) => !poolState.has(BigInt(c.nullRoot)))
+            .map((c) => CommitmentC.recoverFromJSON(c))
         )
+        console.log("set comm", poolId, poolCommitments)
         commitments.set(poolId, poolCommitments)
       })
 

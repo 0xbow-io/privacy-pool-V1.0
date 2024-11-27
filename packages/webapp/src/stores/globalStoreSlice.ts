@@ -10,6 +10,7 @@ import {
   CreateNewCommitment
 } from "@privacy-pool-v1/domainobjs/ts"
 import type { GlobalStore, CompleteStore } from "@/stores/types.ts"
+import { numberToHex } from "viem"
 
 export const createGlobalStoreSlice: StateCreator<
   CompleteStore,
@@ -24,7 +25,21 @@ export const createGlobalStoreSlice: StateCreator<
       throw new Error("Error: unable to load worker")
     }
 
-    const {currPoolID, pools, privKeys, newValues, keyIdx, pkScalars, nonces, existing, externIO} = get()
+    const {
+      currPoolID,
+      pools,
+      privKeys,
+      newValues,
+      src,
+      sink,
+      keyIdx,
+      pkScalars,
+      nonces,
+      existing,
+      externIO,
+      privacyKeys,
+      signerKey
+    } = get()
 
     const poolID = currPoolID
     const poolState = pools.get(poolID)
@@ -32,9 +47,12 @@ export const createGlobalStoreSlice: StateCreator<
     if (meta === undefined || poolState === undefined) {
       throw new Error(`Error: invalid poolID ${poolID}`)
     }
+    const signerKeyPubAddr = privacyKeys.find(
+      (key) => key.pKey === signerKey
+    )?.publicAddr || numberToHex(0)
 
-    if (!existing){
-      throw new Error('Input commitments are not defined')
+    if (!existing) {
+      throw new Error("Input commitments are not defined")
     }
 
     const newCommitments =
@@ -48,10 +66,11 @@ export const createGlobalStoreSlice: StateCreator<
         })
       ) as [Commitment, Commitment])
 
+
     GetOnChainPrivacyPoolByPoolID(poolID)
       .context({
-        src: get().src,
-        sink: get().sink,
+        src: src === numberToHex(0) ? signerKeyPubAddr : src,
+        sink: sink === numberToHex(0) ? signerKeyPubAddr : sink,
         feeCollector: get().feeCollector,
         fee: get().fee
       })

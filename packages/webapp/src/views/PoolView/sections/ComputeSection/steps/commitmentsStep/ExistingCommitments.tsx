@@ -1,10 +1,27 @@
 import { Button } from "@/components/ui/button.tsx"
 import { cn } from "@/lib/utils.ts"
 import { ChevronRightSquareIcon, SigmaIcon } from "lucide-react"
-import React, { lazy, useCallback, useState, useTransition } from "react"
+import React, {
+  lazy,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition
+} from "react"
 import { type PrivacyKeyJSON } from "@privacy-pool-v1/domainobjs/ts"
-import { type FEMeta } from "@privacy-pool-v1/contracts/ts/privacy-pool"
-import { formatUnits, type Hex, numberToHex, parseUnits } from "viem"
+import {
+  DEFAULT_CHAIN,
+  type FEMeta
+} from "@privacy-pool-v1/contracts/ts/privacy-pool"
+import {
+  createWalletClient,
+  formatUnits,
+  type Hex,
+  http,
+  numberToHex,
+  parseUnits,
+  publicActions
+} from "viem"
 import { Label } from "@/components/ui/label.tsx"
 import {
   Select,
@@ -15,7 +32,7 @@ import {
 } from "@/components/ui/select.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import IconButton from "@/components/IconButton/IconButton.tsx"
-import { formatValue, shortForm } from "@/utils"
+import { displayFormattedBalance, formatValue, shortForm } from "@/utils"
 import { useBoundStore } from "@/stores"
 
 type ExistingCommitmentsProps = {
@@ -73,6 +90,8 @@ export const ExistingCommitments = ({
   const [existingSlot, setExistingSlot] = useState(0)
   const [rawInputValue, setRawInputValue] = useState("0")
 
+  const [walletBalances, setWalletBalances] = useState<(bigint | null)[]>([])
+
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value
@@ -90,6 +109,28 @@ export const ExistingCommitments = ({
     },
     [externIO, currPoolFe?.precision, setExternIO, startTransition]
   )
+
+  useEffect(() => {
+    const updateBalance = async (publicAddr: Hex) => {
+      const walletClient = createWalletClient({
+        account: publicAddr,
+        chain: DEFAULT_CHAIN, //todo: change for dynamic chain
+        transport: http()
+      }).extend(publicActions)
+
+      const balance = await walletClient.getBalance({ address: publicAddr })
+      return balance
+    }
+
+    const updateBalances = async () => {
+      const balances = await Promise.all(
+        privacyKeys.map((key) => updateBalance(key.publicAddr))
+      )
+      setWalletBalances(balances)
+    }
+
+    updateBalances()
+  }, [privacyKeys])
 
   return (
     <div className="">
@@ -176,6 +217,9 @@ export const ExistingCommitments = ({
                 privacyKeys.map((pK, index) => (
                   <SelectItem key={index} value={pK.publicAddr}>
                     {shortForm(pK.publicAddr)}
+                    {walletBalances &&
+                      walletBalances[index] &&
+                      `(${displayFormattedBalance(walletBalances[index], currPoolFe?.precision)} ${currPoolFe?.ticker})`}
                   </SelectItem>
                 ))}
             </SelectContent>

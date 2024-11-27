@@ -25,6 +25,7 @@ import type {
   IOCommitments,
   RequestSlice
 } from "@/stores/types.ts"
+import { formatValue } from "@/utils"
 
 const requestSliceDefaultValue = {
   src: numberToHex(0),
@@ -68,13 +69,15 @@ export const createRequestSlice: StateCreator<
       src,
       sink,
       newValues,
-      new: newCommitments
+      new: newCommitments,
+      currPoolFe
     } = state
     const noInputCommits = !existing[0] || !existing[1]
     const isDuplicateCommitments =
       existing[0]?.nullRoot === existing[1]?.nullRoot
     const isInvalidExternIO = externIO[0] < 0n || externIO[1] < 0n
     const isInvalidSrc = src === numberToHex(0) && externIO[0] !== 0n
+    const isInsufficientInput = externIO[0] < 10n ** 5n
     const isInvalidSink = sink === numberToHex(0) && externIO[1] !== 0n
     const isVoidCommits =
       newCommitments[0]?.isVoid() && newCommitments[1]?.isVoid()
@@ -90,6 +93,10 @@ export const createRequestSlice: StateCreator<
     }
     if (isInvalidExternIO || isInvalidSrc || isInvalidSink) {
       return "invalid external input / output"
+    }
+
+    if (isInsufficientInput) {
+      return `input value should be at least ${formatValue(10n ** 5n, currPoolFe?.precision)} ${currPoolFe?.ticker}`
     }
 
     const { expected, actual } = GetNewSum(

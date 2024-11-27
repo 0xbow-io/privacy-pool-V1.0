@@ -151,8 +151,9 @@ const ExistingSelectionDialog = ({
         {targetKeyIndex !== -1 && (
           <div>
             Wallet balance:{" "}
-            {currentWalletBalance &&
-              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`}
+            {(currentWalletBalance &&
+              `${parseFloat(Number(formatValue(currentWalletBalance, currPoolFe?.precision)).toFixed(8))} ${currPoolFe?.ticker}`) ||
+              `0 ${currPoolFe?.ticker}`}
           </div>
         )}
 
