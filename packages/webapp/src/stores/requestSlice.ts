@@ -77,6 +77,10 @@ export const createRequestSlice: StateCreator<
       reqType === RequestType.TwoToOne
         ? !existing[0] || !existing[1]
         : !existing[0]
+    const noOutput =
+      reqType === RequestType.OneToTwo
+        ? !newCommitments[0] && !newCommitments[1] && !externIO[1]
+        : !newCommitments[0] && !externIO[1]
     const isDuplicateCommitments =
       reqType === RequestType.TwoToOne &&
       existing[0]?.nullRoot === existing[1]?.nullRoot

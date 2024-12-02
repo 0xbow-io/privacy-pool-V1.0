@@ -17,13 +17,17 @@ export const createKeysSlice: StateCreator<CompleteStore, [], [], KeysSlice> = (
   masterKeyIndex: -1,
 
   importKeys: (data: string) =>
-    set((state) => ({
-      ...state,
-      privKeys: JSON.parse(data).keys.map((k: Hex) => k),
-      privacyKeys: computePrivacyKeys(JSON.parse(data).keys),
-      masterKey: PrivacyKey.from(JSON.parse(data).keys[0], 0n),
-      masterKeyIndex: 0,
-    })),
+    set((state) => {
+      const keys = JSON.parse(data).keys
+      return {
+        ...state,
+        privKeys: keys,
+        privacyKeys: computePrivacyKeys(keys),
+        masterKey: PrivacyKey.from(keys[0], 0n),
+        src: keys[0],
+        masterKeyIndex: 0
+      }
+    }),
   addKey: () => addKey(set),
   hasKeys: (): boolean => get().privKeys.length > 0,
   setSigner: (key: Hex) => set((state) => ({ ...state, signerKey: key })),
@@ -31,7 +35,8 @@ export const createKeysSlice: StateCreator<CompleteStore, [], [], KeysSlice> = (
     set((state) => ({
       ...state,
       masterKey: get().privacyKeys[index],
-      masterKeyIndex: index
+      masterKeyIndex: index,
+      src: get().privacyKeys[index].publicAddr
     })),
   exportKeys: (fileName = "privacy_pool_keys.json") =>
     downloadJSON(JSON.stringify({ keys: get().privKeys }), fileName)
