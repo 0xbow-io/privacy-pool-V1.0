@@ -87,7 +87,7 @@ export const AccountCard = ({ className }: { className: string }) => {
     [importKeys]
   )
 
-  const { getInputProps, getRootProps } = useDropzone({ onDrop })
+  const { getRootProps } = useDropzone({ onDrop })
 
   return (
     <Card className={cn("", className)}>
