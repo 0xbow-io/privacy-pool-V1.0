@@ -130,7 +130,6 @@ const ExistingSelectionDialog = ({
 
         <div className="flex-auto">
           <Select
-            disabled={targetKeyIndex === -1}
             value={shortForm(
               numberToHex(existing[existingSlot]?.commitmentRoot || 0)
             )}

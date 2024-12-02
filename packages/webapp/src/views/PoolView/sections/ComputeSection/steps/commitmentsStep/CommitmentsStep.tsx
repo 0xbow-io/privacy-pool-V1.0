@@ -9,7 +9,6 @@ import { ComputeBlockWrapper } from "@/views/PoolView/sections/ComputeSection/st
 import ExistingCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/ExistingCommitments.tsx"
 import NewCommitments from "@/views/PoolView/sections/ComputeSection/steps/commitmentsStep/NewCommitments.tsx"
 import { StatusField } from "@/components/StatusField/StatusField.tsx"
-import { useBoundStore } from "@/stores"
 
 export const CommitmentsStep = ({ setPrimaryButtonProps }: CommonProps) => {
   const { isSyncing, status, reqType, changeRequestType } = useBoundStore(

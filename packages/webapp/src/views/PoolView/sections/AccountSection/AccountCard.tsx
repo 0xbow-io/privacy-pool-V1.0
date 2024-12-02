@@ -87,7 +87,7 @@ export const AccountCard = ({ className }: { className: string }) => {
     [importKeys]
   )
 
-  const { getRootProps } = useDropzone({ onDrop })
+  const { getInputProps, getRootProps } = useDropzone({ onDrop })
 
   return (
     <Card className={cn("", className)}>
@@ -157,7 +157,10 @@ export const AccountCard = ({ className }: { className: string }) => {
                           </h2>
                         </div>
                       </div>
-                      <Button className="w-fit m-auto" onClick={() => setMasterKey(index)}>
+                      <Button
+                        className="w-fit m-auto"
+                        onClick={() => setMasterKey(index)}
+                      >
                         Select Key
                       </Button>
                     </div>
